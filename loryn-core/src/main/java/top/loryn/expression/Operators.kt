@@ -1,6 +1,5 @@
 package top.loryn.expression
 
-import top.loryn.schema.BooleanSqlType
 import top.loryn.schema.Column
 
 private fun <T : Any> SqlExpression<T>.cmp(operator: String, other: SqlExpression<T>) =
@@ -13,7 +12,7 @@ infix fun <T : Any> SqlExpression<T>.neq(other: SqlExpression<T>) = cmp("!=", ot
 infix fun <T : Any> SqlExpression<T>.gte(other: SqlExpression<T>) = cmp(">=", other)
 infix fun <T : Any> SqlExpression<T>.lte(other: SqlExpression<T>) = cmp("<=", other)
 
-private fun <T : Any> Column<T>.expr(value: T?) = ParameterExpression(value, sqlType)
+fun <T : Any> Column<T>.expr(value: T?) = ParameterExpression(value, sqlType)
 
 infix fun <T : Any> Column<T>.eq(value: T?) = eq(expr(value))
 infix fun <T : Any> Column<T>.gt(value: T?) = gt(expr(value))

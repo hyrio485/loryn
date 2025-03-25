@@ -1,5 +1,8 @@
-package top.loryn.schema
+package top.loryn.expression
 
+import top.loryn.schema.Column
+import top.loryn.schema.Table
+import top.loryn.database.TypeReference
 import java.math.BigDecimal
 import java.sql.*
 import java.sql.Date

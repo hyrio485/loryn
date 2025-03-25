@@ -1,5 +1,7 @@
 package top.loryn.schema
 
+import top.loryn.expression.SqlType
+
 /**
  * 数据表。
  *

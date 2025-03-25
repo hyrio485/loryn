@@ -1,7 +1,6 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
-import top.loryn.schema.SqlType
 import top.loryn.schema.Table
 
 abstract class ColumnExpression<T : Any>(val sqlTypeNullable: SqlType<T>?, val label: String?) : SqlExpression<T> {
@@ -11,8 +10,8 @@ abstract class ColumnExpression<T : Any>(val sqlTypeNullable: SqlType<T>?, val l
         label?.also { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
     }
 
-    open fun SqlBuilder.generateSqlAsColumn(params: MutableList<SqlParam<*>>) = also {
-        generateSql(params).appendLabel()
+    open fun SqlBuilder.appendExpressionAsColumn(params: MutableList<SqlParam<*>>) = also {
+        appendExpression(this@ColumnExpression, params).appendLabel()
     }
 }
 
@@ -83,7 +82,7 @@ class SelectExpression<T : Any>(
         if (columns.isNotEmpty()) {
             columns.forEachIndexed { index, column ->
                 if (index > 0) append(", ")
-                appendExpression(column, params)
+                column.run { appendExpressionAsColumn(params) }
             }
         } else {
             append('*')
@@ -96,7 +95,7 @@ class SelectExpression<T : Any>(
         }
     }
 
-    override fun SqlBuilder.generateSqlAsColumn(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendExpressionAsColumn(params: MutableList<SqlParam<*>>) = also {
         append('(').generateSql(params).append(')').appendLabel()
     }
 }

@@ -1,6 +1,5 @@
 package top.loryn.expression
 
-import top.loryn.schema.SqlType
 import java.sql.PreparedStatement
 
 data class SqlParam<T : Any>(val value: T?, val sqlType: SqlType<T>) {

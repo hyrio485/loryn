@@ -1,4 +1,4 @@
-package top.loryn.schema
+package top.loryn.expression
 
 import java.sql.JDBCType
 import java.sql.PreparedStatement

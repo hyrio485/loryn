@@ -1,4 +1,4 @@
-package top.loryn.schema
+package top.loryn.database
 
 import java.lang.reflect.ParameterizedType
 

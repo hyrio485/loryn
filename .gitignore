@@ -1,0 +1,10 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+/**/target/
+
+/**/src/test/java/**/DebugTests.java
+/**/src/test/java/**/DebugTests.kt

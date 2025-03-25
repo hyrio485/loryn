@@ -16,7 +16,7 @@ class Column<T : Any>(
     sqlType: SqlType<T>,
     label: String? = null,
 ) : ColumnExpression<T>(sqlType, label) {
-    override fun SqlBuilder.generateSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table.alias?.also { appendRef(it).append('.') }
         appendRef(name)
     }

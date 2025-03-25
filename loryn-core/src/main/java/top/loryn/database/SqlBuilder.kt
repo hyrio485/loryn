@@ -36,7 +36,7 @@ open class SqlBuilder(
     }
 
     open fun appendExpression(expression: SqlExpression<*>, params: MutableList<SqlParam<*>>) = also {
-        expression.run { generateSql(params) }
+        expression.run { appendSql(params) }
     }
 
     fun build() = builder.toString()

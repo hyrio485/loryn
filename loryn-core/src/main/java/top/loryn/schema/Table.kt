@@ -1,6 +1,7 @@
 package top.loryn.schema
 
 import top.loryn.expression.SqlType
+import java.util.*
 
 /**
  * 数据表。
@@ -13,12 +14,12 @@ abstract class Table<E>(
     val category: String? = null,
     val alias: String? = null,
 ) {
-    private val _columns = LinkedHashMap<String, Column<*>>()
+    private val columnsMutable = LinkedHashMap<String, Column<*>>()
 
-    val columns get() = _columns.toMap()
+    val columns: Map<String, Column<*>> = Collections.unmodifiableMap(columnsMutable)
 
     fun <T : Any> registerColumn(name: String, sqlType: SqlType<T>) =
-        Column(this, name, sqlType).also { _columns[name] = it }
+        Column(this, name, sqlType).also { columnsMutable[name] = it }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")
 }

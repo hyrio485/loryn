@@ -61,7 +61,9 @@ data class InsertStatement(
 }
 
 @LorynDsl
-class InsertBuilder<T : Table<*>>(table: T) : StatementBuilder<T, InsertStatement>(table) {
+class InsertBuilder<T : Table<*>>(
+    table: T, val useGeneratedKeys: Boolean = false,
+) : StatementBuilder<T, InsertStatement>(table) {
     internal val columns = mutableListOf<ColumnExpression<*>>()
     internal val values = mutableListOf<ParameterExpression<*>>()
     internal var select: SelectExpression<*>? = null
@@ -111,8 +113,8 @@ class InsertBuilder<T : Table<*>>(table: T) : StatementBuilder<T, InsertStatemen
     }
 
     override fun build(database: Database) =
-        InsertStatement(database, table, columns, values.takeUnless { it.isEmpty() }, select)
+        InsertStatement(database, table, columns, values.takeUnless { it.isEmpty() }, select, useGeneratedKeys)
 }
 
-fun <T : Table<*>> Database.insert(table: T, block: InsertBuilder<T>.(T) -> Unit) =
-    InsertBuilder(table).apply { block(table) }.build(this)
+fun <T : Table<*>> Database.insert(table: T, useGeneratedKeys: Boolean = false, block: InsertBuilder<T>.(T) -> Unit) =
+    InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)

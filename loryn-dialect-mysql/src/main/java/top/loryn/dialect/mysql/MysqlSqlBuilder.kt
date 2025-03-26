@@ -15,4 +15,8 @@ open class MysqlSqlBuilder(
             else -> super.appendExpression(expression, params)
         }
     }
+
+    override fun end() {
+        append(';')
+    }
 }

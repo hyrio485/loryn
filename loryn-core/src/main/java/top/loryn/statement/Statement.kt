@@ -2,10 +2,13 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
+import top.loryn.database.mapEachRow
+import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 
 abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
     abstract fun build(database: Database): S
@@ -16,7 +19,7 @@ abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
  * 按返回值类型可分为查询语句（preparedStatement.executeQuery()）
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
-abstract class Statement {
+abstract class Statement(val database: Database) {
     abstract fun generateSql(): SqlAndParams
 
     protected fun Database.buildSql(block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit): SqlAndParams {
@@ -39,4 +42,38 @@ abstract class Statement {
             }
             block(statement)
         }
+}
+
+abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean) : Statement(database) {
+    @JvmOverloads
+    open fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
+        database.doExecute(useGeneratedKeys) { statement ->
+            statement.executeUpdate().also(database::showEffects).also {
+                if (useGeneratedKeys) {
+                    statement.generatedKeys.mapEachRow(forEachGeneratedKey)
+                }
+            }
+        }
+}
+
+abstract class DqlStatement<E>(database: Database) : Statement(database) {
+    open val createEntity: (() -> E)? = null
+    open val columns: List<ColumnExpression<E, *>>? = emptyList()
+
+    open fun <R> execute(block: (ResultSet) -> R) = database.doExecute { statement ->
+        statement.executeQuery().mapEachRow(block)
+    }
+
+    open fun execute(): List<E> {
+        val createEntity = createEntity ?: throw UnsupportedOperationException(
+            "Entity creation method is not specified"
+        )
+        val columns = columns.takeUnless { it.isNullOrEmpty() }
+            ?: throw UnsupportedOperationException("No columns specified")
+        return execute { rs ->
+            createEntity().apply {
+                columns.forEachIndexed { index, column -> column.applyValue(this, index, rs) }
+            }
+        }
+    }
 }

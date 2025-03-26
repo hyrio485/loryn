@@ -42,7 +42,7 @@ abstract class Table<E>(
     override fun createEntity() = if (createEntity != null) {
         createEntity.invoke()
     } else {
-        throw UnsupportedOperationException("Entity creation method is not specified")
+        throw UnsupportedOperationException("Entity creation method of table $this is not specified")
     }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")

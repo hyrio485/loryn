@@ -8,11 +8,12 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
 
-data class UpdateStatement<E>(
-    val database: Database, val table: Table<*>,
+class UpdateStatement<E>(
+    database: Database,
+    val table: Table<*>,
     val sets: List<AssignmentExpression<E, *>>,
     val where: SqlExpression<Boolean>?,
-) : Statement() {
+) : DmlStatement(database, false) {
     init {
         require(sets.isNotEmpty()) { "At least one column must be set" }
     }
@@ -27,10 +28,6 @@ data class UpdateStatement<E>(
             append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params)
         }
     }
-
-    fun execute() = database.doExecute { statement ->
-        statement.executeUpdate().also(database::showEffects)
-    }
 }
 
 @LorynDsl
@@ -38,9 +35,17 @@ class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateState
     internal val sets = mutableListOf<AssignmentExpression<E, *>>()
     internal var where: SqlExpression<Boolean>? = null
 
-    fun <C : Any> set(column: Column<E, C>, value: C?) {
+    fun <C : Any> set(column: Column<E, C>, value: SqlExpression<C>) {
         checkTableColumn(table, column)
-        sets += AssignmentExpression(column, column.expr(value))
+        sets += AssignmentExpression(column, value)
+    }
+
+    fun <C : Any> set(column: Column<E, C>, block: (Column<E, C>) -> SqlExpression<C>) {
+        set(column, block(column))
+    }
+
+    fun <C : Any> set(column: Column<E, C>, value: C?) {
+        set(column, column.expr(value))
     }
 
     fun where(block: (T) -> SqlExpression<Boolean>) {
@@ -52,5 +57,5 @@ class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateState
 
 fun <E, T : Table<E>> Database.update(
     table: T,
-    block: UpdateBuilder<E, T>.(T) -> Unit,
+    block: UpdateBuilder<E, T>.(T) -> Unit = {},
 ) = UpdateBuilder(table).apply { block(table) }.build(this)

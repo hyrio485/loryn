@@ -2,22 +2,21 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
-import top.loryn.database.mapEachRow
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression
 import top.loryn.expression.SelectExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
-import java.sql.ResultSet
 
-data class InsertStatement<E>(
-    val database: Database, val table: Table<*>,
+class InsertStatement<E>(
+    database: Database,
+    val table: Table<*>,
     val columns: List<ColumnExpression<E, *>>,
     val values: List<ParameterExpression<E, *>>? = null,
     val select: SelectExpression<*>? = null,
-    val useGeneratedKeys: Boolean = false,
-) : Statement() {
+    useGeneratedKeys: Boolean = false,
+) : DmlStatement(database, useGeneratedKeys) {
     init {
         require(columns.isNotEmpty()) { "At least one column must be set" }
         if (values == null && select == null) {
@@ -49,15 +48,6 @@ data class InsertStatement<E>(
             appendExpression(select!!, params)
         }
     }
-
-    fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
-        database.doExecute(useGeneratedKeys) { statement ->
-            statement.executeUpdate().also(database::showEffects).also {
-                if (useGeneratedKeys) {
-                    statement.generatedKeys.mapEachRow(forEachGeneratedKey)
-                }
-            }
-        }
 }
 
 @LorynDsl
@@ -122,7 +112,7 @@ class InsertBuilder<E, T : Table<E>>(
 fun <E, T : Table<E>> Database.insert(
     table: T,
     useGeneratedKeys: Boolean = false,
-    block: InsertBuilder<E, T>.(T) -> Unit,
+    block: InsertBuilder<E, T>.(T) -> Unit = {},
 ) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)
 
 fun <E, T : Table<E>> Database.insert(
@@ -134,7 +124,7 @@ fun <E, T : Table<E>> Database.insert(
     val columns =
         columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
     return InsertStatement(
-        this, table, columns, table.columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
+        this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
     ).execute { rs ->
         val primaryKeys = table.primaryKeys
         if (primaryKeys.isEmpty()) {

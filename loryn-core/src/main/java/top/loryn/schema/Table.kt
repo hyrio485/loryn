@@ -1,7 +1,9 @@
 package top.loryn.schema
 
+import top.loryn.database.SqlBuilder
+import top.loryn.expression.QuerySourceExpression
+import top.loryn.expression.SqlParam
 import top.loryn.expression.SqlType
-import java.util.*
 
 /**
  * 数据表。
@@ -13,13 +15,22 @@ abstract class Table<E>(
     val schema: String? = null,
     val category: String? = null,
     val alias: String? = null,
-) {
-    private val columnsMutable = LinkedHashMap<String, Column<*>>()
+    val newEntity: (() -> E)? = null,
+) : QuerySourceExpression() {
+    private val columnsMapMutable = LinkedHashMap<String, Column<*>>()
 
-    val columns: Map<String, Column<*>> = Collections.unmodifiableMap(columnsMutable)
+    override val columns = columnsMapMutable.values.toList()
+
+    fun <T : Any> registerColumn(column: Column<T>) =
+        column.also { columnsMapMutable[column.name] = it }
 
     fun <T : Any> registerColumn(name: String, sqlType: SqlType<T>) =
-        Column(this, name, sqlType).also { columnsMutable[name] = it }
+        registerColumn(Column(this, name, sqlType))
+
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+        appendTable(this@Table)
+        alias?.also { append(' ').appendRef(it) }
+    }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")
 }

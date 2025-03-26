@@ -7,6 +7,7 @@ import top.loryn.expression.SqlExpression
 import top.loryn.expression.expr
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.schema.checkTableColumn
 
 data class UpdateStatement(
     val database: Database, val table: Table<*>,
@@ -39,7 +40,7 @@ class UpdateBuilder<T : Table<*>>(table: T) : StatementBuilder<T, UpdateStatemen
     internal var where: SqlExpression<Boolean>? = null
 
     fun <V : Any> set(column: Column<V>, value: V?) {
-        checkColumn(column)
+        checkTableColumn(table, column)
         sets += AssignmentExpression(column, column.expr(value))
     }
 

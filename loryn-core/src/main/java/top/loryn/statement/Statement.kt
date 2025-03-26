@@ -4,18 +4,18 @@ import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
-import top.loryn.schema.Column
 import top.loryn.schema.Table
 import java.sql.PreparedStatement
 
 abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
-    fun checkColumn(column: Column<*>) {
-        require(column.table === table) { "Column $column does not belong to table $table" }
-    }
-
     abstract fun build(database: Database): S
 }
 
+/**
+ * 对语句的抽象。若干个表达式借助数据库及某些关键字可以组成一条语句，
+ * 按返回值类型可分为查询语句（preparedStatement.executeQuery()）
+ * 和更新语句（preparedStatement.executeUpdate()）。
+ */
 abstract class Statement {
     abstract fun generateSql(): SqlAndParams
 

@@ -11,7 +11,7 @@ open class MysqlSqlBuilder(
 ) : SqlBuilder(keywords, uppercaseKeywords) {
     override fun appendExpression(expression: SqlExpression<*>, params: MutableList<SqlParam<*>>) = also {
         when (expression) {
-            is SelectExpression<*> -> super.appendExpression(expression, params)
+            is SelectExpression -> super.appendExpression(expression, params)
             else -> super.appendExpression(expression, params)
         }
     }

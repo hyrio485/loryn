@@ -9,13 +9,14 @@ import top.loryn.expression.SelectExpression
 import top.loryn.expression.expr
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.schema.checkTableColumn
 import java.sql.ResultSet
 
 data class InsertStatement(
     val database: Database, val table: Table<*>,
     val columns: List<ColumnExpression<*>>,
     val values: List<ParameterExpression<*>>? = null,
-    val select: SelectExpression<*>? = null,
+    val select: SelectExpression? = null,
     val useGeneratedKeys: Boolean = false,
 ) : Statement() {
     init {
@@ -66,14 +67,14 @@ class InsertBuilder<T : Table<*>>(
 ) : StatementBuilder<T, InsertStatement>(table) {
     internal val columns = mutableListOf<ColumnExpression<*>>()
     internal val values = mutableListOf<ParameterExpression<*>>()
-    internal var select: SelectExpression<*>? = null
+    internal var select: SelectExpression? = null
 
     fun <C : Any> column(column: Column<C>) {
-        columns += column.also(::checkColumn)
+        columns += column.also { checkTableColumn(table, it) }
     }
 
     fun columns(columns: List<Column<*>>) {
-        this.columns += columns.onEach(::checkColumn)
+        this.columns += columns.onEach { checkTableColumn(table, it) }
     }
 
     fun columns(vararg columns: Column<*>) {
@@ -107,7 +108,7 @@ class InsertBuilder<T : Table<*>>(
         require(values.isEmpty()) { "Cannot set both values and select" }
     }
 
-    fun select(select: SelectExpression<*>) {
+    fun select(select: SelectExpression) {
         requireEmptyValues()
         this.select = select
     }

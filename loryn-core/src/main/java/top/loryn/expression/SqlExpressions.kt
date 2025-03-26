@@ -1,23 +1,28 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
-import top.loryn.schema.Table
+import top.loryn.schema.Column
 
-abstract class ColumnExpression<T : Any>(val sqlTypeNullable: SqlType<T>?, val label: String?) : SqlExpression<T> {
-    override val sqlType by lazy(LazyThreadSafetyMode.NONE) { sqlTypeNullable ?: super.sqlType }
+abstract class ColumnExpression<T : Any>(
+    val sqlTypeNullable: SqlType<T>?,
+    val alias: String?,
+) : SqlExpression<T> {
+    override val sqlType: SqlType<T>
+        get() = sqlTypeNullable
+            ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
 
     open fun SqlBuilder.appendSqlInSelectClause(params: MutableList<SqlParam<*>>) = also {
         appendSql(params)
-        if (label != null) {
-            append(' ').appendKeyword("AS").append(' ').appendRef(label)
+        if (alias != null) {
+            append(' ').appendKeyword("AS").append(' ').appendRef(alias)
         }
     }
 
     abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-        if (label != null) {
-            appendRef(label)
+        if (alias != null) {
+            appendRef(alias)
         } else {
             appendSqlOriginal(params)
         }
@@ -25,7 +30,9 @@ abstract class ColumnExpression<T : Any>(val sqlTypeNullable: SqlType<T>?, val l
 }
 
 class ParameterExpression<T : Any>(
-    val value: T?, sqlType: SqlType<T>, label: String? = null,
+    val value: T?,
+    sqlType: SqlType<T>,
+    label: String? = null,
 ) : ColumnExpression<T>(sqlType, label) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         append("?")
@@ -34,8 +41,11 @@ class ParameterExpression<T : Any>(
 }
 
 class UnaryExpression<T : Any, R : Any>(
-    val operator: String, val expr: SqlExpression<T>,
-    sqlType: SqlType<R>, val addParentheses: Boolean = true, label: String? = null,
+    val operator: String,
+    val expr: SqlExpression<T>,
+    sqlType: SqlType<R>,
+    val addParentheses: Boolean = true,
+    label: String? = null,
 ) : ColumnExpression<R>(sqlType, label) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         appendKeyword(operator).append(' ')
@@ -46,8 +56,12 @@ class UnaryExpression<T : Any, R : Any>(
 }
 
 class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
-    val operator: String, val expr1: SqlExpression<T1>, val expr2: SqlExpression<T2>,
-    sqlType: SqlType<R>, val addParentheses: Boolean = true, label: String? = null,
+    val operator: String,
+    val expr1: SqlExpression<T1>,
+    val expr2: SqlExpression<T2>,
+    sqlType: SqlType<R>,
+    val addParentheses: Boolean = true,
+    label: String? = null,
 ) : ColumnExpression<R>(sqlType, label) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
@@ -61,36 +75,40 @@ class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
 }
 
 data class AssignmentExpression<T : Any>(
-    val column: ColumnExpression<T>, val value: SqlExpression<T>,
+    val column: ColumnExpression<T>,
+    val value: SqlExpression<T>,
 ) : SqlExpression<Nothing> {
+    init {
+        if (column is Column<*> && column.notNull && value is ParameterExpression && value.value == null) {
+            throw IllegalArgumentException("The column $column cannot be null.")
+        }
+    }
+
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendExpression(column, params).append(' ').appendKeyword("=").append(' ').appendExpression(value, params)
     }
 }
 
-abstract class QuerySourceExpression : SqlExpression<Nothing>
-
-data class TableExpression(
-    val table: Table<*>, val alias: String? = null,
-) : QuerySourceExpression() {
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-        appendTable(table)
-        alias?.also { append(' ').appendRef(it) }
-    }
+abstract class QuerySourceExpression : SqlExpression<Nothing> {
+    abstract val columns: List<ColumnExpression<*>>
 }
 
-class SelectExpression<T : Any>(
-    val columns: List<ColumnExpression<*>>,
+class SelectExpression(
+    override val columns: List<ColumnExpression<*>>,
     val from: QuerySourceExpression?,
     val where: SqlExpression<Boolean>?,
-    sqlType: SqlType<T>? = null,
-    label: String? = null,
-) : ColumnExpression<T>(sqlType?.also {
-    if (columns.size != 1) {
-        throw IllegalArgumentException("The sqlType argument can only be used when there is exactly one column.")
+) : QuerySourceExpression() {
+    inline fun <reified T : Any> asColumn(): ColumnExpression<T> {
+        require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
+        val column = columns[0]
+        if (column.sqlType.clazz != T::class.java) {
+            throw IllegalArgumentException("The column type is not ${T::class.java}")
+        }
+        @Suppress("UNCHECKED_CAST")
+        return column as ColumnExpression<T>
     }
-}, label) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ')
         if (columns.isNotEmpty()) {
             columns.forEachIndexed { index, column ->

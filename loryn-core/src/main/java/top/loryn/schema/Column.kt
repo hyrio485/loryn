@@ -15,11 +15,14 @@ class Column<T : Any>(
     val name: String,
     sqlType: SqlType<T>,
     label: String? = null,
+    val notNull: Boolean = false,
 ) : ColumnExpression<T>(sqlType, label) {
+    fun notNull(notNull: Boolean = true) = table.registerColumn<T>(Column(table, name, sqlType, alias, notNull))
+
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table.alias?.also { appendRef(it).append('.') }
         appendRef(name)
     }
 
-    override fun toString() = "${table.alias?.let { "$it." }.orEmpty()}$name${label?.let { "($it)" }.orEmpty()}"
+    override fun toString() = "${table.alias?.let { "$it." }.orEmpty()}$name${alias?.let { "($it)" }.orEmpty()}"
 }

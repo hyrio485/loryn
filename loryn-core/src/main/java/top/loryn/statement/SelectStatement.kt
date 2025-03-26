@@ -3,19 +3,21 @@ package top.loryn.statement
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
 import top.loryn.database.mapEachRow
-import top.loryn.expression.*
+import top.loryn.expression.ColumnExpression
+import top.loryn.expression.QuerySourceExpression
+import top.loryn.expression.SelectExpression
+import top.loryn.expression.SqlExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.schema.checkTableColumn
 import java.sql.ResultSet
 
 data class SelectStatement(
     val database: Database,
-    val columns: List<ColumnExpression<*>>,
-    val from: QuerySourceExpression?,
-    val where: SqlExpression<Boolean>?,
+    val expression: SelectExpression,
 ) : Statement() {
     override fun generateSql() = database.buildSql { params ->
-        SelectExpression<Nothing>(columns, from, where).also { appendExpression(it, params) }
+        appendExpression(expression, params)
     }
 
     fun <R> execute(block: (ResultSet) -> R) = database.doExecute { statement ->
@@ -26,15 +28,15 @@ data class SelectStatement(
 @LorynDsl
 class SelectBuilder<T : Table<*>>(table: T) : StatementBuilder<T, SelectStatement>(table) {
     internal val columns: MutableList<ColumnExpression<*>> = mutableListOf()
-    internal var from: QuerySourceExpression? = TableExpression(table)
+    internal var from: QuerySourceExpression? = table
     internal var where: SqlExpression<Boolean>? = null
 
     fun <C : Any> column(column: Column<C>) {
-        columns += column.also(::checkColumn)
+        columns += column.also { checkTableColumn(table, it) }
     }
 
     fun columns(columns: List<Column<*>>) {
-        this.columns += columns.onEach(::checkColumn)
+        this.columns += columns.onEach { checkTableColumn(table, it) }
     }
 
     fun columns(vararg columns: Column<*>) {
@@ -45,7 +47,8 @@ class SelectBuilder<T : Table<*>>(table: T) : StatementBuilder<T, SelectStatemen
         this.where = block(table)
     }
 
-    override fun build(database: Database) = SelectStatement(database, columns, from, where)
+    override fun build(database: Database) =
+        SelectStatement(database, SelectExpression(columns, from, where))
 }
 
 fun <T : Table<*>> Database.select(table: T, block: SelectBuilder<T>.(T) -> Unit) =

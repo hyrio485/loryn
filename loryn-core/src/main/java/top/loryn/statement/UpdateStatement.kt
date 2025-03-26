@@ -9,9 +9,9 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
 
-data class UpdateStatement(
+data class UpdateStatement<E>(
     val database: Database, val table: Table<*>,
-    val sets: List<AssignmentExpression<*>>,
+    val sets: List<AssignmentExpression<E, *>>,
     val where: SqlExpression<Boolean>?,
 ) : Statement() {
     init {
@@ -35,11 +35,11 @@ data class UpdateStatement(
 }
 
 @LorynDsl
-class UpdateBuilder<T : Table<*>>(table: T) : StatementBuilder<T, UpdateStatement>(table) {
-    internal val sets = mutableListOf<AssignmentExpression<*>>()
+class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateStatement<E>>(table) {
+    internal val sets = mutableListOf<AssignmentExpression<E, *>>()
     internal var where: SqlExpression<Boolean>? = null
 
-    fun <V : Any> set(column: Column<V>, value: V?) {
+    fun <C : Any> set(column: Column<E, C>, value: C?) {
         checkTableColumn(table, column)
         sets += AssignmentExpression(column, column.expr(value))
     }
@@ -51,5 +51,7 @@ class UpdateBuilder<T : Table<*>>(table: T) : StatementBuilder<T, UpdateStatemen
     override fun build(database: Database) = UpdateStatement(database, table, sets, where)
 }
 
-fun <T : Table<*>> Database.update(table: T, block: UpdateBuilder<T>.(T) -> Unit) =
-    UpdateBuilder(table).apply { block(table) }.build(this)
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    block: UpdateBuilder<E, T>.(T) -> Unit,
+) = UpdateBuilder(table).apply { block(table) }.build(this)

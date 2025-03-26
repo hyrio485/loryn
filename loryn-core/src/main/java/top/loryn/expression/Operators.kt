@@ -2,30 +2,30 @@ package top.loryn.expression
 
 import top.loryn.schema.Column
 
-private fun <T : Any> SqlExpression<T>.cmp(operator: String, other: SqlExpression<T>) =
-    BinaryExpression<T, T, Boolean>(operator, this, other, BooleanSqlType, addParentheses = false)
+private fun <E, C : Any> SqlExpression<C>.cmp(operator: String, other: SqlExpression<C>) =
+    BinaryExpression<E, C, C, Boolean>(operator, this, other, BooleanSqlType, addParentheses = false)
 
-infix fun <T : Any> SqlExpression<T>.eq(other: SqlExpression<T>) = cmp("=", other)
-infix fun <T : Any> SqlExpression<T>.gt(other: SqlExpression<T>) = cmp(">", other)
-infix fun <T : Any> SqlExpression<T>.lt(other: SqlExpression<T>) = cmp("<", other)
-infix fun <T : Any> SqlExpression<T>.neq(other: SqlExpression<T>) = cmp("!=", other)
-infix fun <T : Any> SqlExpression<T>.gte(other: SqlExpression<T>) = cmp(">=", other)
-infix fun <T : Any> SqlExpression<T>.lte(other: SqlExpression<T>) = cmp("<=", other)
+infix fun <E, C : Any> SqlExpression<C>.eq(other: SqlExpression<C>) = cmp<E, C>("=", other)
+infix fun <E, C : Any> SqlExpression<C>.gt(other: SqlExpression<C>) = cmp<E, C>(">", other)
+infix fun <E, C : Any> SqlExpression<C>.lt(other: SqlExpression<C>) = cmp<E, C>("<", other)
+infix fun <E, C : Any> SqlExpression<C>.neq(other: SqlExpression<C>) = cmp<E, C>("!=", other)
+infix fun <E, C : Any> SqlExpression<C>.gte(other: SqlExpression<C>) = cmp<E, C>(">=", other)
+infix fun <E, C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = cmp<E, C>("<=", other)
 
-fun <T : Any> Column<T>.expr(value: T?) = ParameterExpression(value, sqlType)
+fun <E, C : Any> Column<E, C>.expr(value: C?) = ParameterExpression<E, C>(value, sqlType)
 
-infix fun <T : Any> Column<T>.eq(value: T?) = eq(expr(value))
-infix fun <T : Any> Column<T>.gt(value: T?) = gt(expr(value))
-infix fun <T : Any> Column<T>.lt(value: T?) = lt(expr(value))
-infix fun <T : Any> Column<T>.neq(value: T?) = neq(expr(value))
-infix fun <T : Any> Column<T>.gte(value: T?) = gte(expr(value))
-infix fun <T : Any> Column<T>.lte(value: T?) = lte(expr(value))
+infix fun <E, C : Any> Column<E, C>.eq(value: C?) = eq<E, C>(expr(value))
+infix fun <E, C : Any> Column<E, C>.gt(value: C?) = gt<E, C>(expr(value))
+infix fun <E, C : Any> Column<E, C>.lt(value: C?) = lt<E, C>(expr(value))
+infix fun <E, C : Any> Column<E, C>.neq(value: C?) = neq<E, C>(expr(value))
+infix fun <E, C : Any> Column<E, C>.gte(value: C?) = gte<E, C>(expr(value))
+infix fun <E, C : Any> Column<E, C>.lte(value: C?) = lte<E, C>(expr(value))
 
-infix fun SqlExpression<Boolean>.and(other: SqlExpression<Boolean>) =
-    BinaryExpression<Boolean, Boolean, Boolean>("AND", this, other, BooleanSqlType)
+infix fun <E> SqlExpression<Boolean>.and(other: SqlExpression<Boolean>) =
+    BinaryExpression<E, Boolean, Boolean, Boolean>("AND", this, other, BooleanSqlType)
 
-infix fun SqlExpression<Boolean>.or(other: SqlExpression<Boolean>) =
-    BinaryExpression<Boolean, Boolean, Boolean>("OR", this, other, BooleanSqlType)
+infix fun <E> SqlExpression<Boolean>.or(other: SqlExpression<Boolean>) =
+    BinaryExpression<E, Boolean, Boolean, Boolean>("OR", this, other, BooleanSqlType)
 
-operator fun SqlExpression<Boolean>.not() =
-    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType)
+operator fun <E> SqlExpression<Boolean>.not() =
+    UnaryExpression<E, Boolean, Boolean>("NOT", this, BooleanSqlType)

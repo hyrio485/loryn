@@ -8,16 +8,23 @@ import top.loryn.expression.SqlType
 /**
  * 数据表的一列。
  *
- * @param T 列的数据类型。
+ * @param C 列的数据类型。
  */
-class Column<T : Any>(
-    val table: Table<*>,
+class Column<E, C : Any>(
+    val table: Table<E>,
     val name: String,
-    sqlType: SqlType<T>,
+    sqlType: SqlType<C>,
     label: String? = null,
     val notNull: Boolean = false,
-) : ColumnExpression<T>(sqlType, label) {
-    fun notNull(notNull: Boolean = true) = table.registerColumn<T>(Column(table, name, sqlType, alias, notNull))
+    setValue: ((E, C?) -> Unit)? = null,
+) : ColumnExpression<E, C>(sqlType, label, setValue) {
+    private fun Column<E, C>.registerColumn() = also { table.registerColumn(it) }
+
+    fun notNull(notNull: Boolean = true) =
+        Column<E, C>(table, name, sqlType, alias, notNull, setValue).registerColumn()
+
+    fun setValue(setValue: (E, C?) -> Unit) =
+        Column<E, C>(table, name, sqlType, alias, notNull, setValue).registerColumn()
 
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table.alias?.also { appendRef(it).append('.') }

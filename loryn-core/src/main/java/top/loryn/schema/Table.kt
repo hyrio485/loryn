@@ -15,17 +15,17 @@ abstract class Table<E>(
     val schema: String? = null,
     val category: String? = null,
     val alias: String? = null,
-    val newEntity: (() -> E)? = null,
-) : QuerySourceExpression() {
-    private val columnsMapMutable = LinkedHashMap<String, Column<*>>()
+) : QuerySourceExpression<E>() {
+    private val columnsMapMutable = LinkedHashMap<String, Column<E, *>>()
 
     override val columns = columnsMapMutable.values.toList()
 
-    fun <T : Any> registerColumn(column: Column<T>) =
-        column.also { columnsMapMutable[column.name] = it }
+    fun <C : Any> registerColumn(column: Column<E, C>) {
+        columnsMapMutable[column.name] = column
+    }
 
-    fun <T : Any> registerColumn(name: String, sqlType: SqlType<T>) =
-        registerColumn(Column(this, name, sqlType))
+    fun <C : Any> registerColumn(name: String, sqlType: SqlType<C>) =
+        Column<E, C>(this, name, sqlType).also(this::registerColumn)
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendTable(this@Table)

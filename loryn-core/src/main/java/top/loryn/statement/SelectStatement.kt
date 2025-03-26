@@ -12,9 +12,9 @@ import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
 import java.sql.ResultSet
 
-data class SelectStatement(
+data class SelectStatement<E>(
     val database: Database,
-    val expression: SelectExpression,
+    val expression: SelectExpression<E>,
 ) : Statement() {
     override fun generateSql() = database.buildSql { params ->
         appendExpression(expression, params)
@@ -23,23 +23,33 @@ data class SelectStatement(
     fun <R> execute(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)
     }
+
+    fun execute() = execute { rs ->
+        expression.createEntity().apply {
+            expression.columns.forEachIndexed { index, column ->
+                column.applyValue(this) {
+                    column.sqlType.getResult(rs, index + 1)
+                }
+            }
+        }
+    }
 }
 
 @LorynDsl
-class SelectBuilder<T : Table<*>>(table: T) : StatementBuilder<T, SelectStatement>(table) {
-    internal val columns: MutableList<ColumnExpression<*>> = mutableListOf()
-    internal var from: QuerySourceExpression? = table
+class SelectBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, SelectStatement<E>>(table) {
+    internal val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
+    internal var from: QuerySourceExpression<E>? = table
     internal var where: SqlExpression<Boolean>? = null
 
-    fun <C : Any> column(column: Column<C>) {
+    fun <C : Any> column(column: Column<E, C>) {
         columns += column.also { checkTableColumn(table, it) }
     }
 
-    fun columns(columns: List<Column<*>>) {
+    fun columns(columns: List<Column<E, *>>) {
         this.columns += columns.onEach { checkTableColumn(table, it) }
     }
 
-    fun columns(vararg columns: Column<*>) {
+    fun columns(vararg columns: Column<E, *>) {
         columns(columns.toList())
     }
 
@@ -51,5 +61,5 @@ class SelectBuilder<T : Table<*>>(table: T) : StatementBuilder<T, SelectStatemen
         SelectStatement(database, SelectExpression(columns, from, where))
 }
 
-fun <T : Table<*>> Database.select(table: T, block: SelectBuilder<T>.(T) -> Unit) =
+fun <E, T : Table<E>> Database.select(table: T, block: SelectBuilder<E, T>.(T) -> Unit) =
     SelectBuilder(table).apply { block(table) }.build(this)

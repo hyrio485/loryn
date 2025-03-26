@@ -3,13 +3,19 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
 
-abstract class ColumnExpression<T : Any>(
-    val sqlTypeNullable: SqlType<T>?,
+abstract class ColumnExpression<E, C : Any>(
+    val sqlTypeNullable: SqlType<C>?,
     val alias: String?,
-) : SqlExpression<T> {
-    override val sqlType: SqlType<T>
+    val setValue: ((E, C?) -> Unit)? = null,
+) : SqlExpression<C> {
+    override val sqlType: SqlType<C>
         get() = sqlTypeNullable
             ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
+
+    inline fun applyValue(entity: E, getValue: (SqlType<C>) -> Any?) {
+        @Suppress("UNCHECKED_CAST") // 这里可以直接转换，因为再构建statement的时候已经检查过类型了
+        setValue?.invoke(entity, getValue(sqlType) as C?)
+    }
 
     open fun SqlBuilder.appendSqlInSelectClause(params: MutableList<SqlParam<*>>) = also {
         appendSql(params)
@@ -29,24 +35,26 @@ abstract class ColumnExpression<T : Any>(
     }
 }
 
-class ParameterExpression<T : Any>(
-    val value: T?,
-    sqlType: SqlType<T>,
+class ParameterExpression<E, C : Any>(
+    val value: C?,
+    sqlType: SqlType<C>,
     label: String? = null,
-) : ColumnExpression<T>(sqlType, label) {
+    setValue: ((E, C?) -> Unit)? = null,
+) : ColumnExpression<E, C>(sqlType, label, setValue) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         append("?")
         params += SqlParam(value, sqlType)
     }
 }
 
-class UnaryExpression<T : Any, R : Any>(
+class UnaryExpression<E, T : Any, R : Any>(
     val operator: String,
     val expr: SqlExpression<T>,
     sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
     label: String? = null,
-) : ColumnExpression<R>(sqlType, label) {
+    setValue: ((E, R?) -> Unit)? = null,
+) : ColumnExpression<E, R>(sqlType, label, setValue) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         appendKeyword(operator).append(' ')
         if (addParentheses) append('(')
@@ -55,14 +63,15 @@ class UnaryExpression<T : Any, R : Any>(
     }
 }
 
-class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
+class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     val operator: String,
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
     sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
     label: String? = null,
-) : ColumnExpression<R>(sqlType, label) {
+    setValue: ((E, R?) -> Unit)? = null,
+) : ColumnExpression<E, R>(sqlType, label, setValue) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
         appendExpression(expr1, params)
@@ -74,12 +83,12 @@ class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
     }
 }
 
-data class AssignmentExpression<T : Any>(
-    val column: ColumnExpression<T>,
-    val value: SqlExpression<T>,
+data class AssignmentExpression<E, C : Any>(
+    val column: ColumnExpression<E, C>,
+    val value: SqlExpression<C>,
 ) : SqlExpression<Nothing> {
     init {
-        if (column is Column<*> && column.notNull && value is ParameterExpression && value.value == null) {
+        if (column is Column<*, *> && column.notNull && value is ParameterExpression<*, *> && value.value == null) {
             throw IllegalArgumentException("The column $column cannot be null.")
         }
     }
@@ -89,24 +98,40 @@ data class AssignmentExpression<T : Any>(
     }
 }
 
-abstract class QuerySourceExpression : SqlExpression<Nothing> {
-    abstract val columns: List<ColumnExpression<*>>
+interface EntityCreator<E> {
+    fun createEntity(): E {
+        throw UnsupportedOperationException()
+    }
 }
 
-class SelectExpression(
-    override val columns: List<ColumnExpression<*>>,
-    val from: QuerySourceExpression?,
+/**
+ * 查询源表达式。
+ *
+ * @param E 绑定的查询结果的实体类型。
+ */
+abstract class QuerySourceExpression<E> : EntityCreator<E>, SqlExpression<Nothing> {
+    abstract val columns: List<ColumnExpression<E, *>>
+}
+
+/**
+ * SELECT表达式。
+ *
+ * @param E 绑定的查询结果的实体类型。
+ */
+class SelectExpression<E>(
+    val columns: List<ColumnExpression<E, *>>,
+    val from: QuerySourceExpression<E>?,
     val where: SqlExpression<Boolean>?,
-) : QuerySourceExpression() {
-    inline fun <reified T : Any> asColumn(): ColumnExpression<T> {
-        require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
-        val column = columns[0]
-        if (column.sqlType.clazz != T::class.java) {
-            throw IllegalArgumentException("The column type is not ${T::class.java}")
+    private val doCreateEntity: (() -> E)? = null,
+) : EntityCreator<E>, SqlExpression<Nothing> {
+    override fun createEntity() =
+        if (doCreateEntity != null) {
+            doCreateEntity()
+        } else if (from != null) {
+            from.createEntity()
+        } else {
+            super.createEntity()
         }
-        @Suppress("UNCHECKED_CAST")
-        return column as ColumnExpression<T>
-    }
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ')
@@ -123,6 +148,27 @@ class SelectExpression(
         }
         where?.also {
             append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params)
+        }
+    }
+
+    inline fun <reified T : Any> asColumn(): ColumnExpression<E, T> {
+        require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
+        val column = columns[0]
+        if (column.sqlType.clazz != T::class.java) {
+            throw IllegalArgumentException("The column type is not ${T::class.java}")
+        }
+        @Suppress("UNCHECKED_CAST")
+        return column as ColumnExpression<E, T>
+    }
+
+    fun asQuerySource(alias: String?): QuerySourceExpression<E> {
+        return object : QuerySourceExpression<E>() {
+            override val columns = this@SelectExpression.columns
+
+            override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+                append('(').appendExpression(this@SelectExpression, params).append(')')
+                alias?.also { append(' ').appendRef(it) }
+            }
         }
     }
 }

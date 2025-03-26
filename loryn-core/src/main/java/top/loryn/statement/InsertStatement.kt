@@ -12,11 +12,11 @@ import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
 import java.sql.ResultSet
 
-data class InsertStatement(
+data class InsertStatement<E>(
     val database: Database, val table: Table<*>,
-    val columns: List<ColumnExpression<*>>,
-    val values: List<ParameterExpression<*>>? = null,
-    val select: SelectExpression? = null,
+    val columns: List<ColumnExpression<E, *>>,
+    val values: List<ParameterExpression<E, *>>? = null,
+    val select: SelectExpression<*>? = null,
     val useGeneratedKeys: Boolean = false,
 ) : Statement() {
     init {
@@ -62,22 +62,22 @@ data class InsertStatement(
 }
 
 @LorynDsl
-class InsertBuilder<T : Table<*>>(
+class InsertBuilder<E, T : Table<E>>(
     table: T, val useGeneratedKeys: Boolean = false,
-) : StatementBuilder<T, InsertStatement>(table) {
-    internal val columns = mutableListOf<ColumnExpression<*>>()
-    internal val values = mutableListOf<ParameterExpression<*>>()
-    internal var select: SelectExpression? = null
+) : StatementBuilder<T, InsertStatement<E>>(table) {
+    internal val columns = mutableListOf<ColumnExpression<E, *>>()
+    internal val values = mutableListOf<ParameterExpression<E, *>>()
+    internal var select: SelectExpression<*>? = null
 
-    fun <C : Any> column(column: Column<C>) {
+    fun <C : Any> column(column: Column<E, C>) {
         columns += column.also { checkTableColumn(table, it) }
     }
 
-    fun columns(columns: List<Column<*>>) {
+    fun columns(columns: List<Column<E, *>>) {
         this.columns += columns.onEach { checkTableColumn(table, it) }
     }
 
-    fun columns(vararg columns: Column<*>) {
+    fun columns(vararg columns: Column<E, *>) {
         columns(columns.toList())
     }
 
@@ -85,21 +85,24 @@ class InsertBuilder<T : Table<*>>(
         require(select == null) { "Cannot set both values and select" }
     }
 
-    fun value(value: ParameterExpression<*>) {
+    fun value(value: ParameterExpression<E, *>) {
         requireNullSelect()
         this.values += value
     }
 
-    fun values(values: List<ParameterExpression<*>>) {
+    fun values(values: List<ParameterExpression<E, *>>) {
         requireNullSelect()
         this.values += values
     }
 
-    fun values(vararg values: ParameterExpression<*>) {
+    fun values(vararg values: ParameterExpression<E, *>) {
         values(values.toList())
     }
 
-    fun <T : Any> assign(column: Column<T>, value: T?) {
+    fun <C : Any> assign(column: Column<E, C>, value: C?) {
+        if (column.notNull && value == null) {
+            throw IllegalArgumentException("Column ${column.name} cannot be null")
+        }
         column(column)
         value(column.expr(value))
     }
@@ -108,7 +111,7 @@ class InsertBuilder<T : Table<*>>(
         require(values.isEmpty()) { "Cannot set both values and select" }
     }
 
-    fun select(select: SelectExpression) {
+    fun select(select: SelectExpression<*>) {
         requireEmptyValues()
         this.select = select
     }
@@ -117,5 +120,8 @@ class InsertBuilder<T : Table<*>>(
         InsertStatement(database, table, columns, values.takeUnless { it.isEmpty() }, select, useGeneratedKeys)
 }
 
-fun <T : Table<*>> Database.insert(table: T, useGeneratedKeys: Boolean = false, block: InsertBuilder<T>.(T) -> Unit) =
-    InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)
+fun <E, T : Table<E>> Database.insert(
+    table: T,
+    useGeneratedKeys: Boolean = false,
+    block: InsertBuilder<E, T>.(T) -> Unit,
+) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)

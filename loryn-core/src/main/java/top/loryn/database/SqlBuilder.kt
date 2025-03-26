@@ -12,6 +12,9 @@ open class SqlBuilder(
 
     private val builder = StringBuilder()
 
+    open fun start() {}
+    open fun end() {}
+
     fun append(str: CharSequence) = also { builder.append(str) }
     fun append(char: Char) = also { builder.append(char) }
 
@@ -39,5 +42,5 @@ open class SqlBuilder(
         expression.run { appendSql(params) }
     }
 
-    fun build() = builder.toString()
+    fun build() = end().let { builder.toString() }
 }

@@ -17,7 +17,7 @@ fun <E> Database.dql(
     sql: String,
     vararg params: SqlParam<*>,
     createEntity: (() -> E)? = null,
-    columns: List<ColumnExpression<E, *>>,
+    columns: List<ColumnExpression<E, *>> = emptyList(),
 ) = object : DqlStatement<E>(this) {
     override val createEntity = createEntity
     override val columns = columns.toList()

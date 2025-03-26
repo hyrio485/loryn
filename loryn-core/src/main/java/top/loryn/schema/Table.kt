@@ -32,7 +32,7 @@ abstract class Table<E>(
     }
 
     fun <C : Any> registerColumn(name: String, sqlType: SqlType<C>) =
-        Column<E, C>(this, name, sqlType).also(this::registerColumn)
+        Column<E, C>(name, sqlType, this).also(this::registerColumn)
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendTable(this@Table)

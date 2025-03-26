@@ -13,27 +13,27 @@ import java.sql.ResultSet
  * @param C 列的数据类型。
  */
 class Column<E, C : Any>(
-    val table: Table<E>,
     val name: String,
     sqlType: SqlType<C>,
-    label: String? = null,
+    val table: Table<E>? = null,
+    alias: String? = null,
     val primaryKey: Boolean = false,
     val notNull: Boolean = false,
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
-) : ColumnExpression<E, C>(sqlType, label, setter) {
+) : ColumnExpression<E, C>(sqlType, alias, setter) {
     private fun copy(
-        table: Table<E> = this.table,
         name: String = this.name,
         sqlType: SqlType<C> = this.sqlType,
+        table: Table<E>? = this.table,
         alias: String? = this.alias,
         primaryKey: Boolean = this.primaryKey,
         notNull: Boolean = this.notNull,
         setter: (E.(C?) -> Unit)? = this.setter,
         getter: (E.() -> C?)? = this.getter,
-    ) = Column(table, name, sqlType, alias, primaryKey, notNull, setter, getter)
+    ) = Column(name, sqlType, table, alias, primaryKey, notNull, setter, getter)
 
-    private fun Column<E, C>.registerColumn() = also { table.registerColumn(it) }
+    private fun Column<E, C>.registerColumn() = also { table?.registerColumn(it) }
     fun primaryKey(primaryKey: Boolean = true) = copy(primaryKey = primaryKey).registerColumn()
     fun notNull(notNull: Boolean = true) = copy(notNull = notNull).registerColumn()
     fun setter(setter: E.(C?) -> Unit) = copy(setter = setter).registerColumn()
@@ -52,9 +52,10 @@ class Column<E, C : Any>(
     }
 
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
-        table.alias?.also { appendRef(it).append('.') }
+        table?.alias?.also { appendRef(it).append('.') }
         appendRef(name)
     }
 
-    override fun toString() = "${table.alias?.let { "$it." }.orEmpty()}$name${alias?.let { "($it)" }.orEmpty()}"
+    override fun toString() =
+        "${table?.alias?.let { "$it." }.orEmpty()}$name${this@Column.alias?.let { "($it)" }.orEmpty()}"
 }

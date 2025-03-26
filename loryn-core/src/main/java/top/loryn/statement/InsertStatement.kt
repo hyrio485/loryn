@@ -128,7 +128,7 @@ fun <E, T : Table<E>> Database.insert(
 fun <E, T : Table<E>> Database.insert(
     table: T,
     entity: E,
-    columns: List<Column<E, *>>,
+    columns: List<Column<E, *>> = table.insertColumns,
     useGeneratedKeys: Boolean = false,
 ): Int {
     val columns =

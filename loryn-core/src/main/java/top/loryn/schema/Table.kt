@@ -24,6 +24,9 @@ abstract class Table<E>(
     val primaryKeys get() = columns.filter { it.primaryKey }
     val primaryKey get() = primaryKeys.singleOrNull()
 
+    open val insertColumns get() = emptyList<Column<E, *>>()
+    open val updateColumns get() = emptyList<Column<E, *>>()
+
     fun <C : Any> registerColumn(column: Column<E, C>) {
         columnsMapMutable[column.name] = column
     }

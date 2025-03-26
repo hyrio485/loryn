@@ -15,10 +15,11 @@ abstract class Table<E>(
     val schema: String? = null,
     val category: String? = null,
     val alias: String? = null,
+    val createEntity: (() -> E)? = null,
 ) : QuerySourceExpression<E>() {
     private val columnsMapMutable = LinkedHashMap<String, Column<E, *>>()
 
-    override val columns = columnsMapMutable.values.toList()
+    override val columns get() = columnsMapMutable.values.toList()
 
     fun <C : Any> registerColumn(column: Column<E, C>) {
         columnsMapMutable[column.name] = column
@@ -30,6 +31,12 @@ abstract class Table<E>(
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendTable(this@Table)
         alias?.also { append(' ').appendRef(it) }
+    }
+
+    override fun createEntity() = if (createEntity != null) {
+        createEntity.invoke()
+    } else {
+        throw UnsupportedOperationException("Create entity method is not specified")
     }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")

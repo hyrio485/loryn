@@ -14,10 +14,10 @@ import java.sql.ResultSet
 
 data class SelectStatement<E>(
     val database: Database,
-    val expression: SelectExpression<E>,
+    val select: SelectExpression<E>,
 ) : Statement() {
     override fun generateSql() = database.buildSql { params ->
-        appendExpression(expression, params)
+        appendExpression(select, params)
     }
 
     fun <R> execute(block: (ResultSet) -> R) = database.doExecute { statement ->
@@ -25,12 +25,15 @@ data class SelectStatement<E>(
     }
 
     fun execute() = execute { rs ->
-        expression.createEntity().apply {
-            expression.columns.forEachIndexed { index, column ->
-                column.applyValue(this) {
-                    column.sqlType.getResult(rs, index + 1)
+        select.createEntity().apply {
+            (select.columns.takeIf { it.isNotEmpty() }
+                ?: select.from?.columns
+                ?: throw UnsupportedOperationException("No columns specified"))
+                .forEachIndexed { index, column ->
+                    column.applyValue(this) {
+                        column.sqlType.getResult(rs, index + 1)
+                    }
                 }
-            }
         }
     }
 }

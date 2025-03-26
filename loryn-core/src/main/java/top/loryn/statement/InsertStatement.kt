@@ -125,14 +125,14 @@ fun <E, T : Table<E>> Database.insert(
     block: InsertBuilder<E, T>.(T) -> Unit,
 ) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)
 
-fun <E, T : Table<E>, C : Any> Database.insert(
+fun <E, T : Table<E>> Database.insert(
     table: T,
     entity: E,
-    vararg columns: Column<E, C>,
+    columns: List<Column<E, *>>,
     useGeneratedKeys: Boolean = false,
 ): Int {
     val columns =
-        columns.toList().takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
+        columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
     return InsertStatement(
         this, table, columns, table.columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
     ).execute { rs ->
@@ -145,3 +145,10 @@ fun <E, T : Table<E>, C : Any> Database.insert(
         }
     }
 }
+
+fun <E, T : Table<E>> Database.insert(
+    table: T,
+    entity: E,
+    vararg columns: Column<E, *>,
+    useGeneratedKeys: Boolean = false,
+) = insert(table, entity, columns.toList(), useGeneratedKeys)

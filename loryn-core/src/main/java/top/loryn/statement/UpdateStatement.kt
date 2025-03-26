@@ -4,7 +4,6 @@ import top.loryn.database.Database
 import top.loryn.database.LorynDsl
 import top.loryn.expression.AssignmentExpression
 import top.loryn.expression.SqlExpression
-import top.loryn.expression.expr
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn

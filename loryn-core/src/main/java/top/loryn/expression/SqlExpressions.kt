@@ -2,19 +2,21 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
+import java.sql.ResultSet
 
 abstract class ColumnExpression<E, C : Any>(
     val sqlTypeNullable: SqlType<C>?,
     val alias: String?,
-    val setValue: ((E, C?) -> Unit)? = null,
+    val setter: (E.(C?) -> Unit)? = null,
 ) : SqlExpression<C> {
     override val sqlType: SqlType<C>
         get() = sqlTypeNullable
             ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
 
-    inline fun applyValue(entity: E, getValue: (SqlType<C>) -> Any?) {
-        @Suppress("UNCHECKED_CAST") // 这里可以直接转换，因为再构建statement的时候已经检查过类型了
-        setValue?.invoke(entity, getValue(sqlType) as C?)
+    fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
+        if (setter != null) {
+            entity.setter(sqlType.getResult(resultSet, index + 1))
+        }
     }
 
     open fun SqlBuilder.appendSqlInSelectClause(params: MutableList<SqlParam<*>>) = also {
@@ -39,8 +41,8 @@ class ParameterExpression<E, C : Any>(
     val value: C?,
     sqlType: SqlType<C>,
     label: String? = null,
-    setValue: ((E, C?) -> Unit)? = null,
-) : ColumnExpression<E, C>(sqlType, label, setValue) {
+    setter: (E.(C?) -> Unit)? = null,
+) : ColumnExpression<E, C>(sqlType, label, setter) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         append("?")
         params += SqlParam(value, sqlType)
@@ -53,8 +55,8 @@ class UnaryExpression<E, T : Any, R : Any>(
     sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
     label: String? = null,
-    setValue: ((E, R?) -> Unit)? = null,
-) : ColumnExpression<E, R>(sqlType, label, setValue) {
+    setter: (E.(R?) -> Unit)? = null,
+) : ColumnExpression<E, R>(sqlType, label, setter) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         appendKeyword(operator).append(' ')
         if (addParentheses) append('(')
@@ -70,8 +72,8 @@ class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
     label: String? = null,
-    setValue: ((E, R?) -> Unit)? = null,
-) : ColumnExpression<E, R>(sqlType, label, setValue) {
+    setter: (E.(R?) -> Unit)? = null,
+) : ColumnExpression<E, R>(sqlType, label, setter) {
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
         appendExpression(expr1, params)

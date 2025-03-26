@@ -12,9 +12,8 @@ class JdbcTransactionManager(
 
     override fun newTransaction(isolation: TransactionIsolation?): Transaction {
         if (currentTransaction != null) {
-            throw IllegalStateException("Current thread is already in a transaction.")
+            error("Current thread is already in a transaction.")
         }
-
         return JdbcTransaction(isolation).apply { threadLocal.set(this) }
     }
 

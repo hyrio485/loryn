@@ -21,6 +21,9 @@ abstract class Table<E>(
 
     override val columns get() = columnsMapMutable.values.toList()
 
+    val primaryKeys get() = columns.filter { it.primaryKey }
+    val primaryKey get() = primaryKeys.singleOrNull()
+
     fun <C : Any> registerColumn(column: Column<E, C>) {
         columnsMapMutable[column.name] = column
     }
@@ -36,7 +39,7 @@ abstract class Table<E>(
     override fun createEntity() = if (createEntity != null) {
         createEntity.invoke()
     } else {
-        throw UnsupportedOperationException("Create entity method is not specified")
+        throw UnsupportedOperationException("Entity creation method is not specified")
     }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")

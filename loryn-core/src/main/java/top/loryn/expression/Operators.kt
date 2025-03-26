@@ -12,8 +12,6 @@ infix fun <E, C : Any> SqlExpression<C>.neq(other: SqlExpression<C>) = cmp<E, C>
 infix fun <E, C : Any> SqlExpression<C>.gte(other: SqlExpression<C>) = cmp<E, C>(">=", other)
 infix fun <E, C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = cmp<E, C>("<=", other)
 
-fun <E, C : Any> Column<E, C>.expr(value: C?) = ParameterExpression<E, C>(value, sqlType)
-
 infix fun <E, C : Any> Column<E, C>.eq(value: C?) = eq<E, C>(expr(value))
 infix fun <E, C : Any> Column<E, C>.gt(value: C?) = gt<E, C>(expr(value))
 infix fun <E, C : Any> Column<E, C>.lt(value: C?) = lt<E, C>(expr(value))

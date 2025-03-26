@@ -14,7 +14,7 @@ abstract class TypeReference<T> {
                 }
             }
             return (genericSuperclass as ParameterizedType).actualTypeArguments[0] as? Class<*>
-                ?: throw IllegalStateException("The referenced type of class $javaClass is not a class")
+                ?: error("The referenced type of class $javaClass is not a class")
         }
 
         doFind(javaClass)

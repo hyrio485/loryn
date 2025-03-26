@@ -26,14 +26,9 @@ data class SelectStatement<E>(
 
     fun execute() = execute { rs ->
         select.createEntity().apply {
-            (select.columns.takeIf { it.isNotEmpty() }
-                ?: select.from?.columns
-                ?: throw UnsupportedOperationException("No columns specified"))
-                .forEachIndexed { index, column ->
-                    column.applyValue(this) {
-                        column.sqlType.getResult(rs, index + 1)
-                    }
-                }
+            (select.columns.takeIf { it.isNotEmpty() } ?: select.from?.columns ?: throw UnsupportedOperationException(
+                "No columns specified"
+            )).forEachIndexed { index, column -> column.applyValue(this, index, rs) }
         }
     }
 }

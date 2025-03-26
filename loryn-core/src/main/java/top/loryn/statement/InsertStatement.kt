@@ -6,7 +6,6 @@ import top.loryn.database.mapEachRow
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression
 import top.loryn.expression.SelectExpression
-import top.loryn.expression.expr
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.schema.checkTableColumn
@@ -125,3 +124,24 @@ fun <E, T : Table<E>> Database.insert(
     useGeneratedKeys: Boolean = false,
     block: InsertBuilder<E, T>.(T) -> Unit,
 ) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)
+
+fun <E, T : Table<E>, C : Any> Database.insert(
+    table: T,
+    entity: E,
+    vararg columns: Column<E, C>,
+    useGeneratedKeys: Boolean = false,
+): Int {
+    val columns =
+        columns.toList().takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
+    return InsertStatement(
+        this, table, columns, table.columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
+    ).execute { rs ->
+        val primaryKeys = table.primaryKeys
+        if (primaryKeys.isEmpty()) {
+            error("No primary keys found for table $table")
+        }
+        primaryKeys.forEachIndexed { index, column ->
+            column.setValue(entity, index, rs)
+        }
+    }
+}

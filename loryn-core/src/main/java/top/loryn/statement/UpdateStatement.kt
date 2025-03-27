@@ -58,7 +58,7 @@ class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateState
 fun <E, T : Table<E>> Database.update(
     table: T,
     block: UpdateBuilder<E, T>.(T) -> Unit = {},
-) = UpdateBuilder(table).apply { block(table) }.build(this)
+) = UpdateBuilder(table).apply { block(table) }.build(this).execute()
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<E, *>> = table.updateColumns) =
     update(table) {

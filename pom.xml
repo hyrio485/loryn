@@ -5,7 +5,7 @@
 
   <groupId>top.loryn</groupId>
   <artifactId>loryn</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>${project.artifactId}</name>
   <description>${project.artifactId}</description>

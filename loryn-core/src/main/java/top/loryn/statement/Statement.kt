@@ -7,6 +7,7 @@ import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
+import top.loryn.utils.one
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
@@ -60,20 +61,24 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
     open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<E, *>>? = emptyList()
 
-    open fun <R> execute(block: (ResultSet) -> R) = database.doExecute { statement ->
+    open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)
     }
 
-    open fun execute(): List<E> {
+    open fun list(): List<E> {
         val createEntity = createEntity ?: throw UnsupportedOperationException(
             "Entity creation method is not specified"
         )
         val columns = columns.takeUnless { it.isNullOrEmpty() }
             ?: throw UnsupportedOperationException("No columns specified")
-        return execute { rs ->
+        return list { rs ->
             createEntity().apply {
                 columns.forEachIndexed { index, column -> column.applyValue(this, index, rs) }
             }
         }
     }
+
+    fun <R> one(block: (ResultSet) -> R) = list(block).one()
+
+    fun one() = list().one()
 }

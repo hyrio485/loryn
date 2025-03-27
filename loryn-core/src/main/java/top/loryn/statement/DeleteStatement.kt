@@ -33,9 +33,5 @@ fun <E, T : Table<E>> Database.delete(table: T, block: DeleteBuilder<E, T>.(T) -
 
 fun <E, T : Table<E>> Database.delete(table: T, entity: E) = delete(table) {
     // TODO: 支持联合主键
-    (it.primaryKey ?: throw IllegalArgumentException(
-        "Table $table does not have a primary key"
-    )).also { pkColumn ->
-        where { pkColumn.getValueAndTransform(entity) { column, expr -> column eq expr } }
-    }
+    where { it.primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr } }
 }

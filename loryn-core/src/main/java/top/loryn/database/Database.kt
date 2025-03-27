@@ -139,15 +139,19 @@ class Database(
 
     // region Logging
 
-    fun showArgs(args: List<SqlParam<*>>) {
+    fun showParams(args: List<SqlParam<*>>) {
         logger.debug("Parameters: {}", LazyLogObject {
-            args.joinToString { "${it.value}(${it.sqlType.javaClassName})" }
+            if (args.isEmpty()) {
+                "<no parameters>"
+            } else {
+                args.joinToString { "${it.value}(${it.sqlType.javaClassName})" }
+            }
         })
     }
 
     fun showSql(sql: String, args: List<SqlParam<*>>? = null) {
         logger.debug("SQL: {}", sql)
-        args?.also(::showArgs)
+        args?.also(::showParams)
     }
 
     fun showSql(sqlAndParams: SqlAndParams) {

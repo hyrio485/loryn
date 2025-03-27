@@ -22,7 +22,8 @@ abstract class Table<E>(
     override val columns get() = columnsMapMutable.values.toList()
 
     val primaryKeys get() = columns.filter { it.primaryKey }
-    val primaryKey get() = primaryKeys.singleOrNull()
+    val primaryKeyNullable get() = primaryKeys.singleOrNull()
+    val primaryKey get() = primaryKeyNullable ?: error("Table $this does not have a primary key")
 
     open val insertColumns get() = emptyList<Column<E, *>>()
     open val updateColumns get() = emptyList<Column<E, *>>()

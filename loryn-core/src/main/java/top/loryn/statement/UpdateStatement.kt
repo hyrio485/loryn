@@ -4,6 +4,7 @@ import top.loryn.database.Database
 import top.loryn.database.LorynDsl
 import top.loryn.expression.AssignmentExpression
 import top.loryn.expression.SqlExpression
+import top.loryn.expression.eq
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.utils.checkTableColumn
@@ -64,6 +65,8 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<
     update(table) {
         columns.forEach { column ->
             set(column) { it.getValueExpr(entity) }
+            // TODO: 支持联合主键
+            where { it.primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr } }
         }
     }
 

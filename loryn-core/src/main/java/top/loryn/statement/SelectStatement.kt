@@ -44,9 +44,9 @@ class SelectBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, SelectState
         this.where = block(table)
     }
 
-    override fun build(database: Database) =
+    override fun buildStatement(database: Database) =
         SelectStatement(database, SelectExpression(columns, from, where))
 }
 
 fun <E, T : Table<E>> Database.select(table: T, block: SelectBuilder<E, T>.(T) -> Unit = {}) =
-    SelectBuilder(table).apply { block(table) }.build(this)
+    SelectBuilder(table).apply { block(table) }.buildStatement(this)

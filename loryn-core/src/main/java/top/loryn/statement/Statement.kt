@@ -12,7 +12,7 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 
 abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
-    abstract fun build(database: Database): S
+    abstract fun buildStatement(database: Database): S
 }
 
 /**
@@ -45,7 +45,7 @@ abstract class Statement(val database: Database) {
         }
 }
 
-abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean) : Statement(database) {
+abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = false) : Statement(database) {
     @JvmOverloads
     open fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
         database.doExecute(useGeneratedKeys) { statement ->

@@ -1,10 +1,7 @@
 package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.ColumnExpression
-import top.loryn.expression.ParameterExpression
-import top.loryn.expression.SqlParam
-import top.loryn.expression.SqlType
+import top.loryn.expression.*
 import java.sql.ResultSet
 
 /**
@@ -45,6 +42,10 @@ class Column<E, C : Any>(
         (getter ?: throw IllegalArgumentException("Column $name does not have a getter")).invoke(entity)
 
     fun getValueExpr(entity: E) = expr(getValue(entity))
+
+    // 主要为了解决泛型问题
+    fun <T : Any> getValueAndTransform(entity: E, block: (Column<E, C>, C?) -> SqlExpression<T>) =
+        block(this, getValue(entity))
 
     fun setValue(entity: E, index: Int, resultSet: ResultSet) {
         (setter ?: throw IllegalArgumentException("Column $name does not have a setter"))

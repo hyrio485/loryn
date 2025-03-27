@@ -13,7 +13,7 @@ import top.loryn.utils.checkTableColumn
 
 abstract class BaseInsertStatement<E>(
     database: Database,
-    val table: Table<*>,
+    val table: Table<E>,
     val columns: List<ColumnExpression<E, *>>,
     useGeneratedKeys: Boolean,
 ) : DmlStatement(database, useGeneratedKeys) {
@@ -41,7 +41,7 @@ abstract class BaseInsertStatement<E>(
 
 class InsertStatement<E>(
     database: Database,
-    table: Table<*>,
+    table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
     val values: List<ParameterExpression<E, *>>? = null,
     val select: SelectExpression<*>? = null,
@@ -125,7 +125,7 @@ class InsertBuilder<E, T : Table<E>>(
         this.select = select
     }
 
-    override fun build(database: Database) =
+    override fun buildStatement(database: Database) =
         InsertStatement(database, table, columns, values.takeUnless { it.isEmpty() }, select, useGeneratedKeys)
 }
 
@@ -133,7 +133,7 @@ fun <E, T : Table<E>> Database.insert(
     table: T,
     useGeneratedKeys: Boolean = false,
     block: InsertBuilder<E, T>.(T) -> Unit = {},
-) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.build(this)
+) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.buildStatement(this)
 
 fun <E, T : Table<E>> Database.insert(
     table: T,

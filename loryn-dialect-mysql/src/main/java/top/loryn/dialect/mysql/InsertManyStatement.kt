@@ -10,7 +10,7 @@ import top.loryn.utils.checkTableColumn
 
 class InsertManyStatement<E>(
     database: Database,
-    table: Table<*>,
+    table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
     val values: List<List<ParameterExpression<E, *>>>,
     useGeneratedKeys: Boolean = false,

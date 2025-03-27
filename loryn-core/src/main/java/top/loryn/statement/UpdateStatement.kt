@@ -10,10 +10,10 @@ import top.loryn.utils.checkTableColumn
 
 class UpdateStatement<E>(
     database: Database,
-    val table: Table<*>,
+    val table: Table<E>,
     val sets: List<AssignmentExpression<E, *>>,
     val where: SqlExpression<Boolean>?,
-) : DmlStatement(database, false) {
+) : DmlStatement(database) {
     init {
         require(sets.isNotEmpty()) { "At least one column must be set" }
     }
@@ -52,13 +52,13 @@ class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateState
         this.where = block(table)
     }
 
-    override fun build(database: Database) = UpdateStatement(database, table, sets, where)
+    override fun buildStatement(database: Database) = UpdateStatement(database, table, sets, where)
 }
 
 fun <E, T : Table<E>> Database.update(
     table: T,
     block: UpdateBuilder<E, T>.(T) -> Unit = {},
-) = UpdateBuilder(table).apply { block(table) }.build(this).execute()
+) = UpdateBuilder(table).apply { block(table) }.buildStatement(this).execute()
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<E, *>> = table.updateColumns) =
     update(table) {

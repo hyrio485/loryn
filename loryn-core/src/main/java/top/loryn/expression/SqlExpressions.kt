@@ -37,6 +37,14 @@ abstract class ColumnExpression<E, C : Any>(
     }
 }
 
+data class NullSqlExpression<E, C : Any>(
+    val label: String? = null,
+) : ColumnExpression<E, C>(null, label, null) {
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+        appendKeyword("NULL")
+    }
+}
+
 class ParameterExpression<E, C : Any>(
     val value: C?,
     sqlType: SqlType<C>,
@@ -153,7 +161,7 @@ class SelectExpression<E>(
         }
     }
 
-    inline fun <reified T : Any> asColumn(): ColumnExpression<E, T> {
+    inline fun <reified T : Any> asExpression(): ColumnExpression<E, T> {
         require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
         val column = columns[0]
         if (column.sqlType.clazz != T::class.java) {

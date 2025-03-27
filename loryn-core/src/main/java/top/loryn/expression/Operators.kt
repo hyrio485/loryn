@@ -18,6 +18,9 @@ infix fun <E, C : Any> Column<E, C>.gte(value: C?) = gte<E, C>(expr(value))
 infix fun <E, C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = binBool<E, C>("<=", other)
 infix fun <E, C : Any> Column<E, C>.lte(value: C?) = lte<E, C>(expr(value))
 
+fun <E, C : Any> Column<E, C>.isNull() =
+    binBool<E, C>("IS", NullSqlExpression<E, C>())
+
 private fun <E> SqlExpression<Int>.binInt(operator: String, other: SqlExpression<Int>) =
     BinaryExpression<E, Int, Int, Int>(operator, this, other, IntSqlType, addParentheses = false)
 

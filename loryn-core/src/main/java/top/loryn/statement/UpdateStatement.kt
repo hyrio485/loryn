@@ -59,3 +59,13 @@ fun <E, T : Table<E>> Database.update(
     table: T,
     block: UpdateBuilder<E, T>.(T) -> Unit = {},
 ) = UpdateBuilder(table).apply { block(table) }.build(this)
+
+fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<E, *>> = table.updateColumns) =
+    update(table) {
+        columns.forEach { column ->
+            set(column) { it.getValueExpr(entity) }
+        }
+    }
+
+fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
+    update(table, entity, columns.toList())

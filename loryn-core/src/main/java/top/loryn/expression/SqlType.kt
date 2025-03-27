@@ -18,7 +18,7 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
         }
     }
 
-    protected abstract fun doGetResult(rs: ResultSet, index: Int): T
+    protected abstract fun doGetResult(rs: ResultSet, index: Int): T?
 
     open fun getResult(rs: ResultSet, index: Int) =
         rs.takeUnless { it.wasNull() }?.let { doGetResult(it, index) }
@@ -28,16 +28,6 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
 
     open fun getResult(rs: ResultSet, columnLabel: String) =
         rs.takeUnless { it.wasNull() }?.let { doGetResult(it, columnLabel) }
-
-    open fun <R : Any> transform(clazz: Class<R>, from: (T) -> R, to: (R) -> T) =
-        object : SqlType<R>(jdbcType, clazz) {
-            override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: R) {
-                this@SqlType.doSetParameter(ps, index, to(parameter))
-            }
-
-            override fun doGetResult(rs: ResultSet, index: Int) =
-                from(this@SqlType.doGetResult(rs, index))
-        }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

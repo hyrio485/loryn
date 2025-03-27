@@ -422,8 +422,8 @@ class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OT
         }
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): C {
-        return java.lang.Enum.valueOf(enumClass, rs.getString(index))
+    override fun doGetResult(rs: ResultSet, index: Int): C? {
+        return rs.getString(index)?.let { java.lang.Enum.valueOf(enumClass, it) }
     }
 }
 

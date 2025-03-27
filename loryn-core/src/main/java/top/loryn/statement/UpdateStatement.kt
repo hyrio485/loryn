@@ -6,7 +6,7 @@ import top.loryn.expression.AssignmentExpression
 import top.loryn.expression.SqlExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
-import top.loryn.schema.checkTableColumn
+import top.loryn.utils.checkTableColumn
 
 class UpdateStatement<E>(
     database: Database,

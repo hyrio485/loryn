@@ -8,7 +8,7 @@ import top.loryn.expression.SelectExpression
 import top.loryn.expression.SqlExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
-import top.loryn.schema.checkTableColumn
+import top.loryn.utils.checkTableColumn
 
 class SelectStatement<E>(
     database: Database,

@@ -5,11 +5,12 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import java.math.BigDecimal
 import java.sql.*
-import java.sql.Date
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.sql.rowset.serial.SerialBlob
+import java.sql.Date as SqlDate
+import java.util.Date as JavaDate
 
 // Boolean -> BOOLEAN
 
@@ -211,18 +212,34 @@ fun <E> Table<E>.jdbcTimestamp(name: String): Column<E, Timestamp> {
 
 // Date -> DATE
 
-object DateSqlType : SqlType<Date>(JDBCType.DATE, Date::class.java) {
-    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: Date) {
+object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: SqlDate) {
         ps.setDate(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Date {
+    override fun doGetResult(rs: ResultSet, index: Int): SqlDate {
         return rs.getDate(index)
     }
 }
 
-fun <E> Table<E>.jdbcDate(name: String): Column<E, Date> {
-    return registerColumn(name, DateSqlType)
+fun <E> Table<E>.jdbcDate(name: String): Column<E, SqlDate> {
+    return registerColumn(name, JdbcDateSqlType)
+}
+
+// Date -> DATE
+
+object JavaDateSqlType : SqlType<JavaDate>(JDBCType.DATE, JavaDate::class.java) {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: JavaDate) {
+        ps.setDate(index, SqlDate(parameter.time))
+    }
+
+    override fun doGetResult(rs: ResultSet, index: Int): JavaDate {
+        return rs.getDate(index)
+    }
+}
+
+fun <E> Table<E>.javaDate(name: String): Column<E, JavaDate> {
+    return registerColumn(name, JavaDateSqlType)
 }
 
 // Time -> TIME
@@ -277,7 +294,7 @@ fun <E> Table<E>.datetime(name: String): Column<E, LocalDateTime> {
 
 object LocalDateSqlType : SqlType<LocalDate>(JDBCType.DATE, LocalDate::class.java) {
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: LocalDate) {
-        ps.setDate(index, Date.valueOf(parameter))
+        ps.setDate(index, SqlDate.valueOf(parameter))
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): LocalDate {
@@ -410,6 +427,6 @@ class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OT
     }
 }
 
-inline fun <E, reified C : Enum<C>> Table<E>.enum(name: String): Column<E, C> {
-    return registerColumn(name, EnumSqlType(C::class.java))
+fun <E, C : Enum<C>> Table<E>.enum(name: String, clazz: Class<C>): Column<E, C> {
+    return registerColumn(name, EnumSqlType(clazz))
 }

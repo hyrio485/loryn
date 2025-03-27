@@ -1,6 +1,8 @@
 package top.loryn.utils
 
-fun <T> List<T>.one() = when {
+inline fun <T> List<T>.one(lazyMessage: () -> String?) = when {
     size <= 1 -> firstOrNull()
-    else -> throw IllegalArgumentException("Expected one element but was $size")
+    else -> throw IllegalArgumentException(lazyMessage() ?: "Expected one element but was $size")
 }
+
+fun <T> List<T>.one() = one { null }

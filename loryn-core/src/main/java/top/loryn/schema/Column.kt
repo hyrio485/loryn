@@ -34,7 +34,7 @@ class Column<E, C : Any>(
     ) = Column(name, sqlType, table, alias, primaryKey, notNull, setter, getter)
 
     private fun Column<E, C>.registerColumn() = also { table?.registerColumn(it) }
-    fun primaryKey(primaryKey: Boolean = true) = copy(primaryKey = primaryKey).registerColumn()
+    fun primaryKey(primaryKey: Boolean = true) = copy(primaryKey = primaryKey, notNull = true).registerColumn()
     fun notNull(notNull: Boolean = true) = copy(notNull = notNull).registerColumn()
     fun setter(setter: E.(C?) -> Unit) = copy(setter = setter).registerColumn()
     fun getter(getter: E.() -> C?) = copy(getter = getter).registerColumn()

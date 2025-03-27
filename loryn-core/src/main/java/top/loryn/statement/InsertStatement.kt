@@ -2,21 +2,51 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression
 import top.loryn.expression.SelectExpression
+import top.loryn.expression.SqlParam
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.utils.checkTableColumn
 
-class InsertStatement<E>(
+abstract class BaseInsertStatement<E>(
     database: Database,
     val table: Table<*>,
     val columns: List<ColumnExpression<E, *>>,
+    useGeneratedKeys: Boolean,
+) : DmlStatement(database, useGeneratedKeys) {
+    protected fun SqlBuilder.appendInsertIntoColumns(params: MutableList<SqlParam<*>>) = also {
+        appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ').appendTable(table).append(" (")
+        columns.forEachIndexed { index, column ->
+            if (index > 0) append(", ")
+            appendExpression(column, params)
+        }
+        append(") ")
+    }
+
+    protected fun SqlBuilder.appendRowValues(
+        values: List<ParameterExpression<E, *>>,
+        params: MutableList<SqlParam<*>>,
+    ) = also {
+        append('(')
+        values.forEachIndexed { index, value ->
+            if (index > 0) append(", ")
+            appendExpression(value, params)
+        }
+        append(')')
+    }
+}
+
+class InsertStatement<E>(
+    database: Database,
+    table: Table<*>,
+    columns: List<ColumnExpression<E, *>>,
     val values: List<ParameterExpression<E, *>>? = null,
     val select: SelectExpression<*>? = null,
     useGeneratedKeys: Boolean = false,
-) : DmlStatement(database, useGeneratedKeys) {
+) : BaseInsertStatement<E>(database, table, columns, useGeneratedKeys) {
     init {
         require(columns.isNotEmpty()) { "At least one column must be set" }
         if (values == null && select == null) {
@@ -31,19 +61,9 @@ class InsertStatement<E>(
     }
 
     override fun generateSql() = database.buildSql { params ->
-        appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ').appendTable(table).append(" (")
-        columns.forEachIndexed { index, column ->
-            if (index > 0) append(", ")
-            appendExpression(column, params)
-        }
-        append(") ")
+        appendInsertIntoColumns(params)
         if (values != null) {
-            appendKeyword("VALUES").append(" (")
-            values.forEachIndexed { index, value ->
-                if (index > 0) append(", ")
-                appendExpression(value, params)
-            }
-            append(')')
+            appendKeyword("VALUES").append(' ').appendRowValues(values, params)
         } else {
             appendExpression(select!!, params)
         }

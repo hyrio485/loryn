@@ -20,7 +20,7 @@ class Database(
     val transactionManager: TransactionManager,
     val logger: Logger = defaultLogger,
     val dialect: SqlDialect = detectDialectImplementation(),
-    val exceptionTranslator: ((SQLException) -> Throwable?)? = null,
+    val exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
     val config: Config = Config(),
 ) {
     data class Config(
@@ -98,8 +98,10 @@ class Database(
             } finally {
                 if (transaction == null) connection.close()
             }
-        } catch (e: SQLException) {
+        } catch (e: WrappedSqlException) {
             throw exceptionTranslator?.invoke(e) ?: e
+        } catch (e: SQLException) {
+            throw exceptionTranslator?.invoke(WrappedSqlException(e)) ?: e
         }
     }
 
@@ -115,8 +117,11 @@ class Database(
 
         try {
             return block(transaction)
-        } catch (e: SQLException) {
+        } catch (e: WrappedSqlException) {
             throwable = exceptionTranslator?.invoke(e) ?: e
+            throw throwable
+        } catch (e: SQLException) {
+            throwable = exceptionTranslator?.invoke(WrappedSqlException(e)) ?: e
             throw throwable
         } catch (e: Throwable) {
             throwable = e
@@ -193,7 +198,7 @@ class Database(
             connector: () -> Connection,
             logger: Logger = defaultLogger,
             dialect: SqlDialect = detectDialectImplementation(),
-            exceptionTranslator: ((SQLException) -> Throwable?)? = null,
+            exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
         ) = Database(
             transactionManager = JdbcTransactionManager(connector = connector),
@@ -207,7 +212,7 @@ class Database(
             dataSource: DataSource,
             logger: Logger = defaultLogger,
             dialect: SqlDialect = detectDialectImplementation(),
-            exceptionTranslator: ((SQLException) -> Throwable?)? = null,
+            exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
         ) = Database(
             transactionManager = JdbcTransactionManager { dataSource.connection },
@@ -221,7 +226,7 @@ class Database(
             url: String, user: String? = null, password: String? = null, driver: String? = null,
             logger: Logger = defaultLogger,
             dialect: SqlDialect = detectDialectImplementation(),
-            exceptionTranslator: ((SQLException) -> Throwable?)? = null,
+            exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
         ): Database {
             if (!driver.isNullOrBlank()) {
@@ -247,7 +252,10 @@ class Database(
                 transactionManager = SpringManagedTransactionManager(dataSource),
                 dialect = dialect,
                 logger = logger,
-                exceptionTranslator = { translator.translate("Loryn", null, it) },
+                exceptionTranslator = {
+                    val (sqlException, sql) = it
+                    translator.translate("[Loryn] ${it.message}", sql, sqlException)
+                },
                 config = config,
             )
         }

@@ -2,6 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
+import top.loryn.database.WrappedSqlException
 import top.loryn.database.mapEachRow
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
@@ -10,6 +11,7 @@ import top.loryn.schema.Table
 import top.loryn.utils.one
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import java.sql.SQLException
 
 abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
     abstract fun buildStatement(database: Database): S
@@ -41,7 +43,11 @@ abstract class Statement(val database: Database) {
             params.forEachIndexed { index, param ->
                 param.setParameter(statement, index + 1)
             }
-            block(statement)
+            try {
+                block(statement)
+            } catch (e: SQLException) {
+                throw WrappedSqlException(e, sql)
+            }
         }
 }
 

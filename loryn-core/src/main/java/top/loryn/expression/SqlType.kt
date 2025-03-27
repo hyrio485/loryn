@@ -18,16 +18,11 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
         }
     }
 
-    protected abstract fun doGetResult(rs: ResultSet, index: Int): T?
+    abstract fun getResult(rs: ResultSet, index: Int): T?
 
-    open fun getResult(rs: ResultSet, index: Int) =
-        rs.takeUnless { it.wasNull() }?.let { doGetResult(it, index) }
-
-    protected open fun doGetResult(rs: ResultSet, columnLabel: String) =
-        doGetResult(rs, rs.findColumn(columnLabel))
-
-    open fun getResult(rs: ResultSet, columnLabel: String) =
-        rs.takeUnless { it.wasNull() }?.let { doGetResult(it, columnLabel) }
+    open fun getResult(rs: ResultSet, columnLabel: String): T? {
+        return getResult(rs, rs.findColumn(columnLabel))
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -23,7 +23,7 @@ abstract class Statement(val database: Database) {
     abstract fun generateSql(): SqlAndParams
 
     protected fun Database.buildSql(block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit): SqlAndParams {
-        val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords)
+        val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords).start()
         val params = mutableListOf<SqlParam<*>>()
         builder.block(params)
         return SqlAndParams(builder.build(), params)

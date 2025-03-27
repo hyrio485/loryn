@@ -16,7 +16,5 @@ open class MysqlSqlBuilder(
         }
     }
 
-    override fun end() {
-        append(';')
-    }
+    override fun end() = also { append(';') }
 }

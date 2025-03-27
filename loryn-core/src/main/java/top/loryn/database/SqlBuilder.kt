@@ -12,8 +12,8 @@ open class SqlBuilder(
 
     private val builder = StringBuilder()
 
-    open fun start() {}
-    open fun end() {}
+    open fun start() = this
+    open fun end() = this
 
     fun append(str: CharSequence) = also { builder.append(str) }
     fun append(char: Char) = also { builder.append(char) }
@@ -35,7 +35,7 @@ open class SqlBuilder(
     }
 
     open fun appendKeyword(keyword: String) = also {
-        append(if (uppercaseKeywords) keyword.uppercase() else keyword)
+        append(if (uppercaseKeywords) keyword.uppercase() else keyword.lowercase())
     }
 
     open fun appendExpression(expression: SqlExpression<*>, params: MutableList<SqlParam<*>>) = also {

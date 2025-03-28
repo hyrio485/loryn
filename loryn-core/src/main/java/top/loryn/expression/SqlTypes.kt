@@ -19,7 +19,7 @@ object BooleanSqlType : SqlType<Boolean>(JDBCType.BOOLEAN, Boolean::class.java) 
         ps.setBoolean(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Boolean? {
+    override fun doGetResult(rs: ResultSet, index: Int): Boolean? {
         return rs.getBoolean(index)
     }
 }
@@ -35,7 +35,7 @@ object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
         ps.setInt(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Int? {
+    override fun doGetResult(rs: ResultSet, index: Int): Int? {
         return rs.getInt(index)
     }
 }
@@ -51,7 +51,7 @@ object ShortSqlType : SqlType<Short>(JDBCType.SMALLINT, Short::class.java) {
         ps.setShort(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Short? {
+    override fun doGetResult(rs: ResultSet, index: Int): Short? {
         return rs.getShort(index)
     }
 }
@@ -67,7 +67,7 @@ object LongSqlType : SqlType<Long>(JDBCType.BIGINT, Long::class.java) {
         ps.setLong(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Long? {
+    override fun doGetResult(rs: ResultSet, index: Int): Long? {
         return rs.getLong(index)
     }
 }
@@ -83,7 +83,7 @@ object FloatSqlType : SqlType<Float>(JDBCType.FLOAT, Float::class.java) {
         ps.setFloat(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Float? {
+    override fun doGetResult(rs: ResultSet, index: Int): Float? {
         return rs.getFloat(index)
     }
 }
@@ -99,7 +99,7 @@ object DoubleSqlType : SqlType<Double>(JDBCType.DOUBLE, Double::class.java) {
         ps.setDouble(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Double? {
+    override fun doGetResult(rs: ResultSet, index: Int): Double? {
         return rs.getDouble(index)
     }
 }
@@ -115,7 +115,7 @@ object DecimalSqlType : SqlType<BigDecimal>(JDBCType.DECIMAL, BigDecimal::class.
         ps.setBigDecimal(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): BigDecimal? {
+    override fun doGetResult(rs: ResultSet, index: Int): BigDecimal? {
         return rs.getBigDecimal(index)
     }
 }
@@ -131,7 +131,7 @@ object VarcharSqlType : SqlType<String>(JDBCType.VARCHAR, String::class.java) {
         ps.setString(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): String? {
+    override fun doGetResult(rs: ResultSet, index: Int): String? {
         return rs.getString(index)
     }
 }
@@ -147,7 +147,7 @@ object TextSqlType : SqlType<String>(JDBCType.LONGVARCHAR, String::class.java) {
         ps.setString(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): String? {
+    override fun doGetResult(rs: ResultSet, index: Int): String? {
         return rs.getString(index)
     }
 }
@@ -163,7 +163,7 @@ object BlobSqlType : SqlType<ByteArray>(JDBCType.BLOB, ByteArray::class.java) {
         ps.setBlob(index, SerialBlob(parameter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): ByteArray? {
+    override fun doGetResult(rs: ResultSet, index: Int): ByteArray? {
         return rs.getBlob(index).let { blob ->
             try {
                 blob.binaryStream.use { it.readBytes() }
@@ -185,7 +185,7 @@ object BytesSqlType : SqlType<ByteArray>(JDBCType.BINARY, ByteArray::class.java)
         ps.setBytes(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): ByteArray? {
+    override fun doGetResult(rs: ResultSet, index: Int): ByteArray? {
         return rs.getBytes(index)
     }
 }
@@ -201,7 +201,7 @@ object TimestampSqlType : SqlType<Timestamp>(JDBCType.TIMESTAMP, Timestamp::clas
         ps.setTimestamp(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Timestamp? {
+    override fun doGetResult(rs: ResultSet, index: Int): Timestamp? {
         return rs.getTimestamp(index)
     }
 }
@@ -217,7 +217,7 @@ object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
         ps.setDate(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): SqlDate? {
+    override fun doGetResult(rs: ResultSet, index: Int): SqlDate? {
         return rs.getDate(index)
     }
 }
@@ -233,7 +233,7 @@ object JavaDateSqlType : SqlType<JavaDate>(JDBCType.DATE, JavaDate::class.java) 
         ps.setDate(index, SqlDate(parameter.time))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): JavaDate? {
+    override fun doGetResult(rs: ResultSet, index: Int): JavaDate? {
         return rs.getDate(index)
     }
 }
@@ -249,7 +249,7 @@ object TimeSqlType : SqlType<Time>(JDBCType.TIME, Time::class.java) {
         ps.setTime(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Time? {
+    override fun doGetResult(rs: ResultSet, index: Int): Time? {
         return rs.getTime(index)
     }
 }
@@ -265,7 +265,7 @@ object InstantSqlType : SqlType<Instant>(JDBCType.TIMESTAMP, Instant::class.java
         ps.setTimestamp(index, Timestamp.from(parameter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Instant? {
+    override fun doGetResult(rs: ResultSet, index: Int): Instant? {
         return rs.getTimestamp(index).toInstant()
     }
 }
@@ -281,7 +281,7 @@ object LocalDateTimeSqlType : SqlType<LocalDateTime>(JDBCType.TIMESTAMP, LocalDa
         ps.setTimestamp(index, Timestamp.valueOf(parameter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): LocalDateTime? {
+    override fun doGetResult(rs: ResultSet, index: Int): LocalDateTime? {
         return rs.getTimestamp(index).toLocalDateTime()
     }
 }
@@ -297,7 +297,7 @@ object LocalDateSqlType : SqlType<LocalDate>(JDBCType.DATE, LocalDate::class.jav
         ps.setDate(index, SqlDate.valueOf(parameter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): LocalDate? {
+    override fun doGetResult(rs: ResultSet, index: Int): LocalDate? {
         return rs.getDate(index).toLocalDate()
     }
 }
@@ -313,7 +313,7 @@ object LocalTimeSqlType : SqlType<LocalTime>(JDBCType.TIME, LocalTime::class.jav
         ps.setTime(index, Time.valueOf(parameter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): LocalTime? {
+    override fun doGetResult(rs: ResultSet, index: Int): LocalTime? {
         return rs.getTime(index).toLocalTime()
     }
 }
@@ -331,7 +331,7 @@ object MonthDaySqlType : SqlType<MonthDay>(JDBCType.VARCHAR, MonthDay::class.jav
         ps.setString(index, parameter.format(formatter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): MonthDay? {
+    override fun doGetResult(rs: ResultSet, index: Int): MonthDay? {
         return MonthDay.parse(rs.getString(index), formatter)
     }
 }
@@ -349,7 +349,7 @@ object YearMonthSqlType : SqlType<YearMonth>(JDBCType.VARCHAR, YearMonth::class.
         ps.setString(index, parameter.format(formatter))
     }
 
-    override fun getResult(rs: ResultSet, index: Int): YearMonth? {
+    override fun doGetResult(rs: ResultSet, index: Int): YearMonth? {
         return YearMonth.parse(rs.getString(index), formatter)
     }
 }
@@ -365,7 +365,7 @@ object YearSqlType : SqlType<Year>(JDBCType.INTEGER, Year::class.java) {
         ps.setInt(index, parameter.value)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): Year? {
+    override fun doGetResult(rs: ResultSet, index: Int): Year? {
         return Year.of(rs.getInt(index))
     }
 }
@@ -381,7 +381,7 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
         ps.setObject(index, parameter)
     }
 
-    override fun getResult(rs: ResultSet, index: Int): UUID? {
+    override fun doGetResult(rs: ResultSet, index: Int): UUID? {
         return rs.getObject(index) as UUID
     }
 }
@@ -426,7 +426,7 @@ class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OT
         }
     }
 
-    override fun getResult(rs: ResultSet, index: Int): C? {
+    override fun doGetResult(rs: ResultSet, index: Int): C? {
         return rs.getString(index)?.let { java.lang.Enum.valueOf(enumClass, it) }
     }
 }

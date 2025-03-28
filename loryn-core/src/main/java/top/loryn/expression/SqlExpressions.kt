@@ -74,7 +74,7 @@ class UnaryExpression<E, T : Any, R : Any>(
 }
 
 class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
-    val operator: String,
+    val operators: List<String>,
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
     sqlType: SqlType<R>,
@@ -82,11 +82,27 @@ class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     label: String? = null,
     setter: (E.(R?) -> Unit)? = null,
 ) : ColumnExpression<E, R>(sqlType, label, setter) {
+    constructor(
+        operator: String,
+        expr1: SqlExpression<T1>,
+        expr2: SqlExpression<T2>,
+        sqlType: SqlType<R>,
+        addParentheses: Boolean = true,
+        label: String? = null,
+        setter: (E.(R?) -> Unit)? = null,
+    ) : this(listOf(operator), expr1, expr2, sqlType, addParentheses, label, setter)
+
+    init {
+        require(operators.isNotEmpty()) { "At least one operator must be provided" }
+    }
+
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
         appendExpression(expr1, params)
         if (addParentheses) append(')')
-        append(' ').appendKeyword(operator).append(' ')
+        append(' ').appendList(operators, params, " ") { operator, _ ->
+            appendKeyword(operator)
+        }.append(' ')
         if (addParentheses) append('(')
         appendExpression(expr2, params)
         if (addParentheses) append(')')

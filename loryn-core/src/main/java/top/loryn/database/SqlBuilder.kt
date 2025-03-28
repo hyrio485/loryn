@@ -45,10 +45,11 @@ open class SqlBuilder(
     open fun <T> appendList(
         list: List<T>,
         params: MutableList<SqlParam<*>>,
+        separator: String = ", ",
         block: SqlBuilder.(T, MutableList<SqlParam<*>>) -> Unit,
     ) = also {
         list.forEachIndexed { index, item ->
-            if (index > 0) append(", ")
+            if (index > 0) append(separator)
             block(item, params)
         }
     }

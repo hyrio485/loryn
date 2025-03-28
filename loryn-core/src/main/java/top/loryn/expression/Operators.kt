@@ -5,6 +5,9 @@ import top.loryn.schema.Column
 private fun <E, C : Any> SqlExpression<C>.binBool(operator: String, other: SqlExpression<C>) =
     BinaryExpression<E, C, C, Boolean>(operator, this, other, BooleanSqlType, addParentheses = false)
 
+private fun <E, C : Any> SqlExpression<C>.binBool(operators: List<String>, other: SqlExpression<C>) =
+    BinaryExpression<E, C, C, Boolean>(operators, this, other, BooleanSqlType, addParentheses = false)
+
 infix fun <E, C : Any> SqlExpression<C>.eq(other: SqlExpression<C>) = binBool<E, C>("=", other)
 infix fun <E, C : Any> Column<E, C>.eq(value: C?) = eq<E, C>(expr(value))
 infix fun <E, C : Any> SqlExpression<C>.gt(other: SqlExpression<C>) = binBool<E, C>(">", other)
@@ -20,6 +23,12 @@ infix fun <E, C : Any> Column<E, C>.lte(value: C?) = lte<E, C>(expr(value))
 
 fun <E, C : Any> Column<E, C>.isNull() =
     binBool<E, C>("IS", NullSqlExpression<E, C>())
+
+fun <E, C : Any> Column<E, C>.isNotNull() =
+    binBool<E, C>(listOf("IS", "NOT"), NullSqlExpression<E, C>())
+
+fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
+    if (value == null) isNull() else eq<E, C>(value)
 
 private fun <E> SqlExpression<Int>.binInt(operator: String, other: SqlExpression<Int>) =
     BinaryExpression<E, Int, Int, Int>(operator, this, other, IntSqlType, addParentheses = false)

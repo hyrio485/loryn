@@ -42,5 +42,21 @@ open class SqlBuilder(
         expression.run { appendSql(params) }
     }
 
+    open fun <T> appendList(
+        list: List<T>,
+        params: MutableList<SqlParam<*>>,
+        block: SqlBuilder.(T, MutableList<SqlParam<*>>) -> Unit,
+    ) = also {
+        list.forEachIndexed { index, item ->
+            if (index > 0) append(", ")
+            block(item, params)
+        }
+    }
+
+    open fun appendExpressions(expressions: List<SqlExpression<*>>, params: MutableList<SqlParam<*>>) =
+        appendList(expressions, params) { expression, params ->
+            appendExpression(expression, params)
+        }
+
     fun build() = end().let { builder.toString() }
 }

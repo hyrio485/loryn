@@ -21,9 +21,21 @@ abstract class Table<E>(
 
     override val columns get() = columnsMapMutable.values.toList()
 
-    val primaryKeys get() = columns.filter { it.primaryKey }
-    val primaryKeyNullable get() = primaryKeys.singleOrNull()
-    val primaryKey get() = primaryKeyNullable ?: error("Table $this does not have a primary key")
+    /** 过滤出所有主键列（可能为空） */
+    val primaryKeysMayEmpty get() = columns.filter { it.primaryKey }
+
+    /** 所有主键列（包含一个或多个，没有定义主键时抛出异常） */
+    val primaryKeys
+        get() = primaryKeysMayEmpty.takeIf { it.isNotEmpty() }
+            ?: error("Table $this does not have a primary key")
+
+    /** 主键列（只有一个时才不为空） */
+    val primaryKeySingleOrNull get() = primaryKeys.singleOrNull()
+
+    /** 主键列（非只有一个时抛出异常） */
+    val primaryKey
+        get() = primaryKeys.singleOrNull()
+            ?: error("Table $this has more than one primary keys, use primaryKeys instead")
 
     open val insertColumns get() = emptyList<Column<E, *>>()
     open val updateColumns get() = emptyList<Column<E, *>>()

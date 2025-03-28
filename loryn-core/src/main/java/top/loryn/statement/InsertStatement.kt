@@ -18,25 +18,14 @@ abstract class BaseInsertStatement<E>(
     useGeneratedKeys: Boolean,
 ) : DmlStatement(database, useGeneratedKeys) {
     protected fun SqlBuilder.appendInsertIntoColumns(params: MutableList<SqlParam<*>>) = also {
-        appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ').appendTable(table).append(" (")
-        columns.forEachIndexed { index, column ->
-            if (index > 0) append(", ")
-            appendExpression(column, params)
-        }
-        append(") ")
+        appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ')
+        appendTable(table).append(" (").appendExpressions(columns, params).append(") ")
     }
 
     protected fun SqlBuilder.appendRowValues(
         values: List<ParameterExpression<E, *>>,
         params: MutableList<SqlParam<*>>,
-    ) = also {
-        append('(')
-        values.forEachIndexed { index, value ->
-            if (index > 0) append(", ")
-            appendExpression(value, params)
-        }
-        append(')')
-    }
+    ) = also { append('(').appendExpressions(values, params).append(')') }
 }
 
 class InsertStatement<E>(

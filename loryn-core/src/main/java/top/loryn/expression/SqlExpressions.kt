@@ -93,6 +93,20 @@ class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     }
 }
 
+class InExpression<E>(
+    val expr: SqlExpression<*>,
+    val list: List<SqlExpression<*>>,
+    val not: Boolean = false,
+    label: String? = null,
+    setter: (E.(Boolean?) -> Unit)? = null,
+) : ColumnExpression<E, Boolean>(BooleanSqlType, label, setter) {
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+        appendExpression(expr, params).append(' ')
+        if (not) appendKeyword("NOT").append(' ')
+        appendKeyword("IN").append(" (").appendExpressions(list, params).append(')')
+    }
+}
+
 data class AssignmentExpression<E, C : Any>(
     val column: ColumnExpression<E, C>,
     val value: SqlExpression<C>,
@@ -146,19 +160,14 @@ class SelectExpression<E>(
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ')
         if (columns.isNotEmpty()) {
-            columns.forEachIndexed { index, column ->
-                if (index > 0) append(", ")
-                column.run { appendSqlInSelectClause(params) }
-            }
+            appendExpressions(columns, params)
         } else {
             append('*')
         }
         if (from != null) {
             append(' ').appendKeyword("FROM").append(' ').appendExpression(from, params)
         }
-        where?.also {
-            append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params)
-        }
+        where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
     }
 
     inline fun <reified T : Any> asExpression(): ColumnExpression<E, T> {

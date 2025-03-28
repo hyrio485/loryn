@@ -26,8 +26,7 @@ class InsertManyStatement<E>(
 
     override fun generateSql() = database.buildSql { params ->
         appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
-        values.forEachIndexed { index, values ->
-            if (index > 0) append(", ")
+        appendList(values, params) { values, params ->
             appendRowValues(values, params)
         }
     }

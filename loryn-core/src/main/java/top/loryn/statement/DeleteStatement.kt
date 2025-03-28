@@ -3,6 +3,7 @@ package top.loryn.statement
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
 import top.loryn.expression.SqlExpression
+import top.loryn.expression.and
 import top.loryn.expression.eq
 import top.loryn.schema.Table
 
@@ -32,6 +33,9 @@ fun <E, T : Table<E>> Database.delete(table: T, block: DeleteBuilder<E, T>.(T) -
     DeleteBuilder(table).apply { block(table) }.buildStatement(this)
 
 fun <E, T : Table<E>> Database.delete(table: T, entity: E) = delete(table) {
-    // TODO: 支持联合主键
-    where { it.primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr } }
+    where {
+        it.primaryKeys.map { primaryKey ->
+            primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
+        }.reduce { acc, expr -> acc.and<E>(expr) }
+    }
 }

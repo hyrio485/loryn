@@ -41,3 +41,11 @@ infix fun <E> SqlExpression<Boolean>.or(other: SqlExpression<Boolean>) =
 
 operator fun <E> SqlExpression<Boolean>.not() =
     UnaryExpression<E, Boolean, Boolean>("NOT", this, BooleanSqlType)
+
+// in
+
+infix fun <E, C : Any> Column<E, C>.`in`(values: Iterable<C>) = InExpression<E>(this, values.map { expr(it) })
+infix fun <E> SqlExpression<*>.`in`(list: List<SqlExpression<*>>) = InExpression<E>(this, list)
+infix fun <E> SqlExpression<*>.notIn(list: List<SqlExpression<*>>) = InExpression<E>(this, list, not = true)
+infix fun <E> Tuple.`in`(list: List<Tuple>) = InExpression<E>(this, list)
+infix fun <E> Tuple.notIn(list: List<Tuple>) = InExpression<E>(this, list, not = true)

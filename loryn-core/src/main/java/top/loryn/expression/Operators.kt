@@ -27,7 +27,7 @@ fun <E, C : Any> Column<E, C>.isNull() =
 fun <E, C : Any> Column<E, C>.isNotNull() =
     binBool<E, C>(listOf("IS", "NOT"), NullSqlExpression<E, C>())
 
-fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
+infix fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
     if (value == null) isNull() else eq<E, C>(value)
 
 private fun <E> SqlExpression<Int>.binInt(operator: String, other: SqlExpression<Int>) =

@@ -234,7 +234,7 @@ object JavaDateSqlType : SqlType<JavaDate>(JDBCType.DATE, JavaDate::class.java) 
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): JavaDate? {
-        return rs.getDate(index)
+        return rs.getDate(index)?.let { JavaDate(it.time) }
     }
 }
 

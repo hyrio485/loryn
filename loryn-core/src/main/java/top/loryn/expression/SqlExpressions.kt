@@ -123,8 +123,8 @@ abstract class BaseCaseExpression<E, T : Any, R : Any>(
     ) = also {
         appendKeyword("CASE").append(' ').appendValue(params)
         branches.forEach { (condition, result) ->
-            append(' ').appendKeyword("WHEN").appendExpression(condition, params).append(' ')
-            appendKeyword("THEN").append(' ').appendExpression(result, params)
+            append(' ').appendKeyword("WHEN").append(' ').appendExpression(condition, params)
+            append(' ').appendKeyword("THEN").append(' ').appendExpression(result, params)
         }
         elseExpr?.also {
             append(' ').appendKeyword("ELSE").append(' ').appendExpression(it, params)

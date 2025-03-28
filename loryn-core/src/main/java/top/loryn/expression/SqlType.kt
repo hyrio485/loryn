@@ -20,8 +20,9 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
 
     abstract fun doGetResult(rs: ResultSet, index: Int): T?
 
-    open fun getResult(rs: ResultSet, index: Int) =
-        doGetResult(rs, index).takeUnless { rs.wasNull() }
+    open fun getResult(rs: ResultSet, index: Int): T? {
+        return doGetResult(rs, index).takeUnless { rs.wasNull() }
+    }
 
     open fun getResult(rs: ResultSet, columnLabel: String): T? {
         return getResult(rs, rs.findColumn(columnLabel))

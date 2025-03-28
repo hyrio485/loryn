@@ -8,7 +8,7 @@ import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
 import top.loryn.utils.checkTableColumn
 
-class InsertManyStatement<E>(
+class BatchInsertStatement<E>(
     database: Database,
     table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
@@ -32,7 +32,7 @@ class InsertManyStatement<E>(
     }
 }
 
-fun <E, T : Table<E>> Database.insertMany(
+fun <E, T : Table<E>> Database.batchInsert(
     table: T,
     entities: List<E>,
     columns: List<Column<E, *>> = table.insertColumns,
@@ -40,7 +40,7 @@ fun <E, T : Table<E>> Database.insertMany(
 ): Int {
     val columns =
         columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
-    return InsertManyStatement(
+    return BatchInsertStatement(
         this, table, columns,
         entities.map { entity -> columns.map { it.getValueExpr(entity) } },
         useGeneratedKeys = useGeneratedKeys,
@@ -58,9 +58,9 @@ fun <E, T : Table<E>> Database.insertMany(
     }
 }
 
-fun <E, T : Table<E>> Database.insertMany(
+fun <E, T : Table<E>> Database.batchInsert(
     table: T,
     entities: List<E>,
     vararg columns: Column<E, *>,
     useGeneratedKeys: Boolean = false,
-) = insertMany(table, entities, columns.toList(), useGeneratedKeys)
+) = batchInsert(table, entities, columns.toList(), useGeneratedKeys)

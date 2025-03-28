@@ -2,10 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
-import top.loryn.expression.AssignmentExpression
-import top.loryn.expression.SqlExpression
-import top.loryn.expression.and
-import top.loryn.expression.eq
+import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.utils.checkTableColumn
@@ -71,3 +68,37 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
     update(table, entity, columns.toList())
+
+// 独立出个方法解决泛型问题（方法内无法推断C的类型）
+private fun <E, C : Any> Column<E, C>.caseValueExpr(
+    primaryKeys: List<Column<E, *>>,
+    entities: List<E>,
+) = CaseValueExpression<E, Nothing, C>(
+    Tuple(primaryKeys), entities.map { entity ->
+        Tuple(primaryKeys.map { it.getValueExpr(entity) }) to getValueExpr(entity)
+    }
+)
+
+fun <E, T : Table<E>> Database.batchUpdate(
+    table: T,
+    entities: List<E>,
+    columns: List<Column<E, *>> = table.updateColumns,
+) = update(table) {
+    val primaryKeys = it.primaryKeys
+    columns.forEach { column ->
+        set(column) { column ->
+            column.caseValueExpr(primaryKeys, entities)
+        }
+    }
+    where {
+        Tuple(primaryKeys).`in`<E>(entities.map { entity ->
+            Tuple(primaryKeys.map { it.getValueExpr(entity) })
+        })
+    }
+}
+
+fun <E, T : Table<E>> Database.batchUpdate(
+    table: T,
+    entities: List<E>,
+    vararg columns: Column<E, *>,
+) = batchUpdate(table, entities, columns.toList())

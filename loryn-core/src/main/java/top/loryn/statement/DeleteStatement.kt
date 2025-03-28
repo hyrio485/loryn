@@ -2,9 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.LorynDsl
-import top.loryn.expression.SqlExpression
-import top.loryn.expression.and
-import top.loryn.expression.eq
+import top.loryn.expression.*
 import top.loryn.schema.Table
 
 class DeleteStatement<E>(
@@ -30,12 +28,21 @@ class DeleteBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, DeleteState
 }
 
 fun <E, T : Table<E>> Database.delete(table: T, block: DeleteBuilder<E, T>.(T) -> Unit = {}) =
-    DeleteBuilder(table).apply { block(table) }.buildStatement(this)
+    DeleteBuilder(table).apply { block(table) }.buildStatement(this).execute()
 
 fun <E, T : Table<E>> Database.delete(table: T, entity: E) = delete(table) {
     where {
         it.primaryKeys.map { primaryKey ->
             primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
         }.reduce { acc, expr -> acc.and<E>(expr) }
+    }
+}
+
+fun <E, T : Table<E>> Database.batchDelete(table: T, entities: List<E>) = delete(table) {
+    where {
+        val primaryKeys = it.primaryKeys
+        Tuple(primaryKeys).`in`<E>(entities.map { entity ->
+            Tuple(primaryKeys.map { it.getValueExpr(entity) })
+        })
     }
 }

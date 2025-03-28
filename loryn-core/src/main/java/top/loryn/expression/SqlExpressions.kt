@@ -107,6 +107,53 @@ class InExpression<E>(
     }
 }
 
+abstract class BaseCaseExpression<E, T : Any, R : Any>(
+    val branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
+    val elseExpr: SqlExpression<R>? = null,
+    label: String? = null,
+    setter: (E.(R?) -> Unit)? = null,
+) : ColumnExpression<E, R>(null, label, setter) {
+    init {
+        require(branches.isNotEmpty()) { "At least one branch must be provided" }
+    }
+
+    protected inline fun SqlBuilder.doAppendSqlOriginal(
+        params: MutableList<SqlParam<*>>,
+        appendValue: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit = {},
+    ) = also {
+        appendKeyword("CASE").append(' ').appendValue(params)
+        branches.forEach { (condition, result) ->
+            appendKeyword("WHEN").appendExpression(condition, params).append(' ')
+            appendKeyword("THEN").append(' ').appendExpression(result, params)
+        }
+        elseExpr?.also {
+            append(' ').appendKeyword("ELSE").append(' ').appendExpression(it, params)
+        }
+        append(' ').appendKeyword("END")
+    }
+}
+
+class CaseExpression<E, R : Any>(
+    branches: List<Pair<SqlExpression<Boolean>, SqlExpression<R>>>,
+    elseExpr: SqlExpression<R>? = null,
+    label: String? = null,
+    setter: (E.(R?) -> Unit)? = null,
+) : BaseCaseExpression<E, Boolean, R>(branches, elseExpr, label, setter) {
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+        doAppendSqlOriginal(params)
+}
+
+class CaseValueExpression<E, T : Any, R : Any>(
+    val value: SqlExpression<T>,
+    branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
+    elseExpr: SqlExpression<R>? = null,
+    label: String? = null,
+    setter: (E.(R?) -> Unit)? = null,
+) : BaseCaseExpression<E, T, R>(branches, elseExpr, label, setter) {
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+        doAppendSqlOriginal(params) { appendExpression(value, params) }
+}
+
 data class AssignmentExpression<E, C : Any>(
     val column: ColumnExpression<E, C>,
     val value: SqlExpression<C>,

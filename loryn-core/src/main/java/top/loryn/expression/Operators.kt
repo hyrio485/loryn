@@ -21,6 +21,9 @@ infix fun <E, C : Any> Column<E, C>.gte(value: C?) = gte<E, C>(expr(value))
 infix fun <E, C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = binBool<E, C>("<=", other)
 infix fun <E, C : Any> Column<E, C>.lte(value: C?) = lte<E, C>(expr(value))
 
+infix fun <E> SqlExpression<String>.like(other: SqlExpression<String>) = binBool<E, String>("LIKE", other)
+infix fun <E> Column<E, String>.like(value: String) = like<E>(expr(value))
+
 fun <E, C : Any> Column<E, C>.isNull() =
     binBool<E, C>("IS", NullSqlExpression<E, C>())
 

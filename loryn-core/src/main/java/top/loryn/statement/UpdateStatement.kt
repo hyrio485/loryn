@@ -64,15 +64,24 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<
 fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
     update(table, entity, columns.toList())
 
-fun <E, T : Table<E>> Database.updateOptimistic(table: T, entity: E, vararg columns: Column<E, *>) =
-    update(table) {
-        val revColumn = it.revColumn
+fun <E, T : Table<E>> Database.updateOptimistic(
+    table: T,
+    entity: E,
+    columns: List<Column<E, *>> = table.updateColumns,
+): Int {
+    val revColumn = table.revColumn
+    require(revColumn !in columns) { "Revision column $revColumn cannot be included in the update columns" }
+    return update(table) {
         columns.forEach { column ->
             set(column) { it.getValueExpr(entity) }
             set(revColumn, revColumn.getValue(entity)!! + 1)
         }
         where { it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)) }
     }
+}
+
+fun <E, T : Table<E>> Database.updateOptimistic(table: T, entity: E, vararg columns: Column<E, *>) =
+    updateOptimistic(table, entity, columns.toList())
 
 // 批量更新
 

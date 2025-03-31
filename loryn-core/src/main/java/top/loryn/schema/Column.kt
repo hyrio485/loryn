@@ -53,6 +53,9 @@ class Column<E, C : Any>(
             .invoke(entity, sqlType.getResult(resultSet, index + 1))
     }
 
+    fun assignByValue(value: C?) = AssignmentExpression<E, C>(this, expr(value))
+    fun assignByEntity(entity: E) = AssignmentExpression<E, C>(this, getValueExpr(entity))
+
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table?.alias?.also { appendRef(it).append('.') }
         appendRef(name)

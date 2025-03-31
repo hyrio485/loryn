@@ -83,20 +83,15 @@ fun <E, T : Table<E>> Database.insertOrUpdate(
     table: T,
     entity: E,
     columns: List<Column<E, *>> = table.insertColumns,
-    sets: List<AssignmentExpression<E, *>>,
+    updateColumns: List<Column<E, *>> = table.updateColumns,
     useGeneratedKeys: Boolean = false,
 ): Int {
     val columns =
         columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
     return InsertOrUpdateStatement(
-        this, table, columns, columns.map { it.getValueExpr(entity) }, sets, useGeneratedKeys = useGeneratedKeys,
+        this, table, columns,
+        columns.map { it.getValueExpr(entity) },
+        updateColumns.map { it.assignByEntity(entity) },
+        useGeneratedKeys = useGeneratedKeys,
     ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }
 }
-
-fun <E, T : Table<E>> Database.insertOrUpdate(
-    table: T,
-    entity: E,
-    vararg columns: Column<E, *>,
-    sets: List<AssignmentExpression<E, *>>,
-    useGeneratedKeys: Boolean = false,
-) = insertOrUpdate(table, entity, columns.toList(), sets, useGeneratedKeys)

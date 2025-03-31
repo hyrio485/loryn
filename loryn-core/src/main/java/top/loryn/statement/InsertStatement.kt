@@ -1,7 +1,6 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
-import top.loryn.support.LorynDsl
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression
@@ -9,7 +8,9 @@ import top.loryn.expression.SelectExpression
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.support.LorynDsl
 import top.loryn.utils.checkTableColumn
+import java.sql.ResultSet
 
 abstract class BaseInsertStatement<E>(
     database: Database,
@@ -26,6 +27,16 @@ abstract class BaseInsertStatement<E>(
         values: List<ParameterExpression<E, *>>,
         params: MutableList<SqlParam<*>>,
     ) = also { append('(').appendExpressions(values, params).append(')') }
+
+    fun fillInPrimaryKeysForEachRow(entity: E, rs: ResultSet) {
+        val primaryKeys = table.primaryKeys
+        if (primaryKeys.isEmpty()) {
+            error("No primary keys found for table $table")
+        }
+        primaryKeys.forEachIndexed { index, column ->
+            column.setValue(entity, index, rs)
+        }
+    }
 }
 
 class InsertStatement<E>(
@@ -63,9 +74,9 @@ class InsertStatement<E>(
 class InsertBuilder<E, T : Table<E>>(
     table: T, val useGeneratedKeys: Boolean = false,
 ) : StatementBuilder<T, InsertStatement<E>>(table) {
-    internal val columns = mutableListOf<ColumnExpression<E, *>>()
-    internal val values = mutableListOf<ParameterExpression<E, *>>()
-    internal var select: SelectExpression<*>? = null
+    private val columns = mutableListOf<ColumnExpression<E, *>>()
+    private val values = mutableListOf<ParameterExpression<E, *>>()
+    private var select: SelectExpression<*>? = null
 
     fun <C : Any> column(column: Column<E, C>) {
         columns += column.also { checkTableColumn(table, it) }
@@ -134,15 +145,7 @@ fun <E, T : Table<E>> Database.insert(
         columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
     return InsertStatement(
         this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
-    ).execute { rs ->
-        val primaryKeys = table.primaryKeys
-        if (primaryKeys.isEmpty()) {
-            error("No primary keys found for table $table")
-        }
-        primaryKeys.forEachIndexed { index, column ->
-            column.setValue(entity, index, rs)
-        }
-    }
+    ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }
 }
 
 fun <E, T : Table<E>> Database.insert(

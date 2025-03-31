@@ -27,8 +27,8 @@ class UpdateStatement<E>(
 
 @LorynDsl
 class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateStatement<E>>(table) {
-    internal val sets = mutableListOf<AssignmentExpression<E, *>>()
-    internal var where: SqlExpression<Boolean>? = null
+    private val sets = mutableListOf<AssignmentExpression<E, *>>()
+    private var where: SqlExpression<Boolean>? = null
 
     fun <C : Any> set(column: Column<E, C>, value: SqlExpression<C>) {
         checkTableColumn(table, column)

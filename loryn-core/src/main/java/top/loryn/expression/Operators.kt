@@ -83,4 +83,4 @@ private fun <E, C : Any> SqlExpression<C>.binExprInt(operators: List<String>, ot
     binExpr<E, C, Int>(operators, other, IntSqlType)
 
 private fun <E, C : Any> SqlExpression<C>.binExprInt(operator: String, other: SqlExpression<C>) =
-    binExprBool<E, C>(listOf(operator), other)
+    binExprInt<E, C>(listOf(operator), other)

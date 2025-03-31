@@ -2,12 +2,12 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
-import top.loryn.support.WrappedSqlException
-import top.loryn.utils.mapEachRow
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
+import top.loryn.support.WrappedSqlException
+import top.loryn.utils.mapEachRow
 import top.loryn.utils.one
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -32,23 +32,26 @@ abstract class Statement(val database: Database) {
         return SqlAndParams(builder.build(), params)
     }
 
-    protected fun <R> Database.doExecute(useGeneratedKeys: Boolean = false, block: (PreparedStatement) -> R) =
-        useConnection { conn ->
-            val (sql, params) = generateSql().also(::showSql)
-            val statement = if (useGeneratedKeys) {
-                conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)
-            } else {
-                conn.prepareStatement(sql)
-            }
-            params.forEachIndexed { index, param ->
-                param.setParameter(statement, index + 1)
-            }
-            try {
-                block(statement)
-            } catch (e: SQLException) {
-                throw WrappedSqlException(e, sql)
-            }
+    protected inline fun <R> Database.doExecute(
+        useGeneratedKeys: Boolean = false,
+        getSqlAndParams: () -> SqlAndParams = ::generateSql,
+        block: (PreparedStatement) -> R,
+    ) = useConnection { conn ->
+        val (sql, params) = getSqlAndParams().also(::showSql)
+        val statement = if (useGeneratedKeys) {
+            conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)
+        } else {
+            conn.prepareStatement(sql)
         }
+        params.forEachIndexed { index, param ->
+            param.setParameter(statement, index + 1)
+        }
+        try {
+            block(statement)
+        } catch (e: SQLException) {
+            throw WrappedSqlException(e, sql)
+        }
+    }
 }
 
 abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = false) : Statement(database) {

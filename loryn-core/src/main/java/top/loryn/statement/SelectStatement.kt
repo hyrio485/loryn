@@ -21,6 +21,19 @@ class SelectStatement<E>(
     override fun generateSql() = database.buildSql { params ->
         appendExpression(select, params)
     }
+
+    fun count() = database.doExecute(getSqlAndParams = {
+        database.buildSql { params ->
+            select.run { appendSqlCount(params) }
+        }
+    }) { statement ->
+        statement.executeQuery().use { resultSet ->
+            if (!resultSet.next()) {
+                error("No result found")
+            }
+            resultSet.getInt(1)
+        }
+    }
 }
 
 @LorynDsl

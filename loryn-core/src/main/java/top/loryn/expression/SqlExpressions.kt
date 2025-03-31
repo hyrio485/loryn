@@ -19,14 +19,14 @@ abstract class ColumnExpression<E, C : Any>(
 ) : SqlExpression<C> {
     companion object {
         fun <E, T : Any> wrap(expression: SqlExpression<T>) = object : ColumnExpression<E, T>(null) {
-            override val sqlType: SqlType<T>
-                get() = sqlTypeNullable
-                    ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
-
             override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
                 appendExpression(expression, params)
         }
     }
+
+    override val sqlType: SqlType<C>
+        get() = sqlTypeNullable
+            ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
 
     fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
         if (setter != null) {

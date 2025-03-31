@@ -19,7 +19,7 @@ class Column<E, C : Any>(
     val notNull: Boolean = false,
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
-) : ColumnExpression<E, C>(sqlType, alias, setter) {
+) : ColumnExpression<E, C>(alias, sqlType, setter) {
     private fun copy(
         name: String = this.name,
         sqlType: SqlType<C> = this.sqlType,
@@ -37,7 +37,7 @@ class Column<E, C : Any>(
     fun setter(setter: E.(C?) -> Unit) = copy(setter = setter).registerColumn()
     fun getter(getter: E.() -> C?) = copy(getter = getter).registerColumn()
 
-    fun expr(value: C?) = ParameterExpression<E, C>(value, sqlType)
+    fun expr(value: C?) = ParameterExpression<C>(value, sqlType)
 
     fun getValue(entity: E) =
         (getter ?: throw IllegalArgumentException("Column $name does not have a getter")).invoke(entity)

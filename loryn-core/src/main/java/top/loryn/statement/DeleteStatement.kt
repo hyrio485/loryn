@@ -1,9 +1,12 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
-import top.loryn.support.LorynDsl
-import top.loryn.expression.*
+import top.loryn.expression.SqlExpression
+import top.loryn.expression.and
+import top.loryn.expression.eq
+import top.loryn.expression.`in`
 import top.loryn.schema.Table
+import top.loryn.support.LorynDsl
 import top.loryn.support.Tuple
 
 class DeleteStatement<E>(
@@ -35,7 +38,7 @@ fun <E, T : Table<E>> Database.delete(table: T, entity: E) = delete(table) {
     where {
         it.primaryKeys.map { primaryKey ->
             primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
-        }.reduce { acc, expr -> acc.and<E>(expr) }
+        }.reduce { acc, expr -> acc and expr }
     }
 }
 

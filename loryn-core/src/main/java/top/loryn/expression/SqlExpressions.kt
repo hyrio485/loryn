@@ -13,13 +13,20 @@ import java.sql.ResultSet
  * 2. 在条件子句中追加，如果有别名则只使用别名，否则追加列本体内容。
  */
 abstract class ColumnExpression<E, C : Any>(
-    val sqlTypeNullable: SqlType<C>?,
     val alias: String?,
+    val sqlTypeNullable: SqlType<C>? = null,
     val setter: (E.(C?) -> Unit)? = null,
 ) : SqlExpression<C> {
-    override val sqlType: SqlType<C>
-        get() = sqlTypeNullable
-            ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
+    companion object {
+        fun <E, T : Any> wrap(expression: SqlExpression<T>) = object : ColumnExpression<E, T>(null) {
+            override val sqlType: SqlType<T>
+                get() = sqlTypeNullable
+                    ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
+
+            override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+                appendExpression(expression, params)
+        }
+    }
 
     fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
         if (setter != null) {
@@ -45,35 +52,31 @@ abstract class ColumnExpression<E, C : Any>(
     }
 }
 
-data class NullSqlExpression<E, C : Any>(
+data class NullSqlExpression<T : Any>(
     val label: String? = null,
-) : ColumnExpression<E, C>(null, label, null) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+) : SqlExpression<T> {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("NULL")
     }
 }
 
-class ParameterExpression<E, C : Any>(
-    val value: C?,
-    sqlType: SqlType<C>,
-    label: String? = null,
-    setter: (E.(C?) -> Unit)? = null,
-) : ColumnExpression<E, C>(sqlType, label, setter) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+class ParameterExpression<T : Any>(
+    val value: T?,
+    override val sqlType: SqlType<T>,
+) : SqlExpression<T> {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         append("?")
         params += SqlParam(value, sqlType)
     }
 }
 
-class UnaryExpression<E, T : Any, R : Any>(
+class UnaryExpression<T : Any, R : Any>(
     val operator: String,
     val expr: SqlExpression<T>,
-    sqlType: SqlType<R>,
+    override val sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
-    label: String? = null,
-    setter: (E.(R?) -> Unit)? = null,
-) : ColumnExpression<E, R>(sqlType, label, setter) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+) : SqlExpression<R> {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword(operator).append(' ')
         if (addParentheses) append('(')
         appendExpression(expr, params)
@@ -81,20 +84,18 @@ class UnaryExpression<E, T : Any, R : Any>(
     }
 }
 
-class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
+class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
     val operators: List<String>,
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
-    sqlType: SqlType<R>,
+    override val sqlType: SqlType<R>,
     val addParentheses: Boolean = false,
-    label: String? = null,
-    setter: (E.(R?) -> Unit)? = null,
-) : ColumnExpression<E, R>(sqlType, label, setter) {
+) : SqlExpression<R> {
     init {
         require(operators.isNotEmpty()) { "At least one operator must be provided" }
     }
 
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
         appendExpression(expr1, params)
         if (addParentheses) append(')')
@@ -107,26 +108,24 @@ class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     }
 }
 
-class InExpression<E>(
+class InExpression(
     val expr: SqlExpression<*>,
     val list: List<SqlExpression<*>>,
     val not: Boolean = false,
-    label: String? = null,
-    setter: (E.(Boolean?) -> Unit)? = null,
-) : ColumnExpression<E, Boolean>(BooleanSqlType, label, setter) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
+) : SqlExpression<Boolean> {
+    override val sqlType = BooleanSqlType
+
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendExpression(expr, params).append(' ')
         if (not) appendKeyword("NOT").append(' ')
         appendKeyword("IN").append(" (").appendExpressions(list, params).append(')')
     }
 }
 
-abstract class BaseCaseExpression<E, T : Any, R : Any>(
+abstract class BaseCaseExpression<T : Any, R : Any>(
     val branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
     val elseExpr: SqlExpression<R>? = null,
-    label: String? = null,
-    setter: (E.(R?) -> Unit)? = null,
-) : ColumnExpression<E, R>(null, label, setter) {
+) : SqlExpression<R> {
     init {
         require(branches.isNotEmpty()) { "At least one branch must be provided" }
     }
@@ -147,24 +146,20 @@ abstract class BaseCaseExpression<E, T : Any, R : Any>(
     }
 }
 
-class CaseExpression<E, R : Any>(
+class CaseExpression<R : Any>(
     branches: List<Pair<SqlExpression<Boolean>, SqlExpression<R>>>,
     elseExpr: SqlExpression<R>? = null,
-    label: String? = null,
-    setter: (E.(R?) -> Unit)? = null,
-) : BaseCaseExpression<E, Boolean, R>(branches, elseExpr, label, setter) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
-        doAppendSqlOriginal(params)
+    override val sqlType: SqlType<R>,
+) : BaseCaseExpression<Boolean, R>(branches, elseExpr) {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = doAppendSqlOriginal(params)
 }
 
-class CaseValueExpression<E, T : Any, R : Any>(
+class CaseValueExpression<T : Any, R : Any>(
     val value: SqlExpression<T>,
     branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
     elseExpr: SqlExpression<R>? = null,
-    label: String? = null,
-    setter: (E.(R?) -> Unit)? = null,
-) : BaseCaseExpression<E, T, R>(branches, elseExpr, label, setter) {
-    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+) : BaseCaseExpression<T, R>(branches, elseExpr) {
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) =
         doAppendSqlOriginal(params) { appendExpression(value, params) }
 }
 
@@ -173,7 +168,7 @@ data class AssignmentExpression<E, C : Any>(
     val value: SqlExpression<C>,
 ) : SqlExpression<Nothing> {
     init {
-        if (column is Column<*, *> && column.notNull && value is ParameterExpression<*, *> && value.value == null) {
+        if (column is Column<*, *> && column.notNull && value is ParameterExpression<*> && value.value == null) {
             throw IllegalArgumentException("The column $column cannot be null.")
         }
     }
@@ -184,9 +179,7 @@ data class AssignmentExpression<E, C : Any>(
 }
 
 interface EntityCreator<E> {
-    fun createEntity(): E {
-        throw UnsupportedOperationException()
-    }
+    fun createEntity(): E = throw UnsupportedOperationException()
 }
 
 /**

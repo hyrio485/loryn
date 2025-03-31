@@ -12,7 +12,7 @@ class BatchInsertStatement<E>(
     database: Database,
     table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
-    val values: List<List<ParameterExpression<E, *>>>,
+    val values: List<List<ParameterExpression<*>>>,
     useGeneratedKeys: Boolean = false,
 ) : BaseInsertStatement<E>(database, table, columns, useGeneratedKeys) {
     init {

@@ -1,10 +1,10 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
-import top.loryn.support.LorynDsl
 import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.support.LorynDsl
 import top.loryn.support.Tuple
 import top.loryn.utils.checkTableColumn
 
@@ -62,7 +62,7 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<
             where {
                 it.primaryKeys.map { primaryKey ->
                     primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
-                }.reduce { acc, expr -> acc.and<E>(expr) }
+                }.reduce { acc, expr -> acc and expr }
             }
         }
     }
@@ -74,7 +74,7 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Colum
 private fun <E, C : Any> Column<E, C>.caseValueExpr(
     primaryKeys: List<Column<E, *>>,
     entities: List<E>,
-) = CaseValueExpression<E, Nothing, C>(
+) = CaseValueExpression<Nothing, C>(
     Tuple(primaryKeys), entities.map { entity ->
         Tuple(primaryKeys.map { it.getValueExpr(entity) }) to getValueExpr(entity)
     }

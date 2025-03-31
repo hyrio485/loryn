@@ -24,7 +24,7 @@ abstract class BaseInsertStatement<E>(
     }
 
     protected fun SqlBuilder.appendRowValues(
-        values: List<ParameterExpression<E, *>>,
+        values: List<ParameterExpression<*>>,
         params: MutableList<SqlParam<*>>,
     ) = also { append('(').appendExpressions(values, params).append(')') }
 
@@ -43,7 +43,7 @@ class InsertStatement<E>(
     database: Database,
     table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
-    val values: List<ParameterExpression<E, *>>? = null,
+    val values: List<ParameterExpression<*>>? = null,
     val select: SelectExpression<*>? = null,
     useGeneratedKeys: Boolean = false,
 ) : BaseInsertStatement<E>(database, table, columns, useGeneratedKeys) {
@@ -75,7 +75,7 @@ class InsertBuilder<E, T : Table<E>>(
     table: T, val useGeneratedKeys: Boolean = false,
 ) : StatementBuilder<T, InsertStatement<E>>(table) {
     private val columns = mutableListOf<ColumnExpression<E, *>>()
-    private val values = mutableListOf<ParameterExpression<E, *>>()
+    private val values = mutableListOf<ParameterExpression<*>>()
     private var select: SelectExpression<*>? = null
 
     fun <C : Any> column(column: Column<E, C>) {
@@ -94,17 +94,17 @@ class InsertBuilder<E, T : Table<E>>(
         require(select == null) { "Cannot set both values and select" }
     }
 
-    fun value(value: ParameterExpression<E, *>) {
+    fun value(value: ParameterExpression<*>) {
         requireNullSelect()
         this.values += value
     }
 
-    fun values(values: List<ParameterExpression<E, *>>) {
+    fun values(values: List<ParameterExpression<*>>) {
         requireNullSelect()
         this.values += values
     }
 
-    fun values(vararg values: ParameterExpression<E, *>) {
+    fun values(vararg values: ParameterExpression<*>) {
         values(values.toList())
     }
 

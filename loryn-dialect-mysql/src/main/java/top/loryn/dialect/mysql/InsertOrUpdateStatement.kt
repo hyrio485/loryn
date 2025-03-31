@@ -16,7 +16,7 @@ class InsertOrUpdateStatement<E>(
     database: Database,
     table: Table<E>,
     columns: List<ColumnExpression<E, *>>,
-    val values: List<ParameterExpression<E, *>>,
+    val values: List<ParameterExpression<*>>,
     val sets: List<AssignmentExpression<E, *>>,
     useGeneratedKeys: Boolean = false,
 ) : BaseInsertStatement<E>(database, table, columns, useGeneratedKeys) {
@@ -44,7 +44,7 @@ class InsertOrUpdateBuilder<E, T : Table<E>>(
     table: T, val useGeneratedKeys: Boolean = false,
 ) : StatementBuilder<T, InsertOrUpdateStatement<E>>(table) {
     private val columns = mutableListOf<ColumnExpression<E, *>>()
-    private val values = mutableListOf<ParameterExpression<E, *>>()
+    private val values = mutableListOf<ParameterExpression<*>>()
     private val sets = mutableListOf<AssignmentExpression<E, *>>()
 
     fun <C : Any> assign(column: Column<E, C>, value: C?) {

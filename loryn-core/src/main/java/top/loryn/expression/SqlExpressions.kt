@@ -229,9 +229,6 @@ class SelectExpression<E>(
         }
 
     private fun SqlBuilder.appendMain(params: MutableList<SqlParam<*>>) = also {
-        if (from != null && where != null) {
-            append(' ')
-        }
         from?.also { append(' ').appendKeyword("FROM").append(' ').appendExpression(it, params) }
         where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
     }

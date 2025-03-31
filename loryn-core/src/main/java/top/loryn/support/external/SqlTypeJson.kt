@@ -1,9 +1,10 @@
-package top.loryn.support
+package top.loryn.support.external
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.support.SqlType
 import java.sql.JDBCType
 import java.sql.PreparedStatement
 import java.sql.ResultSet

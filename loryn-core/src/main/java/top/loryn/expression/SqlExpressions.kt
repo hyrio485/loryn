@@ -2,9 +2,12 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
+import top.loryn.schema.Table
 import top.loryn.support.BooleanSqlType
+import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
 import top.loryn.support.SqlType
+import top.loryn.utils.checkTableColumn
 import java.sql.ResultSet
 
 /**
@@ -110,15 +113,28 @@ class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
 
 class InExpression(
     val expr: SqlExpression<*>,
-    val list: List<SqlExpression<*>>,
+    val list: List<SqlExpression<*>>? = null,
+    val select: SelectExpression<*>? = null,
     val not: Boolean = false,
 ) : SqlExpression<Boolean> {
+    init {
+        require(list == null && select != null || list != null && select == null) {
+            "Either list or select must be provided, but not both."
+        }
+    }
+
     override val sqlType = BooleanSqlType
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendExpression(expr, params).append(' ')
         if (not) appendKeyword("NOT").append(' ')
-        appendKeyword("IN").append(" (").appendExpressions(list, params).append(')')
+        appendKeyword("IN").append(" (")
+        if (list != null) {
+            appendExpressions(list, params)
+        } else {
+            appendExpression(select!!, params)
+        }
+        append(')')
     }
 }
 
@@ -255,5 +271,43 @@ class SelectExpression<E>(
                 alias?.also { append(' ').appendRef(it) }
             }
         }
+    }
+
+    @LorynDsl
+    class Builder<E, T : Table<E>>(val table: T) {
+        private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
+        private var from: QuerySourceExpression<E>? = table
+        private var where: SqlExpression<Boolean>? = null
+        private var paginationParams: PaginationParams? = null
+
+        fun <C : Any> column(column: Column<E, C>) {
+            columns += column.also { checkTableColumn(table, it) }
+        }
+
+        fun columns(columns: List<Column<E, *>>) {
+            this.columns += columns.onEach { checkTableColumn(table, it) }
+        }
+
+        fun columns(vararg columns: Column<E, *>) {
+            columns(columns.toList())
+        }
+
+        fun where(block: (T) -> SqlExpression<Boolean>) {
+            this.where = block(table)
+        }
+
+        fun pagination(paginationParams: PaginationParams) {
+            this.paginationParams = paginationParams
+        }
+
+        fun pagination(currentPage: Int, pageSize: Int) {
+            pagination(PaginationParams(currentPage, pageSize))
+        }
+
+        fun limit(limit: Int) {
+            pagination(PaginationParams(1, limit))
+        }
+
+        fun build() = SelectExpression(columns, from, where, paginationParams)
     }
 }

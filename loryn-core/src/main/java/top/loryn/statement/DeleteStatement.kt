@@ -45,8 +45,8 @@ fun <E, T : Table<E>> Database.delete(table: T, entity: E) = delete(table) {
 fun <E, T : Table<E>> Database.batchDelete(table: T, entities: List<E>) = delete(table) {
     where {
         val primaryKeys = it.primaryKeys
-        Tuple(primaryKeys).`in`<E>(entities.map { entity ->
+        Tuple(primaryKeys) `in` entities.map { entity ->
             Tuple(primaryKeys.map { it.getValueExpr(entity) })
-        })
+        }
     }
 }

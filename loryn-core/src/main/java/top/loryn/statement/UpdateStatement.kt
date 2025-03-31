@@ -92,9 +92,9 @@ fun <E, T : Table<E>> Database.batchUpdate(
         }
     }
     where {
-        Tuple(primaryKeys).`in`<E>(entities.map { entity ->
+        Tuple(primaryKeys) `in` entities.map { entity ->
             Tuple(primaryKeys.map { it.getValueExpr(entity) })
-        })
+        }
     }
 }
 

@@ -139,6 +139,10 @@ fun <E> Table<E>.varchar(name: String): Column<E, String> {
     return registerColumn(name, VarcharSqlType)
 }
 
+fun <E> Table<E>.string(name: String): Column<E, String> {
+    return registerColumn(name, VarcharSqlType)
+}
+
 // String -> LONGVARCHAR
 
 object TextSqlType : SqlType<String>(JDBCType.LONGVARCHAR, String::class.java) {

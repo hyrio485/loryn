@@ -1,15 +1,13 @@
 package top.loryn.support.external
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.SqlType
+import top.loryn.utils.LorynObjectMapperHolder.objectMapper
 import java.sql.JDBCType
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-
-lateinit var objectMapper: ObjectMapper
 
 // JsonNode -> VARCHAR
 

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.SqlType
-import top.loryn.utils.LorynObjectMapperHolder.objectMapper
+import top.loryn.support.external.LorynObjectMapperHolder.objectMapper
 import java.sql.JDBCType
 import java.sql.PreparedStatement
 import java.sql.ResultSet

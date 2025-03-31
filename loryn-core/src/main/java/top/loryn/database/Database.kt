@@ -25,7 +25,28 @@ class Database(
     val dialect: SqlDialect = detectDialectImplementation(),
     val exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
     val config: Config = Config(),
+    metadata: Metadata? = null,
 ) {
+    val metadata = metadata ?: useConnection { conn ->
+        Metadata(conn.metaData)
+    }.also {
+        logger.info(
+            "Connected to {}, productName: {}, productVersion: {}",
+            it.url, it.productName, it.productVersion
+        )
+    }
+
+    fun copy(
+        transactionManager: TransactionManager = this.transactionManager,
+        logger: Logger = this.logger,
+        dialect: SqlDialect = this.dialect,
+        exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = this.exceptionTranslator,
+        config: Config = this.config,
+        metadata: Metadata = this.metadata,
+    ) = Database(transactionManager, logger, dialect, exceptionTranslator, config, metadata)
+
+    fun withLogger(logger: Logger) = copy(logger = logger)
+
     data class Config(
         val uppercaseKeywords: Boolean = true,
     )
@@ -76,15 +97,6 @@ class Database(
             metadata.attr { storesUpperCaseQuotedIdentifiers() },
             metadata.attr { storesLowerCaseQuotedIdentifiers() },
             metadata.attr { maxColumnNameLength },
-        )
-    }
-
-    val metadata = useConnection { conn ->
-        Metadata(conn.metaData)
-    }.also {
-        logger.info(
-            "Connected to {}, productName: {}, productVersion: {}",
-            it.url, it.productName, it.productVersion
         )
     }
 

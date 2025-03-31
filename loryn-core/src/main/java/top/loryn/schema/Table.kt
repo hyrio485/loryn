@@ -49,8 +49,8 @@ abstract class Table<E>(
 
     open val insertColumns get() = emptyList<Column<E, *>>()
     open val updateColumns get() = emptyList<Column<E, *>>()
-    open val revColumn: Column<E, Int> = error("The revision column of table $this is not specified")
-    open val deletedColumn: Column<E, Boolean> = error("The deleted column of table $this is not specified")
+    open val revColumn: Column<E, Int> get() = error("The revision column of table $this is not specified")
+    open val deletedColumn: Column<E, Boolean> get() = error("The deleted column of table $this is not specified")
 
     fun <C : Any> registerColumn(column: Column<E, C>) {
         columnsMapMutable[column.name] = column

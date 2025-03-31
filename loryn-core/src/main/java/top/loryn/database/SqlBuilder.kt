@@ -3,6 +3,7 @@ package top.loryn.database
 import top.loryn.expression.SqlExpression
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
+import top.loryn.support.PaginationParams
 
 open class SqlBuilder(
     keywords: Set<String>,
@@ -17,6 +18,7 @@ open class SqlBuilder(
 
     fun append(str: CharSequence) = also { builder.append(str) }
     fun append(char: Char) = also { builder.append(char) }
+    fun append(any: Any) = also { builder.append(any) }
 
     open fun appendRef(ref: String) = also {
         if (ref.lowercase() in keywordsLc) {
@@ -58,6 +60,10 @@ open class SqlBuilder(
         appendList(expressions, params) { expression, params ->
             appendExpression(expression, params)
         }
+
+    open fun appendPagination(paginationParams: PaginationParams) = also {
+        throw UnsupportedOperationException("SQL dialect does not support pagination")
+    }
 
     fun build() = end().let { builder.toString() }
 }

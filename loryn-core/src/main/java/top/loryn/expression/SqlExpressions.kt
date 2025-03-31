@@ -3,6 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
 import top.loryn.support.BooleanSqlType
+import top.loryn.support.PaginationParams
 import top.loryn.support.SqlType
 import java.sql.ResultSet
 
@@ -85,20 +86,10 @@ class BinaryExpression<E, T1 : Any, T2 : Any, R : Any>(
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
     sqlType: SqlType<R>,
-    val addParentheses: Boolean = true,
+    val addParentheses: Boolean = false,
     label: String? = null,
     setter: (E.(R?) -> Unit)? = null,
 ) : ColumnExpression<E, R>(sqlType, label, setter) {
-    constructor(
-        operator: String,
-        expr1: SqlExpression<T1>,
-        expr2: SqlExpression<T2>,
-        sqlType: SqlType<R>,
-        addParentheses: Boolean = true,
-        label: String? = null,
-        setter: (E.(R?) -> Unit)? = null,
-    ) : this(listOf(operator), expr1, expr2, sqlType, addParentheses, label, setter)
-
     init {
         require(operators.isNotEmpty()) { "At least one operator must be provided" }
     }
@@ -216,6 +207,7 @@ class SelectExpression<E>(
     val columns: List<ColumnExpression<E, *>>,
     val from: QuerySourceExpression<E>?,
     val where: SqlExpression<Boolean>?,
+    val paginationParams: PaginationParams?,
     private val doCreateEntity: (() -> E)? = null,
 ) : EntityCreator<E>, SqlExpression<Nothing> {
     override fun createEntity() =
@@ -227,6 +219,14 @@ class SelectExpression<E>(
             super.createEntity()
         }
 
+    private fun SqlBuilder.appendMain(params: MutableList<SqlParam<*>>) = also {
+        if (from != null && where != null) {
+            append(' ')
+        }
+        from?.also { append(' ').appendKeyword("FROM").append(' ').appendExpression(it, params) }
+        where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
+    }
+
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ')
         if (columns.isNotEmpty()) {
@@ -234,10 +234,13 @@ class SelectExpression<E>(
         } else {
             append('*')
         }
-        if (from != null) {
-            append(' ').appendKeyword("FROM").append(' ').appendExpression(from, params)
-        }
-        where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
+        appendMain(params)
+        // append order by
+        paginationParams?.also { append(' ').appendPagination(it) }
+    }
+
+    fun SqlBuilder.appendSqlCount(params: MutableList<SqlParam<*>>) = also {
+        appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append("(1)").appendMain(params)
     }
 
     inline fun <reified T : Any> asExpression(): ColumnExpression<E, T> {

@@ -59,16 +59,25 @@ fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<
     update(table) {
         columns.forEach { column ->
             set(column) { it.getValueExpr(entity) }
-            where {
-                it.primaryKeys.map { primaryKey ->
-                    primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
-                }.reduce { acc, expr -> acc and expr }
-            }
+            where { it.primaryKeyFilter(entity) }
         }
     }
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
     update(table, entity, columns.toList())
+
+fun <E, T : Table<E>> Database.updateOptimistic(
+    table: T,
+    entity: E,
+    revColumn: Column<E, Int>,
+    vararg columns: Column<E, *>,
+) = update(table) {
+    columns.forEach { column ->
+        set(column) { it.getValueExpr(entity) }
+        set(revColumn, revColumn.getValue(entity)!! + 1)
+        where { it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)) }
+    }
+}
 
 // 独立出个方法解决泛型问题（方法内无法推断C的类型）
 private fun <E, C : Any> Column<E, C>.caseValueExpr(
@@ -91,11 +100,7 @@ fun <E, T : Table<E>> Database.batchUpdate(
             column.caseValueExpr(primaryKeys, entities)
         }
     }
-    where {
-        Tuple(primaryKeys) `in` entities.map { entity ->
-            Tuple(primaryKeys.map { it.getValueExpr(entity) })
-        }
-    }
+    where { it.primaryKeyFilter(entities) }
 }
 
 fun <E, T : Table<E>> Database.batchUpdate(

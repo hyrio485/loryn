@@ -1,9 +1,9 @@
 package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.QuerySourceExpression
-import top.loryn.expression.SqlParam
+import top.loryn.expression.*
 import top.loryn.support.SqlType
+import top.loryn.support.Tuple
 
 /**
  * 数据表。
@@ -36,6 +36,16 @@ abstract class Table<E>(
     val primaryKey
         get() = primaryKeys.singleOrNull()
             ?: error("Table $this has more than one primary keys, use primaryKeys instead")
+
+    fun primaryKeyFilter(entity: E) = primaryKeys.map { primaryKey ->
+        primaryKey.getValueAndTransform(entity) { column, expr -> column eq expr }
+    }.reduce { acc, expr -> acc and expr }
+
+    fun primaryKeyFilter(entities: List<E>) = primaryKeys.let { primaryKeys ->
+        Tuple(primaryKeys) `in` entities.map { entity ->
+            Tuple(primaryKeys.map { it.getValueExpr(entity) })
+        }
+    }
 
     open val insertColumns get() = emptyList<Column<E, *>>()
     open val updateColumns get() = emptyList<Column<E, *>>()

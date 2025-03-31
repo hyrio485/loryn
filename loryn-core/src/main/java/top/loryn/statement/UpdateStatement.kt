@@ -79,6 +79,8 @@ fun <E, T : Table<E>> Database.updateOptimistic(
     }
 }
 
+// 批量更新
+
 // 独立出个方法解决泛型问题（方法内无法推断C的类型）
 private fun <E, C : Any> Column<E, C>.caseValueExpr(
     primaryKeys: List<Column<E, *>>,
@@ -89,7 +91,7 @@ private fun <E, C : Any> Column<E, C>.caseValueExpr(
     }
 )
 
-fun <E, T : Table<E>> Database.batchUpdate(
+fun <E, T : Table<E>> Database.update(
     table: T,
     entities: List<E>,
     columns: List<Column<E, *>> = table.updateColumns,
@@ -103,8 +105,22 @@ fun <E, T : Table<E>> Database.batchUpdate(
     where { it.primaryKeyFilter(entities) }
 }
 
-fun <E, T : Table<E>> Database.batchUpdate(
+fun <E, T : Table<E>> Database.update(
     table: T,
     entities: List<E>,
     vararg columns: Column<E, *>,
-) = batchUpdate(table, entities, columns.toList())
+) = update(table, entities, columns.toList())
+
+// 逻辑删除
+
+fun <E, T : Table<E>> Database.deleteLogically(table: T, entity: E, deletedColumn: Column<E, Boolean>) =
+    update(table) {
+        set(deletedColumn, true)
+        where { it.primaryKeyFilter(entity) }
+    }
+
+fun <E, T : Table<E>> Database.deleteLogically(table: T, entities: List<E>, deletedColumn: Column<E, Boolean>) =
+    update(table) {
+        set(deletedColumn, true)
+        where { it.primaryKeyFilter(entities) }
+    }

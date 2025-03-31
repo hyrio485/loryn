@@ -2,6 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.expression.SqlExpression
+import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 
@@ -33,5 +34,5 @@ fun <E, T : Table<E>> Database.delete(table: T, block: DeleteBuilder<E, T>.(T) -
 fun <E, T : Table<E>> Database.delete(table: T, entity: E) =
     delete(table) { where { it.primaryKeyFilter(entity) } }
 
-fun <E, T : Table<E>> Database.batchDelete(table: T, entities: List<E>) =
+fun <E, T : Table<E>> Database.delete(table: T, entities: List<E>) =
     delete(table) { where { it.primaryKeyFilter(entities) } }

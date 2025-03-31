@@ -1,6 +1,9 @@
 package top.loryn.expression
 
 import top.loryn.schema.Column
+import top.loryn.support.BooleanSqlType
+import top.loryn.support.IntSqlType
+import top.loryn.support.Tuple
 
 private fun <E, C : Any> SqlExpression<C>.binBool(operator: String, other: SqlExpression<C>) =
     BinaryExpression<E, C, C, Boolean>(operator, this, other, BooleanSqlType, addParentheses = false)

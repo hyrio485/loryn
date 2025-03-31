@@ -1,4 +1,4 @@
-package top.loryn.database
+package top.loryn.support
 
 import java.sql.SQLException
 

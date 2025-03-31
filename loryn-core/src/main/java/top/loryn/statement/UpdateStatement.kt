@@ -1,10 +1,11 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
-import top.loryn.database.LorynDsl
+import top.loryn.support.LorynDsl
 import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.support.Tuple
 import top.loryn.utils.checkTableColumn
 
 class UpdateStatement<E>(

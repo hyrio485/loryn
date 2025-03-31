@@ -1,4 +1,4 @@
-package top.loryn.database
+package top.loryn.support
 
 @JvmRecord
 data class LazyLogObject(val getObject: () -> Any?) {

@@ -1,7 +1,7 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
-import top.loryn.database.LorynDsl
+import top.loryn.support.LorynDsl
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression

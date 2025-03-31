@@ -1,4 +1,4 @@
-package top.loryn.database
+package top.loryn.utils
 
 import top.loryn.schema.Column
 import java.sql.ResultSet

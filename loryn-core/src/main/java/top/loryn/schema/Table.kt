@@ -3,7 +3,7 @@ package top.loryn.schema
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.QuerySourceExpression
 import top.loryn.expression.SqlParam
-import top.loryn.expression.SqlType
+import top.loryn.support.SqlType
 
 /**
  * 数据表。

@@ -2,8 +2,15 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
+import top.loryn.support.BooleanSqlType
+import top.loryn.support.SqlType
 import java.sql.ResultSet
 
+/**
+ * 可作为列元素的表达式基类。在追加SQL的时候有两种情况：
+ * 1. 在选择列的列表中追加，需要追加列本体的内容及别名；
+ * 2. 在条件子句中追加，如果有别名则只使用别名，否则追加列本体内容。
+ */
 abstract class ColumnExpression<E, C : Any>(
     val sqlTypeNullable: SqlType<C>?,
     val alias: String?,
@@ -19,14 +26,14 @@ abstract class ColumnExpression<E, C : Any>(
         }
     }
 
+    abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
+
     open fun SqlBuilder.appendSqlInSelectClause(params: MutableList<SqlParam<*>>) = also {
-        appendSql(params)
+        appendSqlOriginal(params)
         if (alias != null) {
             append(' ').appendKeyword("AS").append(' ').appendRef(alias)
         }
     }
-
-    abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         if (alias != null) {

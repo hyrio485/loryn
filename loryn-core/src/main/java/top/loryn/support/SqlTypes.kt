@@ -1,6 +1,5 @@
-package top.loryn.expression
+package top.loryn.support
 
-import top.loryn.database.TypeReference
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import java.math.BigDecimal

@@ -2,8 +2,8 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
-import top.loryn.database.WrappedSqlException
-import top.loryn.database.mapEachRow
+import top.loryn.support.WrappedSqlException
+import top.loryn.utils.mapEachRow
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
@@ -66,6 +66,7 @@ abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = 
 abstract class DqlStatement<E>(database: Database) : Statement(database) {
     open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<E, *>>? = emptyList()
+    // TODO：当select未传入列时需要用名称索引而非位置索引
 
     open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)

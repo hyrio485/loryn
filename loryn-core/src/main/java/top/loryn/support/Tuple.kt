@@ -1,6 +1,8 @@
-package top.loryn.expression
+package top.loryn.support
 
 import top.loryn.database.SqlBuilder
+import top.loryn.expression.SqlExpression
+import top.loryn.expression.SqlParam
 
 data class Tuple(val expressions: List<SqlExpression<*>>) : SqlExpression<Nothing> {
     constructor(vararg expressions: SqlExpression<*>) : this(expressions.toList())

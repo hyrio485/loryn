@@ -1,4 +1,4 @@
-package top.loryn.database
+package top.loryn.support
 
 import java.lang.reflect.ParameterizedType
 
@@ -20,7 +20,3 @@ abstract class TypeReference<T> {
         doFind(javaClass)
     }
 }
-
-inline fun <reified T> typeRef() = object : TypeReference<T>() {}
-
-inline fun <reified T> typeOf() = typeRef<T>().referencedClass

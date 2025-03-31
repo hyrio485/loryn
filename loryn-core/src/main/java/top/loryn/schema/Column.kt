@@ -2,6 +2,7 @@ package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.*
+import top.loryn.support.SqlType
 import java.sql.ResultSet
 
 /**

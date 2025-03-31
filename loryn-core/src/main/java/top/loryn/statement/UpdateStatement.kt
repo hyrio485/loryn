@@ -57,27 +57,22 @@ fun <E, T : Table<E>> Database.update(
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<E, *>> = table.updateColumns) =
     update(table) {
-        columns.forEach { column ->
-            set(column) { it.getValueExpr(entity) }
-            where { it.primaryKeyFilter(entity) }
-        }
+        columns.forEach { set(it) { it.getValueExpr(entity) } }
+        where { it.primaryKeyFilter(entity) }
     }
 
 fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
     update(table, entity, columns.toList())
 
-fun <E, T : Table<E>> Database.updateOptimistic(
-    table: T,
-    entity: E,
-    revColumn: Column<E, Int>,
-    vararg columns: Column<E, *>,
-) = update(table) {
-    columns.forEach { column ->
-        set(column) { it.getValueExpr(entity) }
-        set(revColumn, revColumn.getValue(entity)!! + 1)
+fun <E, T : Table<E>> Database.updateOptimistic(table: T, entity: E, vararg columns: Column<E, *>) =
+    update(table) {
+        val revColumn = it.revColumn
+        columns.forEach { column ->
+            set(column) { it.getValueExpr(entity) }
+            set(revColumn, revColumn.getValue(entity)!! + 1)
+        }
         where { it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)) }
     }
-}
 
 // 批量更新
 
@@ -97,30 +92,23 @@ fun <E, T : Table<E>> Database.update(
     columns: List<Column<E, *>> = table.updateColumns,
 ) = update(table) {
     val primaryKeys = it.primaryKeys
-    columns.forEach { column ->
-        set(column) { column ->
-            column.caseValueExpr(primaryKeys, entities)
-        }
-    }
+    columns.forEach { set(it) { it.caseValueExpr(primaryKeys, entities) } }
     where { it.primaryKeyFilter(entities) }
 }
 
-fun <E, T : Table<E>> Database.update(
-    table: T,
-    entities: List<E>,
-    vararg columns: Column<E, *>,
-) = update(table, entities, columns.toList())
+fun <E, T : Table<E>> Database.update(table: T, entities: List<E>, vararg columns: Column<E, *>) =
+    update(table, entities, columns.toList())
 
 // 逻辑删除
 
-fun <E, T : Table<E>> Database.deleteLogically(table: T, entity: E, deletedColumn: Column<E, Boolean>) =
+fun <E, T : Table<E>> Database.deleteLogically(table: T, entity: E) =
     update(table) {
-        set(deletedColumn, true)
+        set(it.deletedColumn, true)
         where { it.primaryKeyFilter(entity) }
     }
 
-fun <E, T : Table<E>> Database.deleteLogically(table: T, entities: List<E>, deletedColumn: Column<E, Boolean>) =
+fun <E, T : Table<E>> Database.deleteLogically(table: T, entities: List<E>) =
     update(table) {
-        set(deletedColumn, true)
+        set(it.deletedColumn, true)
         where { it.primaryKeyFilter(entities) }
     }

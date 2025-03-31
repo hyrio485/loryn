@@ -46,6 +46,8 @@ class Database(
     ) = Database(transactionManager, logger, dialect, exceptionTranslator, config, metadata)
 
     fun withLogger(logger: Logger) = copy(logger = logger)
+    fun withLogger(name: String) = copy(logger = LoggerFactory.getLogger(name))
+    fun withLogger(clazz: Class<*>) = copy(logger = LoggerFactory.getLogger(clazz))
 
     data class Config(
         val uppercaseKeywords: Boolean = true,

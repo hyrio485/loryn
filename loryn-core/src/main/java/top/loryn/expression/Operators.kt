@@ -1,10 +1,7 @@
 package top.loryn.expression
 
 import top.loryn.schema.Column
-import top.loryn.support.BooleanSqlType
-import top.loryn.support.IntSqlType
-import top.loryn.support.SqlType
-import top.loryn.support.Tuple
+import top.loryn.support.*
 
 // comparison operators
 
@@ -66,6 +63,10 @@ fun <E, C : Any> Column<E, C>.isNotNull() =
 
 infix fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
     if (value == null) isNull() else eq<E, C>(value)
+
+fun Int.toParameterExpression() = ParameterExpression(this, IntSqlType)
+fun String.toParameterExpression() = ParameterExpression(this, StringSqlType)
+fun Boolean.toParameterExpression() = ParameterExpression(this, BooleanSqlType)
 
 // BinaryExpression utils
 

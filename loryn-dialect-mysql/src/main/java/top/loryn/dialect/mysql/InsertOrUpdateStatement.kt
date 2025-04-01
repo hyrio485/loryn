@@ -86,8 +86,7 @@ fun <E, T : Table<E>> Database.insertOrUpdate(
     updateColumns: List<Column<E, *>> = table.updateColumns,
     useGeneratedKeys: Boolean = false,
 ): Int {
-    val columns =
-        columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
+    val columns = columns.onEach { checkTableColumn(table, it) }
     return InsertOrUpdateStatement(
         this, table, columns,
         columns.map { it.getValueExpr(entity) },

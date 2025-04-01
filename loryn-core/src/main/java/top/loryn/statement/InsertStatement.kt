@@ -141,8 +141,7 @@ fun <E, T : Table<E>> Database.insert(
     columns: List<Column<E, *>> = table.insertColumns,
     useGeneratedKeys: Boolean = false,
 ): Int {
-    val columns =
-        columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
+    val columns = columns.onEach { checkTableColumn(table, it) }
     return InsertStatement(
         this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
     ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }

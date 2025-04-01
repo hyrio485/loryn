@@ -38,8 +38,7 @@ fun <E, T : Table<E>> Database.batchInsert(
     columns: List<Column<E, *>> = table.insertColumns,
     useGeneratedKeys: Boolean = false,
 ): Int {
-    val columns =
-        columns.takeIf { it.isNotEmpty() }?.onEach { checkTableColumn(table, it) } ?: table.columns
+    val columns = columns.onEach { checkTableColumn(table, it) }
     return BatchInsertStatement(
         this, table, columns,
         entities.map { entity -> columns.map { it.getValueExpr(entity) } },

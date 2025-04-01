@@ -37,6 +37,12 @@ infix fun SqlExpression<Boolean>.and(other: SqlExpression<Boolean>) =
 infix fun SqlExpression<Boolean>.or(other: SqlExpression<Boolean>) =
     infixExprBool<Boolean>("OR", other)
 
+fun SqlExpression<Boolean>.andIf(condition: Boolean, other: SqlExpression<Boolean>) =
+    if (condition) this and other else this
+
+fun SqlExpression<Boolean>.orIf(condition: Boolean, other: SqlExpression<Boolean>) =
+    if (condition) this or other else this
+
 operator fun SqlExpression<Boolean>.not() =
     UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType)
 

@@ -17,6 +17,8 @@ abstract class Table<E>(
     val alias: String? = null,
     val createEntity: (() -> E)? = null,
 ) : QuerySourceExpression<E>() {
+    constructor(tableName: String, createEntity: (() -> E)? = null) : this(tableName, null, null, null, createEntity)
+
     private val columnsMapMutable = LinkedHashMap<String, Column<E, *>>()
 
     override val columns get() = columnsMapMutable.values.toList()

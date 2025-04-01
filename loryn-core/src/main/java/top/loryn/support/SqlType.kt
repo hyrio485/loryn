@@ -28,6 +28,16 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
         return getResult(rs, rs.findColumn(columnLabel))
     }
 
+    fun <R : Any> transform(clazz: Class<R>, fromBasedTypeToNew: (T) -> R, toNewTypeToBased: (R) -> T) =
+        object : SqlType<R>(jdbcType, clazz) {
+            override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: R) {
+                this@SqlType.doSetParameter(ps, index, toNewTypeToBased(parameter))
+            }
+
+            override fun doGetResult(rs: ResultSet, index: Int): R? =
+                this@SqlType.doGetResult(rs, index)?.let(fromBasedTypeToNew)
+        }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

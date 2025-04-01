@@ -87,7 +87,7 @@ class UnaryExpression<T : Any, R : Any>(
     }
 }
 
-class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
+class InfixExpression<T1 : Any, T2 : Any, R : Any>(
     val operators: List<String>,
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
@@ -108,6 +108,20 @@ class BinaryExpression<T1 : Any, T2 : Any, R : Any>(
         if (addParentheses) append('(')
         appendExpression(expr2, params)
         if (addParentheses) append(')')
+    }
+}
+
+class FunctionExpression<R : Any>(
+    val name: String,
+    override val sqlType: SqlType<R>,
+    val args: List<SqlExpression<*>> = emptyList(),
+) : SqlExpression<R> {
+    constructor(name: String, sqlType: SqlType<R>, vararg args: SqlExpression<*>) : this(name, sqlType, args.toList())
+
+    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+        appendKeyword(name).append('(')
+        appendExpressions(args, params)
+        append(')')
     }
 }
 
@@ -277,16 +291,22 @@ class SelectExpression<E>(
         private var where: SqlExpression<Boolean>? = null
         private var paginationParams: PaginationParams? = null
 
-        fun <C : Any> column(column: Column<E, C>) {
-            columns += column.also { checkTableColumn(table, it) }
+        private fun ColumnExpression<E, *>.check() {
+            if (this is Column<*, *>) {
+                checkTableColumn(this@Builder.table, this)
+            }
         }
 
-        fun columns(columns: List<Column<E, *>>) {
-            this.columns += columns.onEach { checkTableColumn(table, it) }
+        fun addColumn(column: ColumnExpression<E, *>) {
+            this.columns += column.also { it.check() }
         }
 
-        fun columns(vararg columns: Column<E, *>) {
-            columns(columns.toList())
+        fun addColumns(columns: List<ColumnExpression<E, *>>) {
+            this.columns += columns.onEach { it.check() }
+        }
+
+        fun addColumns(vararg columns: ColumnExpression<E, *>) {
+            addColumns(columns.toList())
         }
 
         fun where(block: (T) -> SqlExpression<Boolean>) {

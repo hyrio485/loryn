@@ -139,9 +139,8 @@ fun <E> Table<E>.varchar(name: String): Column<E, String> {
     return registerColumn(name, VarcharSqlType)
 }
 
-fun <E> Table<E>.string(name: String): Column<E, String> {
-    return registerColumn(name, VarcharSqlType)
-}
+val StringSqlType = VarcharSqlType
+fun <E> Table<E>.string(name: String) = varchar(name)
 
 // String -> LONGVARCHAR
 

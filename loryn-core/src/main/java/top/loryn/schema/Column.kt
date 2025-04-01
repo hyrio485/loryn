@@ -37,7 +37,7 @@ class Column<E, C : Any>(
     fun notNull(notNull: Boolean = true) = copy(notNull = notNull).registerColumn()
     fun setter(setter: E.(C?) -> Unit) = copy(setter = setter).registerColumn()
     fun getter(getter: E.() -> C?) = copy(getter = getter).registerColumn()
-    fun bindTo(property: KMutableProperty1<E, C?>) =
+    fun bind(property: KMutableProperty1<E, C?>) =
         copy(setter = { property.set(this, it) }, getter = { property.get(this) }).registerColumn()
 
     fun expr(value: C?) = ParameterExpression<C>(value, sqlType)

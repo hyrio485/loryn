@@ -32,7 +32,7 @@ class BatchInsertStatement<E>(
     }
 }
 
-fun <E, T : Table<E>> Database.batchInsert(
+fun <E, T : Table<E>> Database.insert(
     table: T,
     entities: List<E>,
     columns: List<Column<E, *>> = table.insertColumns,
@@ -57,9 +57,9 @@ fun <E, T : Table<E>> Database.batchInsert(
     }
 }
 
-fun <E, T : Table<E>> Database.batchInsert(
+fun <E, T : Table<E>> Database.insert(
     table: T,
     entities: List<E>,
     vararg columns: Column<E, *>,
     useGeneratedKeys: Boolean = false,
-) = batchInsert(table, entities, columns.toList(), useGeneratedKeys)
+) = insert(table, entities, columns.toList(), useGeneratedKeys)

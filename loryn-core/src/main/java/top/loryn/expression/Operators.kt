@@ -3,33 +3,37 @@ package top.loryn.expression
 import top.loryn.schema.Column
 import top.loryn.support.*
 
-// comparison operators
+// region comparison operators
 
 infix fun <C : Any> SqlExpression<C>.eq(other: SqlExpression<C>) = infixExprBool<C>("=", other)
-infix fun <E, C : Any> Column<E, C>.eq(value: C?) = eq<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.eq(value: C?) = eq(value.toParameter(sqlType))
 infix fun <C : Any> SqlExpression<C>.gt(other: SqlExpression<C>) = infixExprBool<C>(">", other)
-infix fun <E, C : Any> Column<E, C>.gt(value: C?) = gt<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.gt(value: C?) = gt(value.toParameter(sqlType))
 infix fun <C : Any> SqlExpression<C>.lt(other: SqlExpression<C>) = infixExprBool<C>("<", other)
-infix fun <E, C : Any> Column<E, C>.lt(value: C?) = lt<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.lt(value: C?) = lt(value.toParameter(sqlType))
 infix fun <C : Any> SqlExpression<C>.neq(other: SqlExpression<C>) = infixExprBool<C>("!=", other)
-infix fun <E, C : Any> Column<E, C>.neq(value: C?) = neq<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.neq(value: C?) = neq(value.toParameter(sqlType))
 infix fun <C : Any> SqlExpression<C>.gte(other: SqlExpression<C>) = infixExprBool<C>(">=", other)
-infix fun <E, C : Any> Column<E, C>.gte(value: C?) = gte<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.gte(value: C?) = gte(value.toParameter(sqlType))
 infix fun <C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = infixExprBool<C>("<=", other)
-infix fun <E, C : Any> Column<E, C>.lte(value: C?) = lte<C>(expr(value))
+infix fun <C : Any> SqlExpression<C>.lte(value: C?) = lte(value.toParameter(sqlType))
 
-// arithmetic operators
+// endregion
+
+// region arithmetic operators
 
 operator fun SqlExpression<Int>.plus(other: SqlExpression<Int>) = infixExprInt<Int>("+", other)
-operator fun <E> Column<E, Int>.plus(value: Int) = plus(expr(value))
+operator fun SqlExpression<Int>.plus(value: Int) = plus(value.toParameter())
 operator fun SqlExpression<Int>.minus(other: SqlExpression<Int>) = infixExprInt<Int>("-", other)
-operator fun <E> Column<E, Int>.minus(value: Int) = minus(expr(value))
+operator fun SqlExpression<Int>.minus(value: Int) = minus(value.toParameter())
 operator fun SqlExpression<Int>.times(other: SqlExpression<Int>) = infixExprInt<Int>("*", other)
-operator fun <E> Column<E, Int>.times(value: Int) = times(expr(value))
+operator fun SqlExpression<Int>.times(value: Int) = times(value.toParameter())
 operator fun SqlExpression<Int>.div(other: SqlExpression<Int>) = infixExprInt<Int>("/", other)
-operator fun <E> Column<E, Int>.div(value: Int) = div(expr(value))
+operator fun SqlExpression<Int>.div(value: Int) = div(value.toParameter())
 
-// logical operators
+// endregion
+
+// region logical operators
 
 infix fun SqlExpression<Boolean>.and(other: SqlExpression<Boolean>) =
     infixExprBool<Boolean>("AND", other)
@@ -46,7 +50,9 @@ fun SqlExpression<Boolean>.orIf(condition: Boolean, other: SqlExpression<Boolean
 operator fun SqlExpression<Boolean>.not() =
     UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType)
 
-// in operator
+// endregion
+
+// region in operator
 
 infix fun <E, C : Any> Column<E, C>.`in`(values: Iterable<C>) = InExpression(this, list = values.map { expr(it) })
 infix fun SqlExpression<*>.`in`(list: List<SqlExpression<*>>) = InExpression(this, list = list)
@@ -56,10 +62,12 @@ infix fun SqlExpression<*>.notIn(select: SelectExpression<*>) = InExpression(thi
 infix fun Tuple.`in`(list: List<Tuple>) = InExpression(this, list = list)
 infix fun Tuple.notIn(list: List<Tuple>) = InExpression(this, list = list, not = true)
 
-// other operators
+// endregion
+
+// region other operators
 
 infix fun SqlExpression<String>.like(other: SqlExpression<String>) = infixExprBool<String>("LIKE", other)
-infix fun <E> Column<E, String>.like(value: String) = like(expr(value))
+infix fun SqlExpression<String>.like(value: String) = like(value.toParameter())
 
 fun <E, C : Any> Column<E, C>.isNull() =
     infixExprBool<C>("IS", NullSqlExpression<C>())
@@ -68,13 +76,18 @@ fun <E, C : Any> Column<E, C>.isNotNull() =
     infixExprBool<C>(listOf("IS", "NOT"), NullSqlExpression<C>())
 
 infix fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
-    if (value == null) isNull() else eq<E, C>(value)
+    if (value == null) isNull() else eq(value)
 
-fun Int.toParameterExpression() = ParameterExpression(this, IntSqlType)
-fun String.toParameterExpression() = ParameterExpression(this, StringSqlType)
-fun Boolean.toParameterExpression() = ParameterExpression(this, BooleanSqlType)
+fun <T : Any> T?.toParameter(sqlType: SqlType<T>) = ParameterExpression(this, sqlType)
+fun Int?.toParameter() = toParameter(IntSqlType)
+fun String?.toParameter() = toParameter(StringSqlType)
+fun Boolean?.toParameter() = toParameter(BooleanSqlType)
 
-// BinaryExpression utils
+fun <E, C : Any> SqlExpression<C>.toColumn() = ColumnExpression.wrap<E, C>(this)
+
+// endregion
+
+// region BinaryExpression utils
 
 private fun <C : Any, R : Any> SqlExpression<C>.infixExpr(
     operators: List<String>,
@@ -93,3 +106,5 @@ private fun <C : Any> SqlExpression<C>.infixExprInt(operators: List<String>, oth
 
 private fun <C : Any> SqlExpression<C>.infixExprInt(operator: String, other: SqlExpression<C>) =
     infixExprInt<C>(listOf(operator), other)
+
+// endregion

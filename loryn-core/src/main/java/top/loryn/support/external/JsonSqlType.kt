@@ -18,7 +18,7 @@ object JsonSqlType : SqlType<JsonNode>(JDBCType.VARCHAR, JsonNode::class.java) {
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): JsonNode? {
-        return rs.getString(index).takeIf { it.isNotBlank() }?.let { objectMapper.readTree(it) }
+        return rs.getString(index).takeUnless { it.isNullOrBlank() }?.let { objectMapper.readTree(it) }
     }
 }
 

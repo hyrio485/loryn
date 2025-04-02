@@ -36,10 +36,10 @@ operator fun SqlExpression<Int>.div(value: Int) = div(value.toParameter())
 // region logical operators
 
 infix fun SqlExpression<Boolean>.and(other: SqlExpression<Boolean>) =
-    infixExprBool<Boolean>("AND", other)
+    infixExprBool<Boolean>("AND", other, addParentheses = true)
 
 infix fun SqlExpression<Boolean>.or(other: SqlExpression<Boolean>) =
-    infixExprBool<Boolean>("OR", other)
+    infixExprBool<Boolean>("OR", other, addParentheses = true)
 
 fun SqlExpression<Boolean>.andIf(condition: Boolean, other: SqlExpression<Boolean>) =
     if (condition) this and other else this
@@ -48,7 +48,7 @@ fun SqlExpression<Boolean>.orIf(condition: Boolean, other: SqlExpression<Boolean
     if (condition) this or other else this
 
 operator fun SqlExpression<Boolean>.not() =
-    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType)
+    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = true)
 
 // endregion
 
@@ -93,18 +93,31 @@ private fun <C : Any, R : Any> SqlExpression<C>.infixExpr(
     operators: List<String>,
     other: SqlExpression<C>,
     sqlType: SqlType<R>,
-) = InfixExpression<C, C, R>(operators, this, other, sqlType)
+    addParentheses: Boolean = false,
+) = InfixExpression<C, C, R>(operators, this, other, sqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprBool(operators: List<String>, other: SqlExpression<C>) =
-    infixExpr<C, Boolean>(operators, other, BooleanSqlType)
+private fun <C : Any> SqlExpression<C>.infixExprBool(
+    operators: List<String>,
+    other: SqlExpression<C>,
+    addParentheses: Boolean = false,
+) = infixExpr<C, Boolean>(operators, other, BooleanSqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprBool(operator: String, other: SqlExpression<C>) =
-    infixExprBool<C>(listOf(operator), other)
+private fun <C : Any> SqlExpression<C>.infixExprBool(
+    operator: String,
+    other: SqlExpression<C>,
+    addParentheses: Boolean = false,
+) = infixExprBool<C>(listOf(operator), other, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprInt(operators: List<String>, other: SqlExpression<C>) =
-    infixExpr<C, Int>(operators, other, IntSqlType)
+private fun <C : Any> SqlExpression<C>.infixExprInt(
+    operators: List<String>,
+    other: SqlExpression<C>,
+    addParentheses: Boolean = false,
+) = infixExpr<C, Int>(operators, other, IntSqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprInt(operator: String, other: SqlExpression<C>) =
-    infixExprInt<C>(listOf(operator), other)
+private fun <C : Any> SqlExpression<C>.infixExprInt(
+    operator: String,
+    other: SqlExpression<C>,
+    addParentheses: Boolean = false,
+) = infixExprInt<C>(listOf(operator), other, addParentheses)
 
 // endregion

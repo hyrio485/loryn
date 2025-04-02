@@ -8,7 +8,6 @@ import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
 import top.loryn.statement.ColumnSelectionBuilder
 import top.loryn.statement.selectColumns
-import top.loryn.utils.checkTableColumn
 
 class BatchInsertStatement<E>(
     database: Database,
@@ -40,7 +39,7 @@ fun <E, T : Table<E>> Database.batchInsert(
     useGeneratedKeys: Boolean = false,
     columns: List<Column<E, *>> = table.insertColumns,
 ): Int {
-    val columns = columns.onEach { checkTableColumn(table, it) }
+    val columns = columns.onEach(table::checkColumn)
     return BatchInsertStatement(
         this, table, columns,
         entities.map { entity -> columns.map { it.getValueExpr(entity) } },

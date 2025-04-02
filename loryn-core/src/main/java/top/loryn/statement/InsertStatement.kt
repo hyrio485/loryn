@@ -9,7 +9,6 @@ import top.loryn.expression.SqlParam
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
-import top.loryn.utils.checkTableColumn
 import java.sql.ResultSet
 
 abstract class BaseInsertStatement<E>(
@@ -79,11 +78,11 @@ class InsertBuilder<E, T : Table<E>>(
     private var select: SelectExpression<*>? = null
 
     fun <C : Any> column(column: Column<E, C>) {
-        columns += column.also { checkTableColumn(table, it) }
+        columns += column.also(table::checkColumn)
     }
 
     fun columns(columns: List<Column<E, *>>) {
-        this.columns += columns.onEach { checkTableColumn(table, it) }
+        this.columns += columns.onEach(table::checkColumn)
     }
 
     fun columns(vararg columns: Column<E, *>) {
@@ -143,7 +142,7 @@ fun <E, T : Table<E>> Database.insert(
     useGeneratedKeys: Boolean = false,
     columns: List<Column<E, *>> = table.insertColumns,
 ): Int {
-    val columns = columns.onEach { checkTableColumn(table, it) }
+    val columns = columns.onEach(table::checkColumn)
     return InsertStatement(
         this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
     ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }

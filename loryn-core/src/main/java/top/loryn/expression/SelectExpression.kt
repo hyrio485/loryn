@@ -1,11 +1,8 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
-import top.loryn.schema.Column
-import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
-import top.loryn.utils.checkTableColumn
 
 /**
  * SELECT表达式。
@@ -71,24 +68,17 @@ class SelectExpression<E>(
     }
 
     @LorynDsl
-    class Builder<E, T : Table<E>>(private val table: T) {
+    class Builder<E, T : QuerySourceExpression<E>>(private val from: T) {
         private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
-        private var from: QuerySourceExpression<E>? = table
         private var where: SqlExpression<Boolean>? = null
         private var paginationParams: PaginationParams? = null
 
-        private fun ColumnExpression<E, *>.check() {
-            if (this is Column<*, *>) {
-                checkTableColumn(this@Builder.table, this)
-            }
-        }
-
         fun addColumn(column: ColumnExpression<E, *>) {
-            this.columns += column.also { it.check() }
+            this.columns += column.also(from::checkColumn)
         }
 
         fun addColumns(columns: List<ColumnExpression<E, *>>) {
-            this.columns += columns.onEach { it.check() }
+            this.columns += columns.onEach(from::checkColumn)
         }
 
         fun addColumns(vararg columns: ColumnExpression<E, *>) {
@@ -96,7 +86,7 @@ class SelectExpression<E>(
         }
 
         fun where(block: (T) -> SqlExpression<Boolean>) {
-            this.where = block(table)
+            this.where = block(from)
         }
 
         fun pagination(paginationParams: PaginationParams) {

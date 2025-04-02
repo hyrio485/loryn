@@ -9,7 +9,6 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 import top.loryn.support.WrappedSqlException
-import top.loryn.utils.checkTableColumn
 import top.loryn.utils.mapEachRow
 import top.loryn.utils.one
 import java.sql.PreparedStatement
@@ -100,16 +99,12 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
 class ColumnSelectionBuilder<E>(private val table: Table<E>) {
     private val columns = mutableListOf<Column<E, *>>()
 
-    private fun Column<E, *>.check() {
-        checkTableColumn(this@ColumnSelectionBuilder.table, this)
-    }
-
     fun addColumn(column: Column<E, *>) {
-        this.columns += column.also { it.check() }
+        this.columns += column.also(table::checkColumn)
     }
 
     fun addColumns(columns: List<Column<E, *>>) {
-        this.columns += columns.onEach { it.check() }
+        this.columns += columns.onEach(table::checkColumn)
     }
 
     fun addColumns(vararg columns: Column<E, *>) {

@@ -6,7 +6,6 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 import top.loryn.support.Tuple
-import top.loryn.utils.checkTableColumn
 
 class UpdateStatement<E>(
     database: Database,
@@ -31,8 +30,7 @@ class UpdateBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, UpdateState
     private var where: SqlExpression<Boolean>? = null
 
     fun <C : Any> set(column: Column<E, C>, value: SqlExpression<C>) {
-        checkTableColumn(table, column)
-        sets += AssignmentExpression(column, value)
+        sets += AssignmentExpression(column.also(table::checkColumn), value)
     }
 
     fun <C : Any> set(column: Column<E, C>, block: (Column<E, C>) -> SqlExpression<C>) {

@@ -12,7 +12,6 @@ import top.loryn.statement.ColumnSelectionBuilder
 import top.loryn.statement.StatementBuilder
 import top.loryn.statement.selectColumns
 import top.loryn.support.LorynDsl
-import top.loryn.utils.checkTableColumn
 
 class InsertOrUpdateStatement<E>(
     database: Database,
@@ -53,13 +52,12 @@ class InsertOrUpdateBuilder<E, T : Table<E>>(
         if (column.notNull && value == null) {
             throw IllegalArgumentException("Column ${column.name} cannot be null")
         }
-        columns += column.also { checkTableColumn(table, it) }
+        columns += column.also(table::checkColumn)
         values += column.expr(value)
     }
 
     fun <C : Any> set(column: Column<E, C>, value: SqlExpression<C>) {
-        checkTableColumn(table, column)
-        require(column in columns) { "Column $column is not in the insert columns" }
+        require(column.also(table::checkColumn) in columns) { "Column $column is not in the insert columns" }
         sets += AssignmentExpression(column, value)
     }
 
@@ -90,7 +88,7 @@ fun <E, T : Table<E>> Database.insertOrUpdate(
     columns: List<Column<E, *>> = table.insertColumns,
     updateColumns: List<Column<E, *>> = table.updateColumns,
 ): Int {
-    val columns = columns.onEach { checkTableColumn(table, it) }
+    val columns = columns.onEach(table::checkColumn)
     return InsertOrUpdateStatement(
         this, table, columns,
         columns.map { it.getValueExpr(entity) },

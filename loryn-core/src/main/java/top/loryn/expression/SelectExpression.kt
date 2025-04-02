@@ -71,7 +71,7 @@ class SelectExpression<E>(
     }
 
     @LorynDsl
-    class Builder<E, T : Table<E>>(val table: T) {
+    class Builder<E, T : Table<E>>(private val table: T) {
         private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
         private var from: QuerySourceExpression<E>? = table
         private var where: SqlExpression<Boolean>? = null

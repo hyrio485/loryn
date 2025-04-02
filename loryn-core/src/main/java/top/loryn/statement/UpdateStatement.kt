@@ -55,21 +55,39 @@ fun <E, T : Table<E>> Database.update(
     block: UpdateBuilder<E, T>.(T) -> Unit = {},
 ) = UpdateBuilder(table).apply { block(table) }.buildStatement(this).execute()
 
-fun <E, T : Table<E>> Database.update(table: T, entity: E, columns: List<Column<E, *>> = table.updateColumns) =
-    update(table) {
-        columns.forEach { set(it) { it.getValueExpr(entity) } }
-        where { it.primaryKeyFilter(entity) }
-    }
+// region 更新实体
 
-fun <E, T : Table<E>> Database.update(table: T, entity: E, vararg columns: Column<E, *>) =
-    update(table, entity, columns.toList())
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    entity: E,
+    columns: List<Column<E, *>> = table.updateColumns,
+) = update(table) {
+    columns.forEach { set(it) { it.getValueExpr(entity) } }
+    where { it.primaryKeyFilter(entity) }
+}
+
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    entity: E,
+    vararg columns: Column<E, *>,
+) = update(table, entity, columns.toList())
+
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    entity: E,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = update(table, entity, table.selectColumns(columnsSelector))
+
+// endregion
+
+// region 乐观锁更新实体
 
 fun <E, T : Table<E>> Database.updateOptimistic(
     table: T,
     entity: E,
+    revColumn: Column<E, Int> = table.revColumn,
     columns: List<Column<E, *>> = table.updateColumns,
 ): Int {
-    val revColumn = table.revColumn
     require(revColumn !in columns) { "Revision column $revColumn cannot be included in the update columns" }
     return update(table) {
         columns.forEach { column ->
@@ -80,10 +98,23 @@ fun <E, T : Table<E>> Database.updateOptimistic(
     }
 }
 
-fun <E, T : Table<E>> Database.updateOptimistic(table: T, entity: E, vararg columns: Column<E, *>) =
-    updateOptimistic(table, entity, columns.toList())
+fun <E, T : Table<E>> Database.updateOptimistic(
+    table: T,
+    entity: E,
+    revColumn: Column<E, Int> = table.revColumn,
+    vararg columns: Column<E, *>,
+) = updateOptimistic(table, entity, revColumn, columns.toList())
 
-// 批量更新
+fun <E, T : Table<E>> Database.updateOptimistic(
+    table: T,
+    entity: E,
+    revColumn: Column<E, Int> = table.revColumn,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = updateOptimistic(table, entity, revColumn, table.selectColumns(columnsSelector))
+
+// endregion
+
+// region 批量更新实体
 
 // 独立出个方法解决泛型问题（方法内无法推断C的类型）
 private fun <E, C : Any> Column<E, C>.caseValueExpr(
@@ -105,19 +136,54 @@ fun <E, T : Table<E>> Database.update(
     where { it.primaryKeyFilter(entities) }
 }
 
-fun <E, T : Table<E>> Database.update(table: T, entities: List<E>, vararg columns: Column<E, *>) =
-    update(table, entities, columns.toList())
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    entities: List<E>,
+    vararg columns: Column<E, *>,
+) = update(table, entities, columns.toList())
 
-// 逻辑删除
+fun <E, T : Table<E>> Database.update(
+    table: T,
+    entities: List<E>,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = update(table, entities, table.selectColumns(columnsSelector))
 
-fun <E, T : Table<E>> Database.deleteLogically(table: T, entity: E) =
-    update(table) {
-        set(it.deletedColumn, true)
-        where { it.primaryKeyFilter(entity) }
-    }
+// endregion
 
-fun <E, T : Table<E>> Database.deleteLogically(table: T, entities: List<E>) =
-    update(table) {
-        set(it.deletedColumn, true)
-        where { it.primaryKeyFilter(entities) }
-    }
+// region 逻辑删除实体
+
+fun <E, T : Table<E>> Database.deleteLogically(
+    table: T,
+    entity: E,
+    deletedColumn: Column<E, Boolean> = table.deletedColumn,
+) = update(table) {
+    set(deletedColumn, true)
+    where { it.primaryKeyFilter(entity) }
+}
+
+fun <E, T : Table<E>> Database.deleteLogically(
+    table: T,
+    entity: E,
+    selectDeletedColumn: (T) -> Column<E, Boolean>,
+) = deleteLogically(table, entity, selectDeletedColumn(table))
+
+// endregion
+
+// region 批量逻辑删除实体
+
+fun <E, T : Table<E>> Database.deleteLogically(
+    table: T,
+    entities: List<E>,
+    deletedColumn: Column<E, Boolean> = table.deletedColumn,
+) = update(table) {
+    set(deletedColumn, true)
+    where { it.primaryKeyFilter(entities) }
+}
+
+fun <E, T : Table<E>> Database.deleteLogically(
+    table: T,
+    entities: List<E>,
+    selectDeletedColumn: (T) -> Column<E, Boolean>,
+) = deleteLogically(table, entities, selectDeletedColumn(table))
+
+// endregion

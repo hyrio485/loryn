@@ -18,7 +18,7 @@ class DeleteStatement<E>(
 
 @LorynDsl
 class DeleteBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, DeleteStatement<E>>(table) {
-    var where: SqlExpression<Boolean>? = null
+    private var where: SqlExpression<Boolean>? = null
 
     fun where(block: (T) -> SqlExpression<Boolean>) {
         this.where = block(table)
@@ -30,8 +30,12 @@ class DeleteBuilder<E, T : Table<E>>(table: T) : StatementBuilder<T, DeleteState
 fun <E, T : Table<E>> Database.delete(table: T, block: DeleteBuilder<E, T>.(T) -> Unit = {}) =
     DeleteBuilder(table).apply { block(table) }.buildStatement(this).execute()
 
+// region 删除实体
+
 fun <E, T : Table<E>> Database.delete(table: T, entity: E) =
     delete(table) { where { it.primaryKeyFilter(entity) } }
 
 fun <E, T : Table<E>> Database.delete(table: T, entities: List<E>) =
     delete(table) { where { it.primaryKeyFilter(entities) } }
+
+// endregion

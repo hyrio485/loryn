@@ -72,7 +72,7 @@ class InsertStatement<E>(
 
 @LorynDsl
 class InsertBuilder<E, T : Table<E>>(
-    table: T, val useGeneratedKeys: Boolean = false,
+    table: T, private val useGeneratedKeys: Boolean = false,
 ) : StatementBuilder<T, InsertStatement<E>>(table) {
     private val columns = mutableListOf<ColumnExpression<E, *>>()
     private val values = mutableListOf<ParameterExpression<*>>()
@@ -135,11 +135,13 @@ fun <E, T : Table<E>> Database.insert(
     block: InsertBuilder<E, T>.(T) -> Unit = {},
 ) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.buildStatement(this)
 
+// region 插入实体
+
 fun <E, T : Table<E>> Database.insert(
     table: T,
     entity: E,
-    columns: List<Column<E, *>> = table.insertColumns,
     useGeneratedKeys: Boolean = false,
+    columns: List<Column<E, *>> = table.insertColumns,
 ): Int {
     val columns = columns.onEach { checkTableColumn(table, it) }
     return InsertStatement(
@@ -150,6 +152,15 @@ fun <E, T : Table<E>> Database.insert(
 fun <E, T : Table<E>> Database.insert(
     table: T,
     entity: E,
-    vararg columns: Column<E, *>,
     useGeneratedKeys: Boolean = false,
-) = insert(table, entity, columns.toList(), useGeneratedKeys)
+    vararg columns: Column<E, *>,
+) = insert(table, entity, useGeneratedKeys, columns.toList())
+
+fun <E, T : Table<E>> Database.insert(
+    table: T,
+    entity: E,
+    useGeneratedKeys: Boolean = false,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = insert(table, entity, useGeneratedKeys, table.selectColumns(columnsSelector))
+
+// endregion

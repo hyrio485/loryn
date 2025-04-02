@@ -6,6 +6,8 @@ import top.loryn.expression.ParameterExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
+import top.loryn.statement.ColumnSelectionBuilder
+import top.loryn.statement.selectColumns
 import top.loryn.utils.checkTableColumn
 
 class BatchInsertStatement<E>(
@@ -35,8 +37,8 @@ class BatchInsertStatement<E>(
 fun <E, T : Table<E>> Database.batchInsert(
     table: T,
     entities: List<E>,
-    columns: List<Column<E, *>> = table.insertColumns,
     useGeneratedKeys: Boolean = false,
+    columns: List<Column<E, *>> = table.insertColumns,
 ): Int {
     val columns = columns.onEach { checkTableColumn(table, it) }
     return BatchInsertStatement(
@@ -60,6 +62,13 @@ fun <E, T : Table<E>> Database.batchInsert(
 fun <E, T : Table<E>> Database.batchInsert(
     table: T,
     entities: List<E>,
-    vararg columns: Column<E, *>,
     useGeneratedKeys: Boolean = false,
-) = batchInsert(table, entities, columns.toList(), useGeneratedKeys)
+    vararg columns: Column<E, *>,
+) = batchInsert(table, entities, useGeneratedKeys, columns.toList())
+
+fun <E, T : Table<E>> Database.batchInsert(
+    table: T,
+    entities: List<E>,
+    useGeneratedKeys: Boolean = false,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = batchInsert(table, entities, useGeneratedKeys, table.selectColumns(columnsSelector))

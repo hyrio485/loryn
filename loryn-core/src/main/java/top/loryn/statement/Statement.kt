@@ -5,15 +5,18 @@ import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
+import top.loryn.schema.Column
 import top.loryn.schema.Table
+import top.loryn.support.LorynDsl
 import top.loryn.support.WrappedSqlException
+import top.loryn.utils.checkTableColumn
 import top.loryn.utils.mapEachRow
 import top.loryn.utils.one
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 
-abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
+abstract class StatementBuilder<T : Table<*>, S : Statement>(protected val table: T) {
     abstract fun buildStatement(database: Database): S
 }
 
@@ -22,7 +25,7 @@ abstract class StatementBuilder<T : Table<*>, S : Statement>(val table: T) {
  * 按返回值类型可分为查询语句（preparedStatement.executeQuery()）
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
-abstract class Statement(val database: Database) {
+abstract class Statement(protected val database: Database) {
     abstract fun generateSql(): SqlAndParams
 
     protected fun Database.buildSql(block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit): SqlAndParams {
@@ -92,3 +95,32 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
 
     fun one() = list().one()
 }
+
+@LorynDsl
+class ColumnSelectionBuilder<E>(private val table: Table<E>) {
+    private val columns = mutableListOf<Column<E, *>>()
+
+    private fun Column<E, *>.check() {
+        checkTableColumn(this@ColumnSelectionBuilder.table, this)
+    }
+
+    fun addColumn(column: Column<E, *>) {
+        this.columns += column.also { it.check() }
+    }
+
+    fun addColumns(columns: List<Column<E, *>>) {
+        this.columns += columns.onEach { it.check() }
+    }
+
+    fun addColumns(vararg columns: Column<E, *>) {
+        addColumns(columns.toList())
+    }
+
+    fun build(): List<Column<E, *>> {
+        require(columns.isNotEmpty()) { "No columns selected" }
+        return columns
+    }
+}
+
+fun <E, T : Table<E>> T.selectColumns(columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit) =
+    ColumnSelectionBuilder<E>(this).apply { columnsSelector(this@selectColumns) }.build()

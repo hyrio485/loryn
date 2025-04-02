@@ -8,7 +8,9 @@ import top.loryn.expression.SqlExpression
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
+import top.loryn.statement.ColumnSelectionBuilder
 import top.loryn.statement.StatementBuilder
+import top.loryn.statement.selectColumns
 import top.loryn.support.LorynDsl
 import top.loryn.utils.checkTableColumn
 
@@ -79,12 +81,14 @@ fun <E, T : Table<E>> Database.insertOrUpdate(
     block: InsertOrUpdateBuilder<E, T>.(T) -> Unit = {},
 ) = InsertOrUpdateBuilder(table, useGeneratedKeys).apply { block(table) }.buildStatement(this)
 
+// region 插入或更新实体
+
 fun <E, T : Table<E>> Database.insertOrUpdate(
     table: T,
     entity: E,
+    useGeneratedKeys: Boolean = false,
     columns: List<Column<E, *>> = table.insertColumns,
     updateColumns: List<Column<E, *>> = table.updateColumns,
-    useGeneratedKeys: Boolean = false,
 ): Int {
     val columns = columns.onEach { checkTableColumn(table, it) }
     return InsertOrUpdateStatement(
@@ -94,3 +98,19 @@ fun <E, T : Table<E>> Database.insertOrUpdate(
         useGeneratedKeys = useGeneratedKeys,
     ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }
 }
+
+fun <E, T : Table<E>> Database.insertOrUpdate(
+    table: T,
+    entity: E,
+    useGeneratedKeys: Boolean = false,
+    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+    updateColumnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
+) = insertOrUpdate(
+    table,
+    entity,
+    useGeneratedKeys,
+    table.selectColumns(columnsSelector),
+    table.selectColumns(updateColumnsSelector),
+)
+
+// endregion

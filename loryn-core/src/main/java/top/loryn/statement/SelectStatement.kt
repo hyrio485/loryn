@@ -31,7 +31,9 @@ class SelectStatement<E>(
 
 fun <E, T : Table<E>> T.select(
     block: SelectExpression.Builder<E, T>.(T) -> Unit = {},
-) = SelectExpression.Builder(this).apply { block(table) }.build()
+) = SelectExpression.Builder(this).apply { block(this@select) }.build()
 
-fun <E, T : Table<E>> Database.select(table: T, block: SelectExpression.Builder<E, T>.(T) -> Unit = {}) =
-    SelectStatement(this, table.select(block))
+fun <E, T : Table<E>> Database.select(
+    table: T,
+    block: SelectExpression.Builder<E, T>.(T) -> Unit = {},
+) = SelectStatement(this, table.select(block))

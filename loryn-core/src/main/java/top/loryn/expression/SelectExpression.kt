@@ -56,8 +56,8 @@ class SelectExpression<E>(
         return column as ColumnExpression<E, T>
     }
 
-    fun asQuerySource(alias: String?): QuerySourceExpression<E> {
-        return object : QuerySourceExpression<E>() {
+    fun asQuerySource(alias: String?) =
+        object : QuerySourceExpression<E>(alias) {
             override val columns = this@SelectExpression.columns
 
             override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
@@ -65,7 +65,6 @@ class SelectExpression<E>(
                 alias?.also { append(' ').appendRef(it) }
             }
         }
-    }
 
     @LorynDsl
     class Builder<E, T : QuerySourceExpression<E>>(private val from: T) {

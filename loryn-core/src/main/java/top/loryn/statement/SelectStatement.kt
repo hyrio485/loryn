@@ -1,8 +1,8 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
+import top.loryn.expression.QuerySourceExpression
 import top.loryn.expression.SelectExpression
-import top.loryn.schema.Table
 
 class SelectStatement<E>(
     database: Database,
@@ -29,11 +29,11 @@ class SelectStatement<E>(
     }
 }
 
-fun <E, T : Table<E>> T.select(
+fun <E, T : QuerySourceExpression<E>> T.select(
     block: SelectExpression.Builder<E, T>.(T) -> Unit = {},
 ) = SelectExpression.Builder(this).apply { block(this@select) }.build()
 
-fun <E, T : Table<E>> Database.select(
-    table: T,
+fun <E, T : QuerySourceExpression<E>> Database.select(
+    querySource: T,
     block: SelectExpression.Builder<E, T>.(T) -> Unit = {},
-) = SelectStatement(this, table.select(block))
+) = SelectStatement(this, querySource.select(block))

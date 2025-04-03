@@ -19,8 +19,6 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <mysql-driver.version>9.1.0</mysql-driver.version>
   </properties>
 
   <dependencies>
@@ -28,13 +26,6 @@
       <groupId>top.loryn</groupId>
       <artifactId>loryn-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.mysql</groupId>
-      <artifactId>mysql-connector-j</artifactId>
-      <version>${mysql-driver.version}</version>
-      <scope>runtime</scope>
     </dependency>
   </dependencies>
 

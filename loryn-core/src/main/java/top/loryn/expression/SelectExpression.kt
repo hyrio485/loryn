@@ -57,7 +57,7 @@ class SelectExpression<E>(
     }
 
     fun asQuerySource(alias: String?) =
-        object : QuerySourceExpression<E>(alias) {
+        object : QuerySourceExpression<E>() {
             override val columns = this@SelectExpression.columns
 
             override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {

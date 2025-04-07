@@ -12,6 +12,8 @@ abstract class QuerySourceExpression<E> : EntityCreator<E>, SqlExpression<Nothin
     abstract val columns: List<ColumnExpression<E, *>>
 
     open fun checkColumn(column: ColumnExpression<*, *>) {
+        // TODO: 这里还需要再思考一下如何校验表格列（主要是对于非table、非column和wrappedColumn的情况）
+        return
         val isTable = this is Table<*>
         require(columns.any { it === column }) {
             "Column $column is not registered in ${if (isTable) "table" else "query source"} $this"

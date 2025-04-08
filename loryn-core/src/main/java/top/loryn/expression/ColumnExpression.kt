@@ -41,6 +41,12 @@ abstract class ColumnExpression<E, C : Any>(
         doApplyValue(entity) { sqlType.getResult(resultSet, label) }
     }
 
+    fun <E1 : Any> withSetter(setter: (E1.(C?) -> Unit)) =
+        object : ColumnExpression<E1, C>(alias, label, sqlTypeNullable, setter) {
+            override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+                appendExpression(this@ColumnExpression, params)
+        }
+
     abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
 
     open fun SqlBuilder.appendSqlInSelectClause(params: MutableList<SqlParam<*>>) = also {

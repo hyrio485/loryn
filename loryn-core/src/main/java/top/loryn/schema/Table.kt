@@ -14,9 +14,16 @@ abstract class Table<E>(
     val tableName: String,
     val schema: String? = null,
     val category: String? = null,
-    val alias: String? = null,
+    alias: String? = null,
     val createEntity: (() -> E)? = null,
-) : QuerySourceExpression<E>() {
+) : QuerySourceExpression<E>(alias) {
+    companion object {
+        fun <E, T : Table<E>> T.aliased(alias: String) = DerivedTable(this, alias = alias)
+
+        operator fun <E, T : Table<E>, C : Any> T.invoke(block: T.() -> Column<E, C>) =
+            DerivedColumn(block(), table = this)
+    }
+
     constructor(tableName: String, createEntity: (() -> E)? = null) : this(tableName, null, null, null, createEntity)
 
     private val columnsMapMutable = LinkedHashMap<String, Column<E, *>>()
@@ -73,6 +80,8 @@ abstract class Table<E>(
     } else {
         throw UnsupportedOperationException("Entity creation method of table $this is not specified")
     }
+
+    open val root = this
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")
 }

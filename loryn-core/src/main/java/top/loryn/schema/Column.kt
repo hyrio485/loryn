@@ -11,7 +11,7 @@ import kotlin.reflect.KMutableProperty1
  *
  * @param C 列的数据类型。
  */
-class Column<E, C : Any>(
+open class Column<E, C : Any>(
     val name: String,
     sqlType: SqlType<C>,
     val table: Table<E>? = null,
@@ -21,24 +21,19 @@ class Column<E, C : Any>(
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
 ) : ColumnExpression<E, C>(alias, name, sqlType, setter) {
-    private fun copy(
-        name: String = this.name,
-        sqlType: SqlType<C> = this.sqlType,
-        table: Table<E>? = this.table,
-        alias: String? = this.alias,
-        primaryKey: Boolean = this.primaryKey,
-        notNull: Boolean = this.notNull,
-        setter: (E.(C?) -> Unit)? = this.setter,
-        getter: (E.() -> C?)? = this.getter,
-    ) = Column(name, sqlType, table, alias, primaryKey, notNull, setter, getter)
+    fun primaryKey(primaryKey: Boolean = true): Column<E, C> =
+        DerivedColumn(this, primaryKey = primaryKey, notNull = true)
 
-    private fun Column<E, C>.registerColumn() = also { table?.registerColumn(it) }
-    fun primaryKey(primaryKey: Boolean = true) = copy(primaryKey = primaryKey, notNull = true).registerColumn()
-    fun notNull(notNull: Boolean = true) = copy(notNull = notNull).registerColumn()
-    fun setter(setter: E.(C?) -> Unit) = copy(setter = setter).registerColumn()
-    fun getter(getter: E.() -> C?) = copy(getter = getter).registerColumn()
-    fun bind(property: KMutableProperty1<E, C?>) =
-        copy(setter = { property.set(this, it) }, getter = { property.get(this) }).registerColumn()
+    fun notNull(notNull: Boolean = true): Column<E, C> = DerivedColumn(this, notNull = notNull)
+
+    fun setter(setter: E.(C?) -> Unit): Column<E, C> = DerivedColumn(this, setter = setter)
+
+    fun getter(getter: E.() -> C?): Column<E, C> = DerivedColumn(this, getter = getter)
+
+    fun bind(property: KMutableProperty1<E, C?>): Column<E, C> =
+        DerivedColumn(this, setter = { property.set(this, it) }, getter = { property.get(this) })
+
+    fun aliased(alias: String): Column<E, C> = DerivedColumn(this, alias = alias)
 
     fun expr(value: C?) = ParameterExpression<C>(value, sqlType)
 
@@ -63,6 +58,8 @@ class Column<E, C : Any>(
         table?.alias?.also { appendRef(it).append('.') }
         appendRef(name)
     }
+
+    open val root = this
 
     override fun toString() =
         "${table?.alias?.let { "$it." }.orEmpty()}$name${this@Column.alias?.let { "($it)" }.orEmpty()}"

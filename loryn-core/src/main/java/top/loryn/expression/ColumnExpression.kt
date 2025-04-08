@@ -10,12 +10,13 @@ import java.sql.ResultSet
  * 2. 在条件子句中追加，如果有别名则只使用别名，否则追加列本体内容。
  */
 abstract class ColumnExpression<E, C : Any>(
-    val alias: String?,
+    val alias: String? = null,
+    val label: String? = null,
     val sqlTypeNullable: SqlType<C>? = null,
     val setter: (E.(C?) -> Unit)? = null,
 ) : SqlExpression<C> {
     companion object {
-        fun <E, T : Any> wrap(expression: SqlExpression<T>) = object : ColumnExpression<E, T>(null) {
+        fun <E, T : Any> wrap(expression: SqlExpression<T>) = object : ColumnExpression<E, T>() {
             override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
                 appendExpression(expression, params)
         }
@@ -25,10 +26,19 @@ abstract class ColumnExpression<E, C : Any>(
         get() = sqlTypeNullable
             ?: throw UnsupportedOperationException("This column expression does not have a SQL type.")
 
-    fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
+    private inline fun doApplyValue(entity: E, getValue: () -> C?) {
         if (setter != null) {
-            entity.setter(sqlType.getResult(resultSet, index + 1))
+            entity.setter(getValue())
         }
+    }
+
+    fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
+        doApplyValue(entity) { sqlType.getResult(resultSet, index + 1) }
+    }
+
+    fun applyValue(entity: E, resultSet: ResultSet) {
+        requireNotNull(label) { "ColumnExpression $this does not have a label." }
+        doApplyValue(entity) { sqlType.getResult(resultSet, label) }
     }
 
     abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder

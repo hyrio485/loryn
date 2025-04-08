@@ -10,6 +10,7 @@ class SelectStatement<E>(
 ) : DqlStatement<E>(database) {
     override val createEntity = select::createEntity
     override val columns = select.columns.takeIf { it.isNotEmpty() } ?: select.from?.columns
+    override val usingIndex = select.columns.isNotEmpty()
 
     override fun generateSql() = database.buildSql { params ->
         appendExpression(select, params)

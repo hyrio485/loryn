@@ -71,6 +71,7 @@ abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = 
 abstract class DqlStatement<E>(database: Database) : Statement(database) {
     open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<E, *>>? = emptyList()
+    open val usingIndex = true
     // TODO：当select未传入列时需要用名称索引而非位置索引
 
     open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
@@ -85,7 +86,13 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
             ?: throw UnsupportedOperationException("No columns specified")
         return list { rs ->
             createEntity().apply {
-                columns.forEachIndexed { index, column -> column.applyValue(this, index, rs) }
+                columns.forEachIndexed { index, column ->
+                    if (usingIndex) {
+                        column.applyValue(this, index, rs)
+                    } else {
+                        column.applyValue(this, rs)
+                    }
+                }
             }
         }
     }

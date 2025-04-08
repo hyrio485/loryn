@@ -20,7 +20,7 @@ class Column<E, C : Any>(
     val notNull: Boolean = false,
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
-) : ColumnExpression<E, C>(alias, sqlType, setter) {
+) : ColumnExpression<E, C>(alias, name, sqlType, setter) {
     private fun copy(
         name: String = this.name,
         sqlType: SqlType<C> = this.sqlType,

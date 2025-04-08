@@ -24,8 +24,8 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
         return doGetResult(rs, index).takeUnless { rs.wasNull() }
     }
 
-    open fun getResult(rs: ResultSet, columnLabel: String): T? {
-        return getResult(rs, rs.findColumn(columnLabel))
+    open fun getResult(rs: ResultSet, label: String): T? {
+        return getResult(rs, rs.findColumn(label))
     }
 
     fun <R : Any> transform(clazz: Class<R>, fromBasedTypeToNew: (T) -> R, fromNewTypeToBased: (R) -> T) =

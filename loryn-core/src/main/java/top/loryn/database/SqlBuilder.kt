@@ -11,6 +11,8 @@ open class SqlBuilder(
 ) {
     protected val keywordsLc: Set<String> = keywords.mapTo(mutableSetOf()) { it.lowercase() }
 
+    val attributes = mutableMapOf<String, Any?>()
+
     private val builder = StringBuilder()
 
     open fun start() = this

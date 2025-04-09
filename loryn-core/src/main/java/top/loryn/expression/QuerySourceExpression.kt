@@ -18,16 +18,22 @@ abstract class QuerySourceExpression<E>(
         require(column.root.table === this.root) { "Column $column does not belong to table $this" }
     }
 
-    fun join(
-        right: QuerySourceExpression<*>,
-        joinType: JoinType = JoinType.DEFAULT,
-        on: SqlExpression<Boolean>,
-    ) = JoinExpression<Nothing>(this, right, joinType, on)
-
     fun <E1 : Any> join(
         right: QuerySourceExpression<*>,
-        joinType: JoinType = JoinType.DEFAULT,
+        joinType: JoinType,
         on: SqlExpression<Boolean>,
         createEntity: (() -> E1)? = null,
     ) = JoinExpression<E1>(this, right, joinType, on, createEntity)
+
+    fun <E1 : Any> leftJoin(
+        right: QuerySourceExpression<*>,
+        on: SqlExpression<Boolean>,
+        createEntity: (() -> E1)? = null,
+    ) = JoinExpression<E1>(this, right, JoinType.LEFT, on, createEntity)
+
+    fun join(right: QuerySourceExpression<*>, joinType: JoinType, on: SqlExpression<Boolean>) =
+        join<Nothing>(right, joinType, on, null)
+
+    fun leftJoin(right: QuerySourceExpression<*>, on: SqlExpression<Boolean>) =
+        leftJoin<Nothing>(right, on, null)
 }

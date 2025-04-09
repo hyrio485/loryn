@@ -17,13 +17,6 @@ abstract class Table<E>(
     alias: String? = null,
     val createEntity: (() -> E)? = null,
 ) : QuerySourceExpression<E>(alias) {
-    companion object {
-        fun <E, T : Table<E>> T.aliased(alias: String) = DerivedTable(this, alias = alias)
-
-        operator fun <E, T : Table<E>, C : Any> T.invoke(block: T.() -> Column<E, C>) =
-            DerivedColumn(block(), table = this)
-    }
-
     constructor(tableName: String, createEntity: (() -> E)? = null) : this(tableName, null, null, null, createEntity)
 
     private val columnsMapMutable = LinkedHashMap<String, Column<E, *>>()

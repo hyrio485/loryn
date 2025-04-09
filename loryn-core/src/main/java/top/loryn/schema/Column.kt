@@ -11,7 +11,7 @@ import kotlin.reflect.KMutableProperty1
  *
  * @param C 列的数据类型。
  */
-open class Column<E, C : Any>(
+class Column<E, C : Any>(
     val name: String,
     sqlType: SqlType<C>,
     val table: Table<E>? = null,
@@ -24,13 +24,15 @@ open class Column<E, C : Any>(
     // region 数据库表描述方法
 
     private fun copy(
+        name: String = this.name,
+        sqlType: SqlType<C> = this.sqlType,
         table: Table<E>? = this.table,
         alias: String? = this.alias,
         primaryKey: Boolean = this.primaryKey,
         notNull: Boolean = this.notNull,
         setter: (E.(C?) -> Unit)? = this.setter,
         getter: (E.() -> C?)? = this.getter,
-    ) = DerivedColumn(this, table, alias, primaryKey, notNull, setter, getter).also { table?.registerColumn(it) }
+    ) = Column(name, sqlType, table, alias, primaryKey, notNull, setter, getter).also { table?.registerColumn(it) }
 
     fun primaryKey(primaryKey: Boolean = true): Column<E, C> =
         copy(primaryKey = primaryKey, notNull = true)
@@ -46,8 +48,6 @@ open class Column<E, C : Any>(
 
     // endregion
     // region 列导出方法
-
-    fun aliased(alias: String): Column<E, C> = DerivedColumn(this, alias = alias)
 
     fun expr(value: C?) = ParameterExpression<C>(value, sqlType)
 
@@ -71,14 +71,14 @@ open class Column<E, C : Any>(
     fun assignByValue(value: C?) = AssignmentExpression<E, C>(this, expr(value))
     fun assignByEntity(entity: E) = AssignmentExpression<E, C>(this, getValueExpr(entity))
 
+    override val tableColumn = this
+
     // endregion
 
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table?.alias?.also { appendRef(it).append('.') }
         appendRef(name)
     }
-
-    open val root = this
 
     override fun toString() =
         "${table?.alias?.let { "$it." }.orEmpty()}$name${this@Column.alias?.let { "($it)" }.orEmpty()}"

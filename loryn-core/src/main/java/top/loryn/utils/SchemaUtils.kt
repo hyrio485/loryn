@@ -7,7 +7,6 @@ import top.loryn.schema.Table
 
 fun <E, T : Table<E>> T.aliased(alias: String) = DerivedTable(this, alias = alias)
 
-operator fun <E, T : Table<E>, C : Any> T.invoke(block: T.() -> Column<E, C>) =
-    DerivedColumn(block(), table = this)
+operator fun <E, T : Table<E>, C : Any> T.invoke(block: T.() -> Column<E, C>) = DerivedColumn(block())
 
 const val APPEND_COLUMN_LABEL_ATTR_KEY = "APPEND_COLUMN_LABEL"

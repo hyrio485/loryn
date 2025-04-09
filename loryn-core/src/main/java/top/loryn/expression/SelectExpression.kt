@@ -53,7 +53,9 @@ class SelectExpression<E>(
             appendKeyword("DISTINCT").append(' ')
         }
         if (columns.isNotEmpty()) {
-            appendExpressions(columns, params)
+            appendList(columns, params) { it, params ->
+                with(it) { appendSqlInSelectClause(params) }
+            }
         } else {
             append('*')
         }
@@ -86,7 +88,7 @@ class SelectExpression<E>(
         }
 
     @LorynDsl
-    class Builder<E, T : QuerySourceExpression<E>>(private val from: T) {
+    class Builder<E, T : QuerySourceExpression<E>>(private val from: T? = null) {
         private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
         private var where: SqlExpression<Boolean>? = null
         private val groupBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
@@ -96,67 +98,75 @@ class SelectExpression<E>(
         private var distinct: Boolean = false
         private var createEntity: (() -> E)? = null
 
-        fun addColumn(column: ColumnExpression<E, *>) {
-            this.columns += column.also(from::checkColumn)
+        fun addColumn(column: ColumnExpression<E, *>) = also {
+            this.columns += column.also { from?.checkColumn(it) }
         }
 
-        fun addColumns(columns: List<ColumnExpression<E, *>>) {
-            this.columns += columns.onEach(from::checkColumn)
+        fun addColumns(columns: List<ColumnExpression<E, *>>) = also {
+            this.columns += columns.onEach { from?.checkColumn(it) }
         }
 
-        fun addColumns(vararg columns: ColumnExpression<E, *>) {
+        fun addColumns(vararg columns: ColumnExpression<E, *>) = also {
             addColumns(columns.toList())
         }
 
-        fun where(block: (T) -> SqlExpression<Boolean>) {
-            this.where = block(from)
+        fun where(block: (T) -> SqlExpression<Boolean>) = also {
+            this.where = block(from!!)
         }
 
-        fun addGroupBy(column: ColumnExpression<E, *>) {
-            this.groupBy += column.also(from::checkColumn)
+        fun whereN(block: () -> SqlExpression<Boolean>) = also {
+            this.where = block()
         }
 
-        fun addGroupBys(columns: List<ColumnExpression<E, *>>) {
-            this.groupBy += columns.onEach(from::checkColumn)
+        fun addGroupBy(column: ColumnExpression<E, *>) = also {
+            this.groupBy += column.also { from?.checkColumn(it) }
         }
 
-        fun addGroupBys(vararg columns: ColumnExpression<E, *>) {
+        fun addGroupBys(columns: List<ColumnExpression<E, *>>) = also {
+            this.groupBy += columns.onEach { from?.checkColumn(it) }
+        }
+
+        fun addGroupBys(vararg columns: ColumnExpression<E, *>) = also {
             addGroupBys(columns.toList())
         }
 
-        fun having(block: (T) -> SqlExpression<Boolean>) {
-            this.having = block(from)
+        fun having(block: (T) -> SqlExpression<Boolean>) = also {
+            this.having = block(from!!)
         }
 
-        fun addOrderBy(orderBy: OrderByExpression<E>) {
+        fun havingN(block: () -> SqlExpression<Boolean>) = also {
+            this.having = block()
+        }
+
+        fun addOrderBy(orderBy: OrderByExpression<E>) = also {
             this.orderBy += orderBy
         }
 
-        fun addOrderBys(orderBys: List<OrderByExpression<E>>) {
+        fun addOrderBys(orderBys: List<OrderByExpression<E>>) = also {
             this.orderBy += orderBys
         }
 
-        fun addOrderBys(vararg orderBys: OrderByExpression<E>) {
+        fun addOrderBys(vararg orderBys: OrderByExpression<E>) = also {
             addOrderBys(orderBys.toList())
         }
 
-        fun pagination(paginationParams: PaginationParams) {
+        fun pagination(paginationParams: PaginationParams) = also {
             this.paginationParams = paginationParams
         }
 
-        fun pagination(currentPage: Int, pageSize: Int) {
+        fun pagination(currentPage: Int, pageSize: Int) = also {
             pagination(PaginationParams(currentPage, pageSize))
         }
 
-        fun limit(limit: Int) {
+        fun limit(limit: Int) = also {
             pagination(PaginationParams(1, limit))
         }
 
-        fun distinct(distinct: Boolean = true) {
+        fun distinct(distinct: Boolean = true) = also {
             this.distinct = distinct
         }
 
-        fun createEntity(createEntity: (() -> E)?) {
+        fun createEntity(createEntity: (() -> E)?) = also {
             this.createEntity = createEntity
         }
 

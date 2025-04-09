@@ -1,13 +1,19 @@
 package top.loryn.schema
 
+import top.loryn.database.SqlBuilder
+import top.loryn.expression.ColumnExpression
+import top.loryn.expression.SqlParam
+import top.loryn.support.SqlType
+
 class DerivedColumn<E, C : Any>(
-    proxy: Column<E, C>,
-    table: Table<E>? = proxy.table,
+    val proxy: ColumnExpression<E, C>,
     alias: String? = proxy.alias,
-    primaryKey: Boolean = proxy.primaryKey,
-    notNull: Boolean = proxy.notNull,
+    label: String? = proxy.label,
+    sqlTypeNullable: SqlType<C>? = proxy.sqlTypeNullable,
     setter: (E.(C?) -> Unit)? = proxy.setter,
-    getter: (E.() -> C?)? = proxy.getter,
-) : Column<E, C>(proxy.name, proxy.sqlType, table, alias, primaryKey, notNull, setter, getter) {
-    override val root = proxy
+) : ColumnExpression<E, C>(alias, label, sqlTypeNullable, setter) {
+    override val tableColumn = proxy as? Column<E, C>
+
+    override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+        with(proxy) { appendSqlOriginal(params) }
 }

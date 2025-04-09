@@ -1,6 +1,8 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.schema.Column
+import top.loryn.schema.DerivedColumn
 import top.loryn.support.SqlType
 import java.sql.ResultSet
 
@@ -31,6 +33,10 @@ abstract class ColumnExpression<E, C : Any>(
             entity.setter(getValue())
         }
     }
+
+    open val tableColumn: Column<E, C>? = null
+
+    fun aliased(alias: String) = DerivedColumn(this, alias = alias)
 
     fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
         doApplyValue(entity) { sqlType.getResult(resultSet, index + 1) }

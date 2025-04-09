@@ -1,6 +1,5 @@
 package top.loryn.expression
 
-import top.loryn.schema.Column
 import top.loryn.schema.Table
 
 /**
@@ -14,8 +13,11 @@ abstract class QuerySourceExpression<E>(
     abstract val columns: List<ColumnExpression<E, *>>
 
     open fun checkColumn(column: ColumnExpression<*, *>) {
-        if (this !is Table<*> || column !is Column<*, *>) return
-        require(column.root.table === this.root) { "Column $column does not belong to table $this" }
+        if (this !is Table<*>) return
+        val root = root
+        val tableColumn = column.tableColumn ?: return
+        require(root === tableColumn.table) { "Column $column does not belong to table $this" }
+        require(root.columns.any { it === tableColumn }) { "Column $column does not registered in table $this" }
     }
 
     fun <E1 : Any> join(

@@ -1,8 +1,10 @@
 package top.loryn.dialect.mysql
 
 import top.loryn.database.Database
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.ParameterExpression
+import top.loryn.expression.SqlParam
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
@@ -25,7 +27,7 @@ class BatchInsertStatement<E>(
         }
     }
 
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
         appendList(values, params) { values, params ->
             appendRowValues(values, params)

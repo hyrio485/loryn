@@ -15,7 +15,7 @@ class SelectExpression<E>(
     val where: SqlExpression<Boolean>?,
     val groupBy: List<ColumnExpression<E, *>>,
     val having: SqlExpression<Boolean>?,
-    val orderBy: List<ColumnExpression<E, *>>,
+    val orderBy: List<OrderByExpression<E>>,
     val paginationParams: PaginationParams?,
     val distinct: Boolean,
     private val createEntity: (() -> E)?,
@@ -91,7 +91,7 @@ class SelectExpression<E>(
         private var where: SqlExpression<Boolean>? = null
         private val groupBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
         private var having: SqlExpression<Boolean>? = null
-        private val orderBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
+        private val orderBy: MutableList<OrderByExpression<E>> = mutableListOf()
         private var paginationParams: PaginationParams? = null
         private var distinct: Boolean = false
         private var createEntity: (() -> E)? = null
@@ -112,16 +112,32 @@ class SelectExpression<E>(
             this.where = block(from)
         }
 
-        fun groupBy(vararg columns: ColumnExpression<E, *>) {
+        fun addGroupBy(column: ColumnExpression<E, *>) {
+            this.groupBy += column.also(from::checkColumn)
+        }
+
+        fun addGroupBys(columns: List<ColumnExpression<E, *>>) {
             this.groupBy += columns.onEach(from::checkColumn)
+        }
+
+        fun addGroupBys(vararg columns: ColumnExpression<E, *>) {
+            addGroupBys(columns.toList())
         }
 
         fun having(block: (T) -> SqlExpression<Boolean>) {
             this.having = block(from)
         }
 
-        fun orderBy(vararg columns: ColumnExpression<E, *>) {
-            this.orderBy += columns.onEach(from::checkColumn)
+        fun addOrderBy(orderBy: OrderByExpression<E>) {
+            this.orderBy += orderBy
+        }
+
+        fun addOrderBys(orderBys: List<OrderByExpression<E>>) {
+            this.orderBy += orderBys
+        }
+
+        fun addOrderBys(vararg orderBys: OrderByExpression<E>) {
+            addOrderBys(orderBys.toList())
         }
 
         fun pagination(paginationParams: PaginationParams) {

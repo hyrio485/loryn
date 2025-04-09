@@ -21,6 +21,8 @@ open class Column<E, C : Any>(
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
 ) : ColumnExpression<E, C>(alias, name, sqlType, setter) {
+    // region 数据库表描述方法
+
     private fun copy(
         table: Table<E>? = this.table,
         alias: String? = this.alias,
@@ -35,8 +37,6 @@ open class Column<E, C : Any>(
 
     fun notNull(notNull: Boolean = true): Column<E, C> = copy(notNull = notNull)
 
-    fun aliased(alias: String): Column<E, C> = copy(alias = alias)
-
     fun setter(setter: E.(C?) -> Unit): Column<E, C> = copy(setter = setter)
 
     fun getter(getter: E.() -> C?): Column<E, C> = copy(getter = getter)
@@ -44,7 +44,15 @@ open class Column<E, C : Any>(
     fun bind(property: KMutableProperty1<E, C?>): Column<E, C> =
         copy(setter = { property.set(this, it) }, getter = { property.get(this) })
 
+    // endregion
+    // region 列导出方法
+
+    fun aliased(alias: String): Column<E, C> = DerivedColumn(this, alias = alias)
+
     fun expr(value: C?) = ParameterExpression<C>(value, sqlType)
+
+    // endregion
+    // region 实体类操作相关
 
     fun getValue(entity: E) =
         (getter ?: throw IllegalArgumentException("Column $name does not have a getter")).invoke(entity)
@@ -62,6 +70,8 @@ open class Column<E, C : Any>(
 
     fun assignByValue(value: C?) = AssignmentExpression<E, C>(this, expr(value))
     fun assignByEntity(entity: E) = AssignmentExpression<E, C>(this, getValueExpr(entity))
+
+    // endregion
 
     override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) = also {
         table?.alias?.also { appendRef(it).append('.') }

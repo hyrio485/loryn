@@ -1,8 +1,10 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.QuerySourceExpression
 import top.loryn.expression.SelectExpression
+import top.loryn.expression.SqlParam
 
 class SelectStatement<E>(
     database: Database,
@@ -12,12 +14,12 @@ class SelectStatement<E>(
     override val columns = select.columns.takeIf { it.isNotEmpty() } ?: select.from?.columns
     override val usingIndex = select.columns.isNotEmpty()
 
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendExpression(select, params)
     }
 
     fun count() = database.doExecute(getSqlAndParams = {
-        database.buildSql { params ->
+        database.generateSql { params ->
             select.run { appendSqlCount(params) }
         }
     }) { statement ->

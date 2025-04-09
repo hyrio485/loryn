@@ -1,7 +1,9 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.SqlExpression
+import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 
@@ -10,7 +12,7 @@ class DeleteStatement<E>(
     val table: Table<E>,
     val where: SqlExpression<Boolean>?,
 ) : DmlStatement(database) {
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendKeyword("DELETE").append(' ').appendKeyword("FROM").append(' ').appendTable(table)
         where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
     }

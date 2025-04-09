@@ -1,10 +1,8 @@
 package top.loryn.dialect.mysql
 
 import top.loryn.database.Database
-import top.loryn.expression.AssignmentExpression
-import top.loryn.expression.ColumnExpression
-import top.loryn.expression.ParameterExpression
-import top.loryn.expression.SqlExpression
+import top.loryn.database.SqlBuilder
+import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.statement.BaseInsertStatement
@@ -29,7 +27,7 @@ class InsertOrUpdateStatement<E>(
         require(sets.isNotEmpty()) { "At least one column for update must be set" }
     }
 
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendInsertIntoColumns(params).appendKeyword("VALUES")
         append(' ').appendRowValues(values, params)
         append(' ').appendKeyword("ON")

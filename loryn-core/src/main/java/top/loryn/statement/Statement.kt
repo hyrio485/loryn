@@ -24,10 +24,12 @@ abstract class StatementBuilder<T : Table<*>, S : Statement>(protected val table
  * 按返回值类型可分为查询语句（preparedStatement.executeQuery()）
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
-abstract class Statement(protected val database: Database) {
-    abstract fun generateSql(): SqlAndParams
+abstract class Statement(val database: Database) {
+    open fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {}
 
-    protected fun Database.buildSql(block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit): SqlAndParams {
+    open fun Database.generateSql(
+        block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit = { doGenerateSql(it) },
+    ): SqlAndParams {
         val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords).start()
         val params = mutableListOf<SqlParam<*>>()
         builder.block(params)
@@ -36,7 +38,7 @@ abstract class Statement(protected val database: Database) {
 
     protected inline fun <R> Database.doExecute(
         useGeneratedKeys: Boolean = false,
-        getSqlAndParams: () -> SqlAndParams = ::generateSql,
+        getSqlAndParams: () -> SqlAndParams = { database.generateSql() },
         block: (PreparedStatement) -> R,
     ) = useConnection { conn ->
         val (sql, params) = getSqlAndParams().also(::showSql)
@@ -57,7 +59,6 @@ abstract class Statement(protected val database: Database) {
 }
 
 abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = false) : Statement(database) {
-    @JvmOverloads
     open fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
         database.doExecute(useGeneratedKeys) { statement ->
             statement.executeUpdate().also(database::showEffects).also {
@@ -72,7 +73,6 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
     open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<E, *>>? = emptyList()
     open val usingIndex = true
-    // TODO：当select未传入列时需要用名称索引而非位置索引
 
     open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)

@@ -84,6 +84,7 @@ fun String?.toParameter() = toParameter(StringSqlType)
 fun Boolean?.toParameter() = toParameter(BooleanSqlType)
 
 fun <E, C : Any> SqlExpression<C>.toColumn() = ColumnExpression.wrap<E, C>(this)
+fun <E, C : Any> ColumnExpression<E, C>.toOrderBy(type: OrderByType = OrderByType.ASC) = OrderByExpression(this, type)
 
 // endregion
 

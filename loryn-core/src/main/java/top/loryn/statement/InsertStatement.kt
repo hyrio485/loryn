@@ -59,7 +59,7 @@ class InsertStatement<E>(
         }
     }
 
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendInsertIntoColumns(params)
         if (values != null) {
             appendKeyword("VALUES").append(' ').appendRowValues(values, params)
@@ -141,9 +141,8 @@ fun <E, T : Table<E>> Database.insert(
     entity: E,
     useGeneratedKeys: Boolean = false,
     columns: List<Column<E, *>> = table.insertColumns,
-): Int {
-    val columns = columns.onEach(table::checkColumn)
-    return InsertStatement(
+) = columns.onEach(table::checkColumn).let { columns ->
+    InsertStatement(
         this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
     ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }
 }

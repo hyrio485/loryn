@@ -1,6 +1,7 @@
 package top.loryn.statement
 
 import top.loryn.database.Database
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
@@ -17,7 +18,7 @@ class UpdateStatement<E>(
         require(sets.isNotEmpty()) { "At least one column must be set" }
     }
 
-    override fun generateSql() = database.buildSql { params ->
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
         appendKeyword("UPDATE").append(' ').appendTable(table).append(' ')
         appendKeyword("SET").append(' ').appendExpressions(sets, params)
         where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }

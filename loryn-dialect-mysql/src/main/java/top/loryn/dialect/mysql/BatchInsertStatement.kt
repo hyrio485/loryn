@@ -27,7 +27,7 @@ class BatchInsertStatement<E>(
         }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
         appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
         appendList(values, params) { values, params ->
             appendRowValues(values, params)

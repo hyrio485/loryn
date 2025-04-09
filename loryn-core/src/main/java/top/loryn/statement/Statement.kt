@@ -25,7 +25,8 @@ abstract class StatementBuilder<T : Table<*>, S : Statement>(protected val table
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
 abstract class Statement(val database: Database) {
-    open fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {}
+    open fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>): SqlBuilder =
+        throw UnsupportedOperationException("SQL generation not implemented")
 
     open fun Database.generateSql(
         block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit = { doGenerateSql(it) },
@@ -73,6 +74,27 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
     open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<E, *>>? = emptyList()
     open val usingIndex = true
+
+    open fun SqlBuilder.doGenerateCountSql(
+        column: ColumnExpression<*, *>?,
+        params: MutableList<SqlParam<*>>,
+    ): SqlBuilder = throw UnsupportedOperationException("SQL count generation not implemented")
+
+    open fun count(
+        column: ColumnExpression<*, *>? = null,
+        getSqlAndParams: () -> SqlAndParams = {
+            database.generateSql { params ->
+                doGenerateCountSql(column, params)
+            }
+        },
+    ) = database.doExecute(getSqlAndParams = getSqlAndParams) { statement ->
+        statement.executeQuery().use { resultSet ->
+            if (!resultSet.next()) {
+                error("No result found")
+            }
+            resultSet.getInt(1)
+        }
+    }
 
     open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)

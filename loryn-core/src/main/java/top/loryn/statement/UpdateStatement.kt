@@ -18,7 +18,7 @@ class UpdateStatement<E>(
         require(sets.isNotEmpty()) { "At least one column must be set" }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("UPDATE").append(' ').appendTable(table).append(' ')
         appendKeyword("SET").append(' ').appendExpressions(sets, params)
         where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }

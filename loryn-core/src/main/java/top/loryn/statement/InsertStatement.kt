@@ -59,7 +59,7 @@ class InsertStatement<E>(
         }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
         appendInsertIntoColumns(params)
         if (values != null) {
             appendKeyword("VALUES").append(' ').appendRowValues(values, params)

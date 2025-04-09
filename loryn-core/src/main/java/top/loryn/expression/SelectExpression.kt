@@ -63,8 +63,14 @@ class SelectExpression<E>(
         paginationParams?.also { append(' ').appendPagination(it) }
     }
 
-    fun SqlBuilder.appendSqlCount(params: MutableList<SqlParam<*>>) = also {
-        appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append("(1)").appendMain(params)
+    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*, *>?, params: MutableList<SqlParam<*>>) = also {
+        appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append('(')
+        if (column == null) {
+            append('1')
+        } else {
+            appendExpression(column, params)
+        }
+        append(')').appendMain(params)
     }
 
     inline fun <reified T : Any> asExpression(): ColumnExpression<E, T> {

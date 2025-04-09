@@ -18,10 +18,11 @@ abstract class ColumnExpression<E, C : Any>(
     val setter: (E.(C?) -> Unit)? = null,
 ) : SqlExpression<C> {
     companion object {
-        fun <E, T : Any> wrap(expression: SqlExpression<T>) = object : ColumnExpression<E, T>() {
-            override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
-                appendExpression(expression, params)
-        }
+        fun <E, T : Any> wrap(expression: SqlExpression<T>) =
+            object : ColumnExpression<E, T>(sqlTypeNullable = expression.sqlType) {
+                override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
+                    appendExpression(expression, params)
+            }
     }
 
     override val sqlType: SqlType<C>
@@ -52,6 +53,8 @@ abstract class ColumnExpression<E, C : Any>(
             override fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>) =
                 appendExpression(this@ColumnExpression, params)
         }
+
+    fun distinct() = UnaryExpression("DISTINCT", this, sqlType, false).toColumn<E, C>()
 
     abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
 

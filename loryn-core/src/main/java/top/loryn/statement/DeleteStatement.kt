@@ -12,7 +12,7 @@ class DeleteStatement<E>(
     val table: Table<E>,
     val where: SqlExpression<Boolean>?,
 ) : DmlStatement(database) {
-    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) {
+    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("DELETE").append(' ').appendKeyword("FROM").append(' ').appendTable(table)
         where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
     }

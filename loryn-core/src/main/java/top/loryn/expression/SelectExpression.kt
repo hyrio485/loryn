@@ -13,12 +13,16 @@ class SelectExpression<E>(
     val columns: List<ColumnExpression<E, *>>,
     val from: QuerySourceExpression<E>?,
     val where: SqlExpression<Boolean>?,
+    val groupBy: List<ColumnExpression<E, *>>,
+    val having: SqlExpression<Boolean>?,
+    val orderBy: List<ColumnExpression<E, *>>,
     val paginationParams: PaginationParams?,
-    private val doCreateEntity: (() -> E)? = null,
+    val distinct: Boolean,
+    private val createEntity: (() -> E)?,
 ) : EntityCreator<E>, SqlExpression<Nothing> {
     override fun createEntity() =
-        if (doCreateEntity != null) {
-            doCreateEntity()
+        if (createEntity != null) {
+            createEntity.invoke()
         } else if (from != null) {
             from.createEntity()
         } else {
@@ -26,19 +30,34 @@ class SelectExpression<E>(
         }
 
     private fun SqlBuilder.appendMain(params: MutableList<SqlParam<*>>) = also {
-        from?.also { append(' ').appendKeyword("FROM").append(' ').appendExpression(it, params) }
-        where?.also { append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params) }
+        from?.also {
+            append(' ').appendKeyword("FROM").append(' ').appendExpression(it, params)
+        }
+        where?.also {
+            append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params)
+        }
+        groupBy.takeIf { it.isNotEmpty() }?.also {
+            append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ').appendExpressions(it, params)
+        }
+        having?.also {
+            append(' ').appendKeyword("HAVING").append(' ').appendExpression(it, params)
+        }
+        orderBy.takeIf { it.isNotEmpty() }?.also {
+            append(' ').appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ').appendExpressions(it, params)
+        }
     }
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ')
+        if (distinct) {
+            appendKeyword("DISTINCT").append(' ')
+        }
         if (columns.isNotEmpty()) {
             appendExpressions(columns, params)
         } else {
             append('*')
         }
         appendMain(params)
-        // todo append order by
         paginationParams?.also { append(' ').appendPagination(it) }
     }
 
@@ -70,7 +89,12 @@ class SelectExpression<E>(
     class Builder<E, T : QuerySourceExpression<E>>(private val from: T) {
         private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
         private var where: SqlExpression<Boolean>? = null
+        private val groupBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
+        private var having: SqlExpression<Boolean>? = null
+        private val orderBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
         private var paginationParams: PaginationParams? = null
+        private var distinct: Boolean = false
+        private var createEntity: (() -> E)? = null
 
         fun addColumn(column: ColumnExpression<E, *>) {
             this.columns += column.also(from::checkColumn)
@@ -88,6 +112,18 @@ class SelectExpression<E>(
             this.where = block(from)
         }
 
+        fun groupBy(vararg columns: ColumnExpression<E, *>) {
+            this.groupBy += columns.onEach(from::checkColumn)
+        }
+
+        fun having(block: (T) -> SqlExpression<Boolean>) {
+            this.having = block(from)
+        }
+
+        fun orderBy(vararg columns: ColumnExpression<E, *>) {
+            this.orderBy += columns.onEach(from::checkColumn)
+        }
+
         fun pagination(paginationParams: PaginationParams) {
             this.paginationParams = paginationParams
         }
@@ -100,6 +136,15 @@ class SelectExpression<E>(
             pagination(PaginationParams(1, limit))
         }
 
-        fun build() = SelectExpression(columns, from, where, paginationParams)
+        fun distinct(distinct: Boolean = true) {
+            this.distinct = distinct
+        }
+
+        fun createEntity(createEntity: (() -> E)?) {
+            this.createEntity = createEntity
+        }
+
+        fun build() =
+            SelectExpression(columns, from, where, groupBy, having, orderBy, paginationParams, distinct, createEntity)
     }
 }

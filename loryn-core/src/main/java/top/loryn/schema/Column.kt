@@ -21,19 +21,23 @@ open class Column<E, C : Any>(
     setter: (E.(C?) -> Unit)? = null,
     val getter: (E.() -> C?)? = null,
 ) : ColumnExpression<E, C>(alias, name, sqlType, setter) {
-    fun primaryKey(primaryKey: Boolean = true): Column<E, C> =
-        DerivedColumn(this, primaryKey = primaryKey, notNull = true)
+    private fun copy(
+        table: Table<E>? = this.table,
+        alias: String? = this.alias,
+        primaryKey: Boolean = this.primaryKey,
+        notNull: Boolean = this.notNull,
+        setter: (E.(C?) -> Unit)? = this.setter,
+        getter: (E.() -> C?)? = this.getter,
+    ) = DerivedColumn(this, table, alias, primaryKey, notNull, setter, getter)
 
-    fun notNull(notNull: Boolean = true): Column<E, C> = DerivedColumn(this, notNull = notNull)
-
-    fun setter(setter: E.(C?) -> Unit): Column<E, C> = DerivedColumn(this, setter = setter)
-
-    fun getter(getter: E.() -> C?): Column<E, C> = DerivedColumn(this, getter = getter)
+    fun primaryKey(primaryKey: Boolean = true): Column<E, C> = copy(primaryKey = primaryKey, notNull = true)
+    fun notNull(notNull: Boolean = true): Column<E, C> = copy(notNull = notNull)
+    fun setter(setter: E.(C?) -> Unit): Column<E, C> = copy(setter = setter)
+    fun getter(getter: E.() -> C?): Column<E, C> = copy(getter = getter)
+    fun aliased(alias: String): Column<E, C> = copy(alias = alias)
 
     fun bind(property: KMutableProperty1<E, C?>): Column<E, C> =
-        DerivedColumn(this, setter = { property.set(this, it) }, getter = { property.get(this) })
-
-    fun aliased(alias: String): Column<E, C> = DerivedColumn(this, alias = alias)
+        copy(setter = { property.set(this, it) }, getter = { property.get(this) })
 
     fun expr(value: C?) = ParameterExpression<C>(value, sqlType)
 

@@ -28,13 +28,18 @@ open class Column<E, C : Any>(
         notNull: Boolean = this.notNull,
         setter: (E.(C?) -> Unit)? = this.setter,
         getter: (E.() -> C?)? = this.getter,
-    ) = DerivedColumn(this, table, alias, primaryKey, notNull, setter, getter)
+    ) = DerivedColumn(this, table, alias, primaryKey, notNull, setter, getter).also { table?.registerColumn(it) }
 
-    fun primaryKey(primaryKey: Boolean = true): Column<E, C> = copy(primaryKey = primaryKey, notNull = true)
+    fun primaryKey(primaryKey: Boolean = true): Column<E, C> =
+        copy(primaryKey = primaryKey, notNull = true)
+
     fun notNull(notNull: Boolean = true): Column<E, C> = copy(notNull = notNull)
-    fun setter(setter: E.(C?) -> Unit): Column<E, C> = copy(setter = setter)
-    fun getter(getter: E.() -> C?): Column<E, C> = copy(getter = getter)
+
     fun aliased(alias: String): Column<E, C> = copy(alias = alias)
+
+    fun setter(setter: E.(C?) -> Unit): Column<E, C> = copy(setter = setter)
+
+    fun getter(getter: E.() -> C?): Column<E, C> = copy(getter = getter)
 
     fun bind(property: KMutableProperty1<E, C?>): Column<E, C> =
         copy(setter = { property.set(this, it) }, getter = { property.get(this) })

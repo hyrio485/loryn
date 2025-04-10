@@ -4,6 +4,9 @@ import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.support.IntSqlType
 
+fun <T : Any> SqlExpression<T>.`if`(condition: SqlExpression<Boolean>, elseBranch: SqlExpression<T>) =
+    FunctionExpression("IF", sqlType, condition, this, elseBranch)
+
 fun <T : Any> SqlExpression<T>.ifnull(default: SqlExpression<T>) =
     FunctionExpression("IFNULL", sqlType, this, default)
 

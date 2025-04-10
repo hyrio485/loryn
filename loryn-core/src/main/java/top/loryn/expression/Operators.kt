@@ -47,11 +47,17 @@ fun SqlExpression<Boolean>.andIf(condition: Boolean, other: SqlExpression<Boolea
 fun SqlExpression<Boolean>.orIf(condition: Boolean, other: SqlExpression<Boolean>) =
     if (condition) this or other else this
 
-inline fun <A> SqlExpression<Boolean>.andIf(condition: A?, getOther: (A) -> SqlExpression<Boolean>) =
-    if (condition != null) this and getOther(condition) else this
+fun <A> SqlExpression<Boolean>.andIfNotNull(param: A?, other: SqlExpression<Boolean>) =
+    if (param != null) this and other else this
 
-inline fun <A> SqlExpression<Boolean>.orIf(condition: A?, getOther: (A) -> SqlExpression<Boolean>) =
-    if (condition != null) this or getOther(condition) else this
+fun <A> SqlExpression<Boolean>.orIfNotNull(param: A?, other: SqlExpression<Boolean>) =
+    if (param != null) this or other else this
+
+inline fun <A> SqlExpression<Boolean>.andIfNotNull(param: A?, getOther: (A) -> SqlExpression<Boolean>) =
+    if (param != null) this and getOther(param) else this
+
+inline fun <A> SqlExpression<Boolean>.orIfNotNull(param: A?, getOther: (A) -> SqlExpression<Boolean>) =
+    if (param != null) this or getOther(param) else this
 
 operator fun SqlExpression<Boolean>.not() =
     UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = true)

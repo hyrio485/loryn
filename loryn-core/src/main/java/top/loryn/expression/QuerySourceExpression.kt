@@ -38,4 +38,18 @@ abstract class QuerySourceExpression<E>(
 
     fun leftJoin(right: QuerySourceExpression<*>, on: SqlExpression<Boolean>) =
         leftJoin<Nothing>(right, on, null)
+
+    private fun <C : Any> ColumnExpression<E, C>.withAlias() =
+        if (alias == null) this else aliased(alias)
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <C : Any> get(column: ColumnExpression<E, C>): ColumnExpression<E, C> {
+        var tableColumn = column.tableColumn ?: throw IllegalArgumentException("The table column of $column is null")
+        var foundColumn = columns.find { it.tableColumn?.let { it === tableColumn } == true }
+            ?: throw IllegalArgumentException("The column $column is not found in $this")
+        return (foundColumn as ColumnExpression<E, C>).withAlias()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <C : Any> get(index: Int) = (columns[index] as ColumnExpression<E, C>).withAlias()
 }

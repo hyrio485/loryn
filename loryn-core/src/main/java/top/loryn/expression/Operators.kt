@@ -90,6 +90,8 @@ fun <E, C : Any> Column<E, C>.isNotNull() =
 infix fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
     if (value == null) isNull() else eq(value)
 
+fun <T : Any> SqlExpression<T>.count() = UnaryExpression<T, Int>("COUNT", this, IntSqlType, addParentheses = true)
+
 fun <T : Any> T?.toParameter(sqlType: SqlType<T>) = ParameterExpression(this, sqlType)
 fun Int?.toParameter() = toParameter(IntSqlType)
 fun String?.toParameter() = toParameter(StringSqlType)

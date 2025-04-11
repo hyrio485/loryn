@@ -35,18 +35,22 @@ abstract class ColumnExpression<E, C : Any>(
         }
     }
 
-    open val tableColumn: Column<E, C>? = null
-
-    fun aliased(alias: String) = DerivedColumn(this, alias = alias)
+    fun getValue(resultSet: ResultSet): C? {
+        requireNotNull(label) { "ColumnExpression $this does not have a label." }
+        return sqlType.getResult(resultSet, label)
+    }
 
     fun applyValue(entity: E, index: Int, resultSet: ResultSet) {
         doApplyValue(entity) { sqlType.getResult(resultSet, index + 1) }
     }
 
     fun applyValue(entity: E, resultSet: ResultSet) {
-        requireNotNull(label) { "ColumnExpression $this does not have a label." }
-        doApplyValue(entity) { sqlType.getResult(resultSet, label) }
+        doApplyValue(entity) { getValue(resultSet) }
     }
+
+    open val tableColumn: Column<E, C>? = null
+
+    fun aliased(alias: String) = DerivedColumn(this, alias = alias)
 
     fun <E1 : Any> withSetter(setter: (E1.(C?) -> Unit)) =
         object : ColumnExpression<E1, C>(alias, label, sqlTypeNullable, setter) {

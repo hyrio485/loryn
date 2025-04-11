@@ -10,8 +10,8 @@ class UnaryExpression<T : Any, R : Any>(
     val addParentheses: Boolean = true,
 ) : SqlExpression<R> {
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-        appendKeyword(operator).append(' ')
-        if (addParentheses) append('(')
+        appendKeyword(operator)
+        append(if (addParentheses) '(' else ' ')
         appendExpression(expr, params)
         if (addParentheses) append(')')
     }

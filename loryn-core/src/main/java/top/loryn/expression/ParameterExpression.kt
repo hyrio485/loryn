@@ -3,7 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
 
-class ParameterExpression<T : Any>(
+class ParameterExpression<T>(
     val value: T?,
     override val sqlType: SqlType<T>,
 ) : SqlExpression<T> {

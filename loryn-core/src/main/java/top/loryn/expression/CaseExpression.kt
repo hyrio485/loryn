@@ -3,7 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
 
-class CaseExpression<R : Any>(
+class CaseExpression<R>(
     branches: List<Pair<SqlExpression<Boolean>, SqlExpression<R>>>,
     elseExpr: SqlExpression<R>? = null,
     override val sqlType: SqlType<R>,

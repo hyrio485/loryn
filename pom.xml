@@ -12,6 +12,7 @@
   <modules>
     <module>loryn-core</module>
     <module>loryn-dialect-mysql</module>
+    <module>loryn-example</module>
   </modules>
 
   <properties>

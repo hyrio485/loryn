@@ -4,7 +4,7 @@ import java.sql.JDBCType
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
-abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
+abstract class SqlType<T>(val jdbcType: JDBCType, val clazz: Class<T>) {
     val jdbcTypeCode: Int = jdbcType.vendorTypeNumber
     val javaClassName: String = clazz.simpleName
 
@@ -28,7 +28,7 @@ abstract class SqlType<T : Any>(val jdbcType: JDBCType, val clazz: Class<T>) {
         return getResult(rs, rs.findColumn(label))
     }
 
-    fun <R : Any> transform(clazz: Class<R>, fromBasedTypeToNew: (T) -> R, fromNewTypeToBased: (R) -> T) =
+    fun <R> transform(clazz: Class<R>, fromBasedTypeToNew: (T) -> R, fromNewTypeToBased: (R) -> T) =
         object : SqlType<R>(jdbcType, clazz) {
             override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: R) {
                 this@SqlType.doSetParameter(ps, index, fromNewTypeToBased(parameter))

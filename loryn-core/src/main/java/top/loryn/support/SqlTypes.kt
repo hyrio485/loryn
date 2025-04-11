@@ -23,7 +23,7 @@ object BooleanSqlType : SqlType<Boolean>(JDBCType.BOOLEAN, Boolean::class.java) 
     }
 }
 
-fun <E> Table<E>.boolean(name: String): Column<E, Boolean> {
+fun Table.boolean(name: String): Column<Boolean> {
     return registerColumn(name, BooleanSqlType)
 }
 
@@ -39,7 +39,7 @@ object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
     }
 }
 
-fun <E> Table<E>.int(name: String): Column<E, Int> {
+fun Table.int(name: String): Column<Int> {
     return registerColumn(name, IntSqlType)
 }
 
@@ -55,7 +55,7 @@ object ShortSqlType : SqlType<Short>(JDBCType.SMALLINT, Short::class.java) {
     }
 }
 
-fun <E> Table<E>.short(name: String): Column<E, Short> {
+fun Table.short(name: String): Column<Short> {
     return registerColumn(name, ShortSqlType)
 }
 
@@ -71,7 +71,7 @@ object LongSqlType : SqlType<Long>(JDBCType.BIGINT, Long::class.java) {
     }
 }
 
-fun <E> Table<E>.long(name: String): Column<E, Long> {
+fun Table.long(name: String): Column<Long> {
     return registerColumn(name, LongSqlType)
 }
 
@@ -87,7 +87,7 @@ object FloatSqlType : SqlType<Float>(JDBCType.FLOAT, Float::class.java) {
     }
 }
 
-fun <E> Table<E>.float(name: String): Column<E, Float> {
+fun Table.float(name: String): Column<Float> {
     return registerColumn(name, FloatSqlType)
 }
 
@@ -103,7 +103,7 @@ object DoubleSqlType : SqlType<Double>(JDBCType.DOUBLE, Double::class.java) {
     }
 }
 
-fun <E> Table<E>.double(name: String): Column<E, Double> {
+fun Table.double(name: String): Column<Double> {
     return registerColumn(name, DoubleSqlType)
 }
 
@@ -119,7 +119,7 @@ object DecimalSqlType : SqlType<BigDecimal>(JDBCType.DECIMAL, BigDecimal::class.
     }
 }
 
-fun <E> Table<E>.decimal(name: String): Column<E, BigDecimal> {
+fun Table.decimal(name: String): Column<BigDecimal> {
     return registerColumn(name, DecimalSqlType)
 }
 
@@ -135,12 +135,12 @@ object VarcharSqlType : SqlType<String>(JDBCType.VARCHAR, String::class.java) {
     }
 }
 
-fun <E> Table<E>.varchar(name: String): Column<E, String> {
+fun Table.varchar(name: String): Column<String> {
     return registerColumn(name, VarcharSqlType)
 }
 
 val StringSqlType = VarcharSqlType
-fun <E> Table<E>.string(name: String) = varchar(name)
+fun Table.string(name: String) = varchar(name)
 
 // String -> LONGVARCHAR
 
@@ -154,7 +154,7 @@ object TextSqlType : SqlType<String>(JDBCType.LONGVARCHAR, String::class.java) {
     }
 }
 
-fun <E> Table<E>.text(name: String): Column<E, String> {
+fun Table.text(name: String): Column<String> {
     return registerColumn(name, TextSqlType)
 }
 
@@ -176,7 +176,7 @@ object BlobSqlType : SqlType<ByteArray>(JDBCType.BLOB, ByteArray::class.java) {
     }
 }
 
-fun <E> Table<E>.blob(name: String): Column<E, ByteArray> {
+fun Table.blob(name: String): Column<ByteArray> {
     return registerColumn(name, BlobSqlType)
 }
 
@@ -192,7 +192,7 @@ object BytesSqlType : SqlType<ByteArray>(JDBCType.BINARY, ByteArray::class.java)
     }
 }
 
-fun <E> Table<E>.bytes(name: String): Column<E, ByteArray> {
+fun Table.bytes(name: String): Column<ByteArray> {
     return registerColumn(name, BytesSqlType)
 }
 
@@ -208,7 +208,7 @@ object TimestampSqlType : SqlType<Timestamp>(JDBCType.TIMESTAMP, Timestamp::clas
     }
 }
 
-fun <E> Table<E>.jdbcTimestamp(name: String): Column<E, Timestamp> {
+fun Table.jdbcTimestamp(name: String): Column<Timestamp> {
     return registerColumn(name, TimestampSqlType)
 }
 
@@ -224,7 +224,7 @@ object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
     }
 }
 
-fun <E> Table<E>.jdbcDate(name: String): Column<E, SqlDate> {
+fun Table.jdbcDate(name: String): Column<SqlDate> {
     return registerColumn(name, JdbcDateSqlType)
 }
 
@@ -240,7 +240,7 @@ object JavaDateSqlType : SqlType<JavaDate>(JDBCType.DATE, JavaDate::class.java) 
     }
 }
 
-fun <E> Table<E>.javaDate(name: String): Column<E, JavaDate> {
+fun Table.javaDate(name: String): Column<JavaDate> {
     return registerColumn(name, JavaDateSqlType)
 }
 
@@ -256,7 +256,7 @@ object TimeSqlType : SqlType<Time>(JDBCType.TIME, Time::class.java) {
     }
 }
 
-fun <E> Table<E>.jdbcTime(name: String): Column<E, Time> {
+fun Table.jdbcTime(name: String): Column<Time> {
     return registerColumn(name, TimeSqlType)
 }
 
@@ -272,7 +272,7 @@ object InstantSqlType : SqlType<Instant>(JDBCType.TIMESTAMP, Instant::class.java
     }
 }
 
-fun <E> Table<E>.timestamp(name: String): Column<E, Instant> {
+fun Table.timestamp(name: String): Column<Instant> {
     return registerColumn(name, InstantSqlType)
 }
 
@@ -288,7 +288,7 @@ object LocalDateTimeSqlType : SqlType<LocalDateTime>(JDBCType.TIMESTAMP, LocalDa
     }
 }
 
-fun <E> Table<E>.datetime(name: String): Column<E, LocalDateTime> {
+fun Table.datetime(name: String): Column<LocalDateTime> {
     return registerColumn(name, LocalDateTimeSqlType)
 }
 
@@ -304,7 +304,7 @@ object LocalDateSqlType : SqlType<LocalDate>(JDBCType.DATE, LocalDate::class.jav
     }
 }
 
-fun <E> Table<E>.date(name: String): Column<E, LocalDate> {
+fun Table.date(name: String): Column<LocalDate> {
     return registerColumn(name, LocalDateSqlType)
 }
 
@@ -320,7 +320,7 @@ object LocalTimeSqlType : SqlType<LocalTime>(JDBCType.TIME, LocalTime::class.jav
     }
 }
 
-fun <E> Table<E>.time(name: String): Column<E, LocalTime> {
+fun Table.time(name: String): Column<LocalTime> {
     return registerColumn(name, LocalTimeSqlType)
 }
 
@@ -338,7 +338,7 @@ object MonthDaySqlType : SqlType<MonthDay>(JDBCType.VARCHAR, MonthDay::class.jav
     }
 }
 
-fun <E> Table<E>.monthDay(name: String): Column<E, MonthDay> {
+fun Table.monthDay(name: String): Column<MonthDay> {
     return registerColumn(name, MonthDaySqlType)
 }
 
@@ -356,7 +356,7 @@ object YearMonthSqlType : SqlType<YearMonth>(JDBCType.VARCHAR, YearMonth::class.
     }
 }
 
-fun <E> Table<E>.yearMonth(name: String): Column<E, YearMonth> {
+fun Table.yearMonth(name: String): Column<YearMonth> {
     return registerColumn(name, YearMonthSqlType)
 }
 
@@ -372,7 +372,7 @@ object YearSqlType : SqlType<Year>(JDBCType.INTEGER, Year::class.java) {
     }
 }
 
-fun <E> Table<E>.year(name: String): Column<E, Year> {
+fun Table.year(name: String): Column<Year> {
     return registerColumn(name, YearSqlType)
 }
 
@@ -388,7 +388,7 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
     }
 }
 
-fun <E> Table<E>.uuid(name: String): Column<E, UUID> {
+fun Table.uuid(name: String): Column<UUID> {
     return registerColumn(name, UuidSqlType)
 }
 
@@ -433,6 +433,6 @@ class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OT
     }
 }
 
-fun <E, C : Enum<C>> Table<E>.enum(name: String, clazz: Class<C>): Column<E, C> {
+fun <C : Enum<C>> Table.enum(name: String, clazz: Class<C>): Column<C> {
     return registerColumn(name, EnumSqlType(clazz))
 }

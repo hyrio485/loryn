@@ -5,18 +5,18 @@ import top.loryn.support.*
 
 // region comparison operators
 
-infix fun <C : Any> SqlExpression<C>.eq(other: SqlExpression<C>) = infixExprBool<C>("=", other)
-infix fun <C : Any> SqlExpression<C>.eq(value: C?) = eq(value.toParameter(sqlType))
-infix fun <C : Any> SqlExpression<C>.gt(other: SqlExpression<C>) = infixExprBool<C>(">", other)
-infix fun <C : Any> SqlExpression<C>.gt(value: C?) = gt(value.toParameter(sqlType))
-infix fun <C : Any> SqlExpression<C>.lt(other: SqlExpression<C>) = infixExprBool<C>("<", other)
-infix fun <C : Any> SqlExpression<C>.lt(value: C?) = lt(value.toParameter(sqlType))
-infix fun <C : Any> SqlExpression<C>.neq(other: SqlExpression<C>) = infixExprBool<C>("!=", other)
-infix fun <C : Any> SqlExpression<C>.neq(value: C?) = neq(value.toParameter(sqlType))
-infix fun <C : Any> SqlExpression<C>.gte(other: SqlExpression<C>) = infixExprBool<C>(">=", other)
-infix fun <C : Any> SqlExpression<C>.gte(value: C?) = gte(value.toParameter(sqlType))
-infix fun <C : Any> SqlExpression<C>.lte(other: SqlExpression<C>) = infixExprBool<C>("<=", other)
-infix fun <C : Any> SqlExpression<C>.lte(value: C?) = lte(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.eq(other: SqlExpression<C>) = infixExprBool<C>("=", other)
+infix fun <C> SqlExpression<C>.eq(value: C?) = eq(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.gt(other: SqlExpression<C>) = infixExprBool<C>(">", other)
+infix fun <C> SqlExpression<C>.gt(value: C?) = gt(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.lt(other: SqlExpression<C>) = infixExprBool<C>("<", other)
+infix fun <C> SqlExpression<C>.lt(value: C?) = lt(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.neq(other: SqlExpression<C>) = infixExprBool<C>("!=", other)
+infix fun <C> SqlExpression<C>.neq(value: C?) = neq(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.gte(other: SqlExpression<C>) = infixExprBool<C>(">=", other)
+infix fun <C> SqlExpression<C>.gte(value: C?) = gte(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.lte(other: SqlExpression<C>) = infixExprBool<C>("<=", other)
+infix fun <C> SqlExpression<C>.lte(value: C?) = lte(value.toParameter(sqlType))
 
 // endregion
 
@@ -66,18 +66,18 @@ operator fun SqlExpression<Boolean>.not() =
 
 // region in operator
 
-infix fun <E, C : Any> Column<E, C>.`in`(values: Iterable<C>) =
+infix fun <C> Column<C>.`in`(values: Iterable<C>) =
     InExpression(this, list = values.map { expr(it) })
 
 infix fun SqlExpression<*>.`in`(list: List<SqlExpression<*>>) = InExpression(this, list = list)
-infix fun SqlExpression<*>.`in`(select: SelectExpression<*>) = InExpression(this, select = select)
+infix fun SqlExpression<*>.`in`(select: SelectExpression) = InExpression(this, select = select)
 infix fun Tuple.`in`(list: List<Tuple>) = InExpression(this, list = list)
 
-infix fun <E, C : Any> Column<E, C>.notIn(values: Iterable<C>) =
+infix fun <C> Column<C>.notIn(values: Iterable<C>) =
     InExpression(this, list = values.map { expr(it) }, not = true)
 
 infix fun SqlExpression<*>.notIn(list: List<SqlExpression<*>>) = InExpression(this, list = list, not = true)
-infix fun SqlExpression<*>.notIn(select: SelectExpression<*>) = InExpression(this, select = select, not = true)
+infix fun SqlExpression<*>.notIn(select: SelectExpression) = InExpression(this, select = select, not = true)
 infix fun Tuple.notIn(list: List<Tuple>) = InExpression(this, list = list, not = true)
 
 // endregion
@@ -87,67 +87,67 @@ infix fun Tuple.notIn(list: List<Tuple>) = InExpression(this, list = list, not =
 infix fun SqlExpression<String>.like(other: SqlExpression<String>) = infixExprBool<String>("LIKE", other)
 infix fun SqlExpression<String>.like(value: String) = like(value.toParameter())
 
-fun <E, C : Any> Column<E, C>.isNull() =
+fun <C> Column<C>.isNull() =
     infixExprBool<C>("IS", NullSqlExpression<C>())
 
-fun <E, C : Any> Column<E, C>.isNotNull() =
-    infixExprBool<C>(listOf("IS", "NOT"), NullSqlExpression<C>())
+fun <C> Column<C>.isNotNull() =
+    infixExprBool<C>(kotlin.collections.listOf("IS", "NOT"), NullSqlExpression<C>())
 
-infix fun <E, C : Any> Column<E, C>.eqNullable(value: C?) =
+infix fun <C> Column<C>.eqNullable(value: C?) =
     if (value == null) isNull() else eq(value)
 
-fun <T : Any> SqlExpression<T>.count() = UnaryExpression<T, Int>("COUNT", this, IntSqlType, addParentheses = true)
+fun <T> SqlExpression<T>.count() = UnaryExpression<T, Int>("COUNT", this, IntSqlType, addParentheses = true)
 
-fun <T : Any> T?.toParameter(sqlType: SqlType<T>) = ParameterExpression(this, sqlType)
+fun <T> T?.toParameter(sqlType: SqlType<T>) = ParameterExpression(this, sqlType)
 fun Int?.toParameter() = toParameter(IntSqlType)
 fun String?.toParameter() = toParameter(StringSqlType)
 fun Boolean?.toParameter() = toParameter(BooleanSqlType)
 
-fun <E, C : Any> SqlExpression<C>.asColumn() =
-    ColumnExpression.wrap<E, C>(this)
+fun <C> SqlExpression<C>.asColumn() =
+    ColumnExpression.wrap<C>(this)
 
-fun <E, C : Any> SqlExpression<C>.toOrderBy(type: OrderByType) =
-    OrderByExpression(asColumn<E, C>(), type)
+fun <C> SqlExpression<C>.toOrderBy(type: OrderByType) =
+    OrderByExpression(asColumn<C>(), type)
 
-fun <E, C : Any> ColumnExpression<E, C>.toOrderBy(type: OrderByType) =
+fun <C> ColumnExpression<C>.toOrderBy(type: OrderByType) =
     OrderByExpression(this, type)
 
-fun <E, C : Any> SqlExpression<C>.toOrderBy(ascending: Boolean = true) =
-    toOrderBy<E, C>(if (ascending) OrderByType.ASC else OrderByType.DESC)
+fun <C> SqlExpression<C>.toOrderBy(ascending: Boolean = true) =
+    toOrderBy<C>(if (ascending) OrderByType.ASC else OrderByType.DESC)
 
-fun <E, C : Any> ColumnExpression<E, C>.toOrderBy(ascending: Boolean = true) =
+fun <C> ColumnExpression<C>.toOrderBy(ascending: Boolean = true) =
     toOrderBy(if (ascending) OrderByType.ASC else OrderByType.DESC)
 
 // endregion
 
 // region BinaryExpression utils
 
-private fun <C : Any, R : Any> SqlExpression<C>.infixExpr(
+private fun <C, R> SqlExpression<C>.infixExpr(
     operators: List<String>,
     other: SqlExpression<C>,
     sqlType: SqlType<R>,
     addParentheses: Boolean = false,
 ) = InfixExpression<C, C, R>(operators, this, other, sqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprBool(
+private fun <C> SqlExpression<C>.infixExprBool(
     operators: List<String>,
     other: SqlExpression<C>,
     addParentheses: Boolean = false,
 ) = infixExpr<C, Boolean>(operators, other, BooleanSqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprBool(
+private fun <C> SqlExpression<C>.infixExprBool(
     operator: String,
     other: SqlExpression<C>,
     addParentheses: Boolean = false,
 ) = infixExprBool<C>(listOf(operator), other, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprInt(
+private fun <C> SqlExpression<C>.infixExprInt(
     operators: List<String>,
     other: SqlExpression<C>,
     addParentheses: Boolean = false,
 ) = infixExpr<C, Int>(operators, other, IntSqlType, addParentheses)
 
-private fun <C : Any> SqlExpression<C>.infixExprInt(
+private fun <C> SqlExpression<C>.infixExprInt(
     operator: String,
     other: SqlExpression<C>,
     addParentheses: Boolean = false,

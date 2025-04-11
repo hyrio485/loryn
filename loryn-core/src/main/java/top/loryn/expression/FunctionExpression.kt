@@ -3,7 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
 
-class FunctionExpression<R : Any>(
+class FunctionExpression<R>(
     val name: String,
     override val sqlType: SqlType<R>,
     val args: List<SqlExpression<*>> = emptyList(),
@@ -18,7 +18,7 @@ class FunctionExpression<R : Any>(
                 append("()")
             }
         } else {
-            append('(').appendExpressions(args, params).append(')')
+            append('(').append(args, params).append(')')
         }
     }
 }

@@ -1,49 +1,38 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.schema.QuerySource
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
 
 /**
  * SELECT表达式。
- *
- * @param E 绑定的查询结果的实体类型。
  */
-class SelectExpression<E>(
-    val columns: List<ColumnExpression<E, *>>,
-    val from: QuerySourceExpression<E>?,
+class SelectExpression(
+    val columns: List<ColumnExpression<*>>,
+    val from: QuerySource?,
     val where: SqlExpression<Boolean>?,
-    val groupBy: List<ColumnExpression<E, *>>,
+    val groupBy: List<ColumnExpression<*>>,
     val having: SqlExpression<Boolean>?,
-    val orderBy: List<OrderByExpression<E>>,
+    val orderBy: List<OrderByExpression>,
     val paginationParams: PaginationParams?,
     val distinct: Boolean,
-    private val createEntity: (() -> E)?,
-) : EntityCreator<E>, SqlExpression<Nothing> {
-    override fun createEntity() =
-        if (createEntity != null) {
-            createEntity.invoke()
-        } else if (from != null) {
-            from.createEntity()
-        } else {
-            super.createEntity()
-        }
-
+) : SqlExpression<Nothing> {
     private fun SqlBuilder.appendMain(params: MutableList<SqlParam<*>>) = also {
         from?.also {
-            append(' ').appendKeyword("FROM").append(' ').appendExpression(it, params)
+            append(' ').appendKeyword("FROM").append(' ').append(it, params)
         }
         where?.also {
-            append(' ').appendKeyword("WHERE").append(' ').appendExpression(it, params)
+            append(' ').appendKeyword("WHERE").append(' ').append(it, params)
         }
         groupBy.takeIf { it.isNotEmpty() }?.also {
-            append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ').appendExpressions(it, params)
+            append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ').append(it, params)
         }
         having?.also {
-            append(' ').appendKeyword("HAVING").append(' ').appendExpression(it, params)
+            append(' ').appendKeyword("HAVING").append(' ').append(it, params)
         }
         orderBy.takeIf { it.isNotEmpty() }?.also {
-            append(' ').appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ').appendExpressions(it, params)
+            append(' ').appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ').append(it, params)
         }
     }
 
@@ -53,66 +42,67 @@ class SelectExpression<E>(
             appendKeyword("DISTINCT").append(' ')
         }
         if (columns.isNotEmpty()) {
-            appendList(columns, params) { it, params ->
-                with(it) { appendSqlInSelectClause(params) }
+            appendList(columns, params) { column, params ->
+                with(column) {
+                    appendSql(params).appendAlias(this) { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
+                }
             }
         } else {
             append('*')
         }
         appendMain(params)
-        paginationParams?.also { append(' ').appendPagination(it) }
+        paginationParams?.also { append(' ').append(it) }
     }
 
-    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*, *>?, params: MutableList<SqlParam<*>>) = also {
+    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*>?, params: MutableList<SqlParam<*>>) = also {
         appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append('(')
         if (column == null) {
             append('1')
         } else {
-            appendExpression(column, params)
+            append(column, params)
         }
         append(')').appendMain(params)
     }
 
-    inline fun <reified T : Any> asExpression(): ColumnExpression<E, T> {
+    inline fun <reified T> asExpression(): ColumnExpression<T> {
         require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
         val column = columns[0]
         if (column.sqlType.clazz != T::class.java) {
             throw IllegalArgumentException("The column type is not ${T::class.java}")
         }
         @Suppress("UNCHECKED_CAST")
-        return column as ColumnExpression<E, T>
+        return column as ColumnExpression<T>
     }
 
     fun asQuerySource(alias: String?) =
-        object : QuerySourceExpression<E>(alias) {
+        object : QuerySource {
             override val columns = this@SelectExpression.columns
 
             override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-                append('(').appendExpression(this@SelectExpression, params).append(')')
+                append('(').append(this@SelectExpression, params).append(')')
                 alias?.also { append(' ').appendRef(it) }
             }
         }
 
     @LorynDsl
-    class Builder<E, T : QuerySourceExpression<E>>(private val from: T? = null) {
-        private val columns: MutableList<ColumnExpression<E, *>> = mutableListOf()
+    class Builder<T : QuerySource>(private val from: T? = null) {
+        private val columns: MutableList<ColumnExpression<*>> = mutableListOf()
         private var where: SqlExpression<Boolean>? = null
-        private val groupBy: MutableList<ColumnExpression<E, *>> = mutableListOf()
+        private val groupBy: MutableList<ColumnExpression<*>> = mutableListOf()
         private var having: SqlExpression<Boolean>? = null
-        private val orderBy: MutableList<OrderByExpression<E>> = mutableListOf()
+        private val orderBy: MutableList<OrderByExpression> = mutableListOf()
         private var paginationParams: PaginationParams? = null
         private var distinct: Boolean = false
-        private var createEntity: (() -> E)? = null
 
-        fun column(column: ColumnExpression<E, *>) = also {
-            this.columns += column.also { from?.checkColumn(it) }
+        fun column(column: ColumnExpression<*>) = also {
+            this.columns += column
         }
 
-        fun columns(columns: List<ColumnExpression<E, *>>) = also {
-            this.columns += columns.onEach { from?.checkColumn(it) }
+        fun columns(columns: List<ColumnExpression<*>>) = also {
+            this.columns += columns
         }
 
-        fun columns(vararg columns: ColumnExpression<E, *>) = also {
+        fun columns(vararg columns: ColumnExpression<*>) = also {
             columns(columns.toList())
         }
 
@@ -124,15 +114,15 @@ class SelectExpression<E>(
             this.where = block()
         }
 
-        fun groupBy(column: ColumnExpression<E, *>) = also {
-            this.groupBy += column.also { from?.checkColumn(it) }
+        fun groupBy(column: ColumnExpression<*>) = also {
+            this.groupBy += column
         }
 
-        fun groupBys(columns: List<ColumnExpression<E, *>>) = also {
-            this.groupBy += columns.onEach { from?.checkColumn(it) }
+        fun groupBys(columns: List<ColumnExpression<*>>) = also {
+            this.groupBy += columns
         }
 
-        fun groupBys(vararg columns: ColumnExpression<E, *>) = also {
+        fun groupBys(vararg columns: ColumnExpression<*>) = also {
             groupBys(columns.toList())
         }
 
@@ -144,15 +134,15 @@ class SelectExpression<E>(
             this.having = block()
         }
 
-        fun orderBy(orderBy: OrderByExpression<E>) = also {
+        fun orderBy(orderBy: OrderByExpression) = also {
             this.orderBy += orderBy
         }
 
-        fun orderBys(orderBys: List<OrderByExpression<E>>) = also {
+        fun orderBys(orderBys: List<OrderByExpression>) = also {
             this.orderBy += orderBys
         }
 
-        fun orderBys(vararg orderBys: OrderByExpression<E>) = also {
+        fun orderBys(vararg orderBys: OrderByExpression) = also {
             orderBys(orderBys.toList())
         }
 
@@ -172,11 +162,11 @@ class SelectExpression<E>(
             this.distinct = distinct
         }
 
-        fun createEntity(createEntity: (() -> E)?) = also {
-            this.createEntity = createEntity
-        }
-
         fun build() =
-            SelectExpression(columns, from, where, groupBy, having, orderBy, paginationParams, distinct, createEntity)
+            SelectExpression(columns, from, where, groupBy, having, orderBy, paginationParams, distinct)
     }
 }
+
+fun <T : QuerySource> T.select(
+    block: SelectExpression.Builder<T>.(T) -> Unit = {},
+) = SelectExpression.Builder(this).apply { block(this@select) }.build()

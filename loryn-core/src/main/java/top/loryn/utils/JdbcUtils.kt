@@ -11,5 +11,5 @@ fun <R> ResultSet.mapEachRow(block: ResultSet.() -> R): List<R> = use {
     }
 }
 
-operator fun <E, C : Any> ResultSet.get(column: Column<E, C>): C? =
+operator fun <C> ResultSet.get(column: Column<C>): C? =
     column.sqlType.getResult(this, column.name)

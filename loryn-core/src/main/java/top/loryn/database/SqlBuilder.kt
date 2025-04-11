@@ -4,6 +4,8 @@ import top.loryn.expression.SqlExpression
 import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
 import top.loryn.support.PaginationParams
+import top.loryn.support.SqlAppender
+import top.loryn.support.WithAlias
 
 open class SqlBuilder(
     keywords: Set<String>,
@@ -30,20 +32,8 @@ open class SqlBuilder(
         }
     }
 
-    open fun appendTable(table: Table<*>) = also {
-        with(table) {
-            category?.also { appendRef(it).append('.') }
-            schema?.also { appendRef(it).append('.') }
-            appendRef(tableName)
-        }
-    }
-
     open fun appendKeyword(keyword: String) = also {
         append(if (uppercaseKeywords) keyword.uppercase() else keyword.lowercase())
-    }
-
-    open fun appendExpression(expression: SqlExpression<*>, params: MutableList<SqlParam<*>>) = also {
-        expression.run { appendSql(params) }
     }
 
     open fun <T> appendList(
@@ -58,13 +48,31 @@ open class SqlBuilder(
         }
     }
 
-    open fun appendExpressions(expressions: List<SqlExpression<*>>, params: MutableList<SqlParam<*>>) =
+    open fun append(table: Table) = also {
+        with(table) {
+            category?.also { appendRef(it).append('.') }
+            schema?.also { appendRef(it).append('.') }
+            appendRef(tableName)
+        }
+    }
+
+    open fun append(sqlAppender: SqlAppender, params: MutableList<SqlParam<*>>) = also {
+        sqlAppender.run { appendSql(params) }
+    }
+
+    open fun append(expressions: List<SqlExpression<*>>, params: MutableList<SqlParam<*>>) =
         appendList(expressions, params) { expression, params ->
-            appendExpression(expression, params)
+            append(expression, params)
         }
 
-    open fun appendPagination(paginationParams: PaginationParams) = also {
+    open fun append(paginationParams: PaginationParams) = also {
         throw UnsupportedOperationException("SQL dialect does not support pagination")
+    }
+
+    open fun appendAlias(any: Any, block: SqlBuilder.(String) -> Unit) = also {
+        if (any is WithAlias) {
+            any.alias?.also { block(it) }
+        }
     }
 
     fun build() = end().let { builder.toString() }

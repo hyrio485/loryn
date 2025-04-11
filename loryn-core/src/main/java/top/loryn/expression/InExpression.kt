@@ -6,7 +6,7 @@ import top.loryn.support.BooleanSqlType
 class InExpression(
     val expr: SqlExpression<*>,
     val list: List<SqlExpression<*>>? = null,
-    val select: SelectExpression<*>? = null,
+    val select: SelectExpression? = null,
     val not: Boolean = false,
 ) : SqlExpression<Boolean> {
     init {
@@ -18,13 +18,13 @@ class InExpression(
     override val sqlType = BooleanSqlType
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-        appendExpression(expr, params).append(' ')
+        append(expr, params).append(' ')
         if (not) appendKeyword("NOT").append(' ')
         appendKeyword("IN").append(" (")
         if (list != null) {
-            appendExpressions(list, params)
+            append(list, params)
         } else {
-            appendExpression(select!!, params)
+            append(select!!, params)
         }
         append(')')
     }

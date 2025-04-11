@@ -15,13 +15,13 @@ fun Database.dml(
         SqlAndParams(sql, params.toList())
 }
 
-fun <E> Database.dql(
+fun Database.dql(
     sql: String,
     vararg params: SqlParam<*>,
-    createEntity: (() -> E)? = null,
-    columns: List<ColumnExpression<E, *>> = emptyList(),
-) = object : DqlStatement<E>(this) {
-    override val createEntity = createEntity
+    //    createEntity: (() -> E)? = null,
+    columns: List<ColumnExpression<*>> = emptyList(),
+) = object : DqlStatement(this) {
+    //    override val createEntity = createEntity
     override val columns = columns.toList()
 
     override fun Database.generateSql(block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit) =

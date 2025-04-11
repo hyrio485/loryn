@@ -8,12 +8,12 @@ enum class OrderByType(val keyword: String) {
     ;
 }
 
-class OrderByExpression<E>(
-    val column: ColumnExpression<E, *>,
+class OrderByExpression(
+    val column: ColumnExpression<*>,
     val type: OrderByType,
 ) : SqlExpression<Nothing> {
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
-        appendExpression(column, params)
+        append(column, params)
         if (type == OrderByType.DESC) {
             append(' ').appendKeyword(type.keyword)
         }

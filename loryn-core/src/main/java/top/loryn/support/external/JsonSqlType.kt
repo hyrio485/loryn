@@ -22,7 +22,7 @@ object JsonSqlType : SqlType<JsonNode>(JDBCType.VARCHAR, JsonNode::class.java) {
     }
 }
 
-fun <E> Table<E>.json(name: String): Column<E, JsonNode> {
+fun Table.json(name: String): Column<JsonNode> {
     return registerColumn(name, JsonSqlType)
 }
 
@@ -31,6 +31,6 @@ fun <E> Table<E>.json(name: String): Column<E, JsonNode> {
 val JsonObjectSqlType =
     JsonSqlType.transform(ObjectNode::class.java, { it as ObjectNode }, { it })
 
-fun <E> Table<E>.jsonObject(name: String): Column<E, ObjectNode> {
+fun Table.jsonObject(name: String): Column<ObjectNode> {
     return registerColumn(name, JsonObjectSqlType)
 }

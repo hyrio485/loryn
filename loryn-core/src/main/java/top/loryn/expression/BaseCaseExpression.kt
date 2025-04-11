@@ -2,7 +2,7 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 
-abstract class BaseCaseExpression<T : Any, R : Any>(
+abstract class BaseCaseExpression<T, R>(
     val branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
     val elseExpr: SqlExpression<R>? = null,
 ) : SqlExpression<R> {
@@ -16,11 +16,11 @@ abstract class BaseCaseExpression<T : Any, R : Any>(
     ) = also {
         appendKeyword("CASE").append(' ').appendValue(params)
         branches.forEach { (condition, result) ->
-            append(' ').appendKeyword("WHEN").append(' ').appendExpression(condition, params)
-            append(' ').appendKeyword("THEN").append(' ').appendExpression(result, params)
+            append(' ').appendKeyword("WHEN").append(' ').append(condition, params)
+            append(' ').appendKeyword("THEN").append(' ').append(result, params)
         }
         elseExpr?.also {
-            append(' ').appendKeyword("ELSE").append(' ').appendExpression(it, params)
+            append(' ').appendKeyword("ELSE").append(' ').append(it, params)
         }
         append(' ').appendKeyword("END")
     }

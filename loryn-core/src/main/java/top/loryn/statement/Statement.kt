@@ -15,7 +15,7 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 
-abstract class StatementBuilder<T : Table<*>, S : Statement>(protected val table: T) {
+abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T) {
     abstract fun buildStatement(database: Database): S
 }
 
@@ -70,18 +70,18 @@ abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = 
         }
 }
 
-abstract class DqlStatement<E>(database: Database) : Statement(database) {
-    open val createEntity: (() -> E)? = null
-    open val columns: List<ColumnExpression<E, *>>? = emptyList()
+abstract class DqlStatement(database: Database) : Statement(database) {
+    //    open val createEntity: (() -> E)? = null
+    open val columns: List<ColumnExpression<*>>? = emptyList()
     open val usingIndex = true
 
     open fun SqlBuilder.doGenerateCountSql(
-        column: ColumnExpression<*, *>?,
+        column: ColumnExpression<*>?,
         params: MutableList<SqlParam<*>>,
     ): SqlBuilder = throw UnsupportedOperationException("SQL count generation not implemented")
 
     open fun count(
-        column: ColumnExpression<*, *>? = null,
+        column: ColumnExpression<*>? = null,
         getSqlAndParams: () -> SqlAndParams = {
             database.generateSql { params ->
                 doGenerateCountSql(column, params)
@@ -100,51 +100,51 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
         statement.executeQuery().mapEachRow(block)
     }
 
-    open fun list(): List<E> {
-        val createEntity = createEntity ?: throw UnsupportedOperationException(
-            "Entity creation method is not specified"
-        )
-        val columns = columns.takeUnless { it.isNullOrEmpty() }
-            ?: throw UnsupportedOperationException("No columns specified")
-        return list { rs ->
-            createEntity().apply {
-                columns.forEachIndexed { index, column ->
-                    if (usingIndex) {
-                        column.applyValue(this, index, rs)
-                    } else {
-                        column.applyValue(this, rs)
-                    }
-                }
-            }
-        }
-    }
+    //    open fun list(): List<E> {
+    //        val createEntity = createEntity ?: throw UnsupportedOperationException(
+    //            "Entity creation method is not specified"
+    //        )
+    //        val columns = columns.takeUnless { it.isNullOrEmpty() }
+    //            ?: throw UnsupportedOperationException("No columns specified")
+    //        return list { rs ->
+    //            createEntity().apply {
+    //                columns.forEachIndexed { index, column ->
+    //                    if (usingIndex) {
+    //                        column.applyValue(this, index, rs)
+    //                    } else {
+    //                        column.applyValue(this, rs)
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
 
     fun <R> one(block: (ResultSet) -> R) = list(block).one()
 
-    fun one() = list().one()
+    //    fun one() = list().one()
 }
 
 @LorynDsl
-class ColumnSelectionBuilder<E>(private val table: Table<E>) {
-    private val columns = mutableListOf<Column<E, *>>()
+class ColumnSelectionBuilder(private val table: Table) {
+    private val columns = mutableListOf<Column<*>>()
 
-    fun column(column: Column<E, *>) {
-        this.columns += column.also(table::checkColumn)
+    fun column(column: Column<*>) {
+        this.columns += column
     }
 
-    fun columns(columns: List<Column<E, *>>) {
-        this.columns += columns.onEach(table::checkColumn)
+    fun columns(columns: List<Column<*>>) {
+        this.columns += columns
     }
 
-    fun columns(vararg columns: Column<E, *>) {
+    fun columns(vararg columns: Column<*>) {
         columns(columns.toList())
     }
 
-    fun build(): List<Column<E, *>> {
+    fun build(): List<Column<*>> {
         require(columns.isNotEmpty()) { "No columns selected" }
         return columns
     }
 }
 
-fun <E, T : Table<E>> T.selectColumns(columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit) =
-    ColumnSelectionBuilder<E>(this).apply { columnsSelector(this@selectColumns) }.build()
+fun <T : Table> T.selectColumns(columnsSelector: ColumnSelectionBuilder.(T) -> Unit) =
+    ColumnSelectionBuilder(this).apply { columnsSelector(this@selectColumns) }.build()

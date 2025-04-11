@@ -3,7 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
 
-class InfixExpression<T1 : Any, T2 : Any, R : Any>(
+class InfixExpression<T1, T2, R>(
     val operators: List<String>,
     val expr1: SqlExpression<T1>,
     val expr2: SqlExpression<T2>,
@@ -16,13 +16,13 @@ class InfixExpression<T1 : Any, T2 : Any, R : Any>(
 
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
         if (addParentheses) append('(')
-        appendExpression(expr1, params)
+        append(expr1, params)
         if (addParentheses) append(')')
         append(' ').appendList(operators, params, " ") { operator, _ ->
             appendKeyword(operator)
         }.append(' ')
         if (addParentheses) append('(')
-        appendExpression(expr2, params)
+        append(expr2, params)
         if (addParentheses) append(')')
     }
 }

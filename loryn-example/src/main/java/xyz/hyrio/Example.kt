@@ -5,6 +5,7 @@ import top.loryn.expression.eq
 import top.loryn.schema.Table
 import top.loryn.statement.select
 import top.loryn.support.int
+import top.loryn.utils.get
 
 class A {
     var id: Int? = null
@@ -23,7 +24,7 @@ fun main() {
     database.select(TableA) {
         where { it.id eq 1 }
     }.list {
-        Triple(it.getInt(1), it.getInt(2), it.getInt(3))
+        Triple(it[TableA.id], it[TableA.field2], 9)
     }.also {
         println(it)
     }

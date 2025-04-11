@@ -24,17 +24,15 @@ open class SqlBuilder(
     fun append(char: Char) = also { builder.append(char) }
     fun append(any: Any) = also { builder.append(any) }
 
-    open fun appendRef(ref: String) = also {
+    open fun appendRef(ref: String) =
         if (ref.lowercase() in keywordsLc) {
-            builder.append('`').append(ref).append('`')
+            append('`').append(ref).append('`')
         } else {
-            builder.append(ref)
+            append(ref)
         }
-    }
 
-    open fun appendKeyword(keyword: String) = also {
+    open fun appendKeyword(keyword: String) =
         append(if (uppercaseKeywords) keyword.uppercase() else keyword.lowercase())
-    }
 
     open fun <T> appendList(
         list: List<T>,
@@ -48,17 +46,14 @@ open class SqlBuilder(
         }
     }
 
-    open fun append(table: Table) = also {
-        with(table) {
-            category?.also { appendRef(it).append('.') }
-            schema?.also { appendRef(it).append('.') }
-            appendRef(tableName)
-        }
+    open fun append(table: Table) = with(table) {
+        category?.also { appendRef(it).append('.') }
+        schema?.also { appendRef(it).append('.') }
+        appendRef(tableName)
     }
 
-    open fun append(sqlAppender: SqlAppender, params: MutableList<SqlParam<*>>) = also {
+    open fun append(sqlAppender: SqlAppender, params: MutableList<SqlParam<*>>) =
         sqlAppender.run { appendSql(params) }
-    }
 
     open fun append(expressions: List<SqlExpression<*>>, params: MutableList<SqlParam<*>>) =
         appendList(expressions, params) { expression, params ->
@@ -69,6 +64,7 @@ open class SqlBuilder(
         throw UnsupportedOperationException("SQL dialect does not support pagination")
     }
 
+    /** 如果对象有别名，则调用 [block]，其参数为别名（非空）。 */
     open fun appendAlias(any: Any, block: SqlBuilder.(String) -> Unit) = also {
         if (any is WithAlias) {
             any.alias?.also { block(it) }

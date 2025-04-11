@@ -128,16 +128,16 @@ abstract class DqlStatement<E>(database: Database) : Statement(database) {
 class ColumnSelectionBuilder<E>(private val table: Table<E>) {
     private val columns = mutableListOf<Column<E, *>>()
 
-    fun addColumn(column: Column<E, *>) {
+    fun column(column: Column<E, *>) {
         this.columns += column.also(table::checkColumn)
     }
 
-    fun addColumns(columns: List<Column<E, *>>) {
+    fun columns(columns: List<Column<E, *>>) {
         this.columns += columns.onEach(table::checkColumn)
     }
 
-    fun addColumns(vararg columns: Column<E, *>) {
-        addColumns(columns.toList())
+    fun columns(vararg columns: Column<E, *>) {
+        columns(columns.toList())
     }
 
     fun build(): List<Column<E, *>> {

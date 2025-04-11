@@ -104,16 +104,16 @@ class SelectExpression<E>(
         private var distinct: Boolean = false
         private var createEntity: (() -> E)? = null
 
-        fun addColumn(column: ColumnExpression<E, *>) = also {
+        fun column(column: ColumnExpression<E, *>) = also {
             this.columns += column.also { from?.checkColumn(it) }
         }
 
-        fun addColumns(columns: List<ColumnExpression<E, *>>) = also {
+        fun columns(columns: List<ColumnExpression<E, *>>) = also {
             this.columns += columns.onEach { from?.checkColumn(it) }
         }
 
-        fun addColumns(vararg columns: ColumnExpression<E, *>) = also {
-            addColumns(columns.toList())
+        fun columns(vararg columns: ColumnExpression<E, *>) = also {
+            columns(columns.toList())
         }
 
         fun where(block: (T) -> SqlExpression<Boolean>) = also {
@@ -124,16 +124,16 @@ class SelectExpression<E>(
             this.where = block()
         }
 
-        fun addGroupBy(column: ColumnExpression<E, *>) = also {
+        fun groupBy(column: ColumnExpression<E, *>) = also {
             this.groupBy += column.also { from?.checkColumn(it) }
         }
 
-        fun addGroupBys(columns: List<ColumnExpression<E, *>>) = also {
+        fun groupBys(columns: List<ColumnExpression<E, *>>) = also {
             this.groupBy += columns.onEach { from?.checkColumn(it) }
         }
 
-        fun addGroupBys(vararg columns: ColumnExpression<E, *>) = also {
-            addGroupBys(columns.toList())
+        fun groupBys(vararg columns: ColumnExpression<E, *>) = also {
+            groupBys(columns.toList())
         }
 
         fun having(block: (T) -> SqlExpression<Boolean>) = also {
@@ -144,16 +144,16 @@ class SelectExpression<E>(
             this.having = block()
         }
 
-        fun addOrderBy(orderBy: OrderByExpression<E>) = also {
+        fun orderBy(orderBy: OrderByExpression<E>) = also {
             this.orderBy += orderBy
         }
 
-        fun addOrderBys(orderBys: List<OrderByExpression<E>>) = also {
+        fun orderBys(orderBys: List<OrderByExpression<E>>) = also {
             this.orderBy += orderBys
         }
 
-        fun addOrderBys(vararg orderBys: OrderByExpression<E>) = also {
-            addOrderBys(orderBys.toList())
+        fun orderBys(vararg orderBys: OrderByExpression<E>) = also {
+            orderBys(orderBys.toList())
         }
 
         fun pagination(paginationParams: PaginationParams) = also {

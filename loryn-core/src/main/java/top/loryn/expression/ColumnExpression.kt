@@ -54,7 +54,7 @@ abstract class ColumnExpression<E, C : Any>(
                 appendExpression(this@ColumnExpression, params)
         }
 
-    fun distinct() = UnaryExpression("DISTINCT", this, sqlType, false).toColumn<E, C>()
+    fun distinct() = UnaryExpression("DISTINCT", this, sqlType, false).asColumn<E, C>()
 
     abstract fun SqlBuilder.appendSqlOriginal(params: MutableList<SqlParam<*>>): SqlBuilder
 

@@ -95,11 +95,11 @@ fun Int?.toParameter() = toParameter(IntSqlType)
 fun String?.toParameter() = toParameter(StringSqlType)
 fun Boolean?.toParameter() = toParameter(BooleanSqlType)
 
-fun <E, C : Any> SqlExpression<C>.toColumn() =
+fun <E, C : Any> SqlExpression<C>.asColumn() =
     ColumnExpression.wrap<E, C>(this)
 
 fun <E, C : Any> SqlExpression<C>.toOrderBy(type: OrderByType) =
-    OrderByExpression(toColumn<E, C>(), type)
+    OrderByExpression(asColumn<E, C>(), type)
 
 fun <E, C : Any> ColumnExpression<E, C>.toOrderBy(type: OrderByType) =
     OrderByExpression(this, type)

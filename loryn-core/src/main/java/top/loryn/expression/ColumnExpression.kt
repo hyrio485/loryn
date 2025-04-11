@@ -36,8 +36,8 @@ abstract class ColumnExpression<E, C : Any>(
     }
 
     fun getValue(resultSet: ResultSet): C? {
-        requireNotNull(label) { "ColumnExpression $this does not have a label." }
-        return sqlType.getResult(resultSet, label)
+        require(label != null || alias != null) { "ColumnExpression $this does not have a label or alias." }
+        return sqlType.getResult(resultSet, (label ?: alias)!!)
     }
 
     fun applyValue(entity: E, index: Int, resultSet: ResultSet) {

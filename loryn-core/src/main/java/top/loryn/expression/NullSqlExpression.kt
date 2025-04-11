@@ -2,8 +2,6 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 
-data class NullSqlExpression<T : Any>(
-    val label: String? = null,
-) : SqlExpression<T> {
+class NullSqlExpression<T : Any> : SqlExpression<T> {
     override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = appendKeyword("NULL")
 }

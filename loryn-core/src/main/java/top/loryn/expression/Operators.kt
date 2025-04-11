@@ -66,12 +66,18 @@ operator fun SqlExpression<Boolean>.not() =
 
 // region in operator
 
-infix fun <E, C : Any> Column<E, C>.`in`(values: Iterable<C>) = InExpression(this, list = values.map { expr(it) })
+infix fun <E, C : Any> Column<E, C>.`in`(values: Iterable<C>) =
+    InExpression(this, list = values.map { expr(it) })
+
 infix fun SqlExpression<*>.`in`(list: List<SqlExpression<*>>) = InExpression(this, list = list)
 infix fun SqlExpression<*>.`in`(select: SelectExpression<*>) = InExpression(this, select = select)
+infix fun Tuple.`in`(list: List<Tuple>) = InExpression(this, list = list)
+
+infix fun <E, C : Any> Column<E, C>.notIn(values: Iterable<C>) =
+    InExpression(this, list = values.map { expr(it) }, not = true)
+
 infix fun SqlExpression<*>.notIn(list: List<SqlExpression<*>>) = InExpression(this, list = list, not = true)
 infix fun SqlExpression<*>.notIn(select: SelectExpression<*>) = InExpression(this, select = select, not = true)
-infix fun Tuple.`in`(list: List<Tuple>) = InExpression(this, list = list)
 infix fun Tuple.notIn(list: List<Tuple>) = InExpression(this, list = list, not = true)
 
 // endregion

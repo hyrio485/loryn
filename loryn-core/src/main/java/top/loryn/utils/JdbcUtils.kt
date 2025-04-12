@@ -11,4 +11,4 @@ fun <R> ResultSet.mapEachRow(block: ResultSet.() -> R): List<R> = use {
     }
 }
 
-operator fun <C> ResultSet.get(column: Column<C>) = column.sqlType.getResult(this, column.name)
+operator fun <C> ResultSet.get(column: Column<C>) = column.getValue(this)

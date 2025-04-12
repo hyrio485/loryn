@@ -208,6 +208,6 @@ class BindableSelectExpression<E>(
     }
 }
 
-fun <E, T : BindableQuerySource<E>> T.select(
+fun <E, T : BindableQuerySource<E>> T.selectBindable(
     block: BindableSelectExpression.Builder<E, T>.(T) -> Unit = {},
-) = BindableSelectExpression.Builder(this).apply { block(this@select) }.build()
+) = BindableSelectExpression.Builder(this).apply { block(this@selectBindable) }.build()

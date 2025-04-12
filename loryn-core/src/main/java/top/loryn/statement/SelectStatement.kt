@@ -2,9 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.BindableSelectExpression
-import top.loryn.expression.ColumnExpression
-import top.loryn.expression.SelectExpression
+import top.loryn.expression.*
 import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
 import top.loryn.utils.SqlParamList
@@ -22,10 +20,6 @@ class SelectStatement(
     override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
         select.run { appendSqlCount(column, params) }
 }
-
-fun <T : QuerySource> T.select(
-    block: SelectExpression.Builder<T>.(T) -> Unit = {},
-) = SelectExpression.Builder(this).apply { block(this@select) }.build()
 
 fun <T : QuerySource> Database.select(
     querySource: T,
@@ -46,10 +40,6 @@ class BindableSelectStatement<E>(
     override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
         select.run { appendSqlCount(column, params) }
 }
-
-fun <E, T : BindableQuerySource<E>> T.selectBindable(
-    block: BindableSelectExpression.Builder<E, T>.(T) -> Unit = {},
-) = BindableSelectExpression.Builder(this).apply { block(this@selectBindable) }.build()
 
 fun <E, T : BindableQuerySource<E>> Database.selectBindable(
     bindableQuerySource: T,

@@ -9,7 +9,10 @@ import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
 import top.loryn.utils.SqlParamList
 
-class SelectStatement(database: Database, val select: SelectExpression) : DqlStatement(database) {
+class SelectStatement(
+    override val database: Database,
+    val select: SelectExpression,
+) : DqlStatement {
     override val columns = select.columns.takeIf { it.isNotEmpty() } ?: select.from?.columns
     override val usingIndex = select.columns.isNotEmpty()
 
@@ -30,8 +33,10 @@ fun <T : QuerySource> Database.select(
 ) = SelectStatement(this, querySource.select(block))
 
 class BindableSelectStatement<E>(
-    database: Database, val select: BindableSelectExpression<E>,
-) : BindableDqlStatement<E>(database, select::createEntity) {
+    override val database: Database,
+    val select: BindableSelectExpression<E>,
+) : BindableDqlStatement<E> {
+    override val createEntity = select::createEntity
     override val columns = select.columns.takeIf { it.isNotEmpty() } ?: select.from.columns
     override val usingIndex = select.columns.isNotEmpty()
 

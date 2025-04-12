@@ -12,7 +12,10 @@ fun Database.dml(
     sql: String,
     vararg params: SqlParam<*>,
     useGeneratedKeys: Boolean = false,
-) = object : DmlStatement(this, useGeneratedKeys) {
+) = object : DmlStatement {
+    override val database = this@dml
+    override val useGeneratedKeys = useGeneratedKeys
+
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())
 }
@@ -21,7 +24,8 @@ fun Database.dql(
     sql: String,
     vararg params: SqlParam<*>,
     columns: List<ColumnExpression<*>> = emptyList(),
-) = object : DqlStatement(this) {
+) = object : DqlStatement {
+    override val database = this@dql
     override val columns = columns.toList()
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
@@ -33,7 +37,9 @@ fun <E> Database.bindableDql(
     vararg params: SqlParam<*>,
     createEntity: () -> E,
     columns: List<BindableColumnExpression<E, *>>,
-) = object : BindableDqlStatement<E>(this, createEntity) {
+) = object : BindableDqlStatement<E> {
+    override val database = this@bindableDql
+    override val createEntity = createEntity
     override val columns = columns.toList()
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =

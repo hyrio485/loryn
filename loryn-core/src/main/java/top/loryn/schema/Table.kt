@@ -4,6 +4,7 @@ import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
 import top.loryn.utils.SqlParamList
 
+// TODO: alias, binding
 abstract class Table(
     val tableName: String,
     val schema: String? = null,

@@ -26,11 +26,13 @@ abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T
  * 按返回值类型可分为查询语句（preparedStatement.executeQuery()）
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
-abstract class Statement(val database: Database) {
-    open fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder =
+interface Statement {
+    val database: Database
+
+    fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder =
         throw UnsupportedOperationException("SQL generation not implemented")
 
-    open fun Database.generateSql(
+    fun Database.generateSql(
         block: SqlBuilder.(SqlParamList) -> Unit = { doGenerateSql(it) },
     ): SqlAndParams {
         val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords).start()
@@ -39,7 +41,7 @@ abstract class Statement(val database: Database) {
         return SqlAndParams(builder.build(), params)
     }
 
-    protected inline fun <R> Database.doExecute(
+    fun <R> Database.doExecute(
         useGeneratedKeys: Boolean = false,
         getSqlAndParams: () -> SqlAndParams = { database.generateSql() },
         block: (PreparedStatement) -> R,
@@ -61,8 +63,10 @@ abstract class Statement(val database: Database) {
     }
 }
 
-abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = false) : Statement(database) {
-    open fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
+interface DmlStatement : Statement {
+    val useGeneratedKeys: Boolean get() = false
+
+    fun execute(forEachGeneratedKey: (ResultSet) -> Unit = {}) =
         database.doExecute(useGeneratedKeys) { statement ->
             statement.executeUpdate().also(database::showEffects).also {
                 if (useGeneratedKeys) {
@@ -72,14 +76,14 @@ abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = 
         }
 }
 
-abstract class DqlStatement(database: Database) : Statement(database) {
-    open val columns: List<ColumnExpression<*>>? = emptyList()
-    open val usingIndex = true
+interface DqlStatement : Statement {
+    val columns: List<ColumnExpression<*>>? get() = emptyList()
+    val usingIndex get() = true
 
-    open fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder =
+    fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder =
         throw UnsupportedOperationException("SQL count generation not implemented")
 
-    open fun count(
+    fun count(
         column: ColumnExpression<*>? = null,
         getSqlAndParams: () -> SqlAndParams = {
             database.generateSql { params ->
@@ -95,17 +99,18 @@ abstract class DqlStatement(database: Database) : Statement(database) {
         }
     }
 
-    open fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
+    fun <R> list(block: (ResultSet) -> R) = database.doExecute { statement ->
         statement.executeQuery().mapEachRow(block)
     }
 
     fun <R> one(block: (ResultSet) -> R) = list(block).one()
 }
 
-abstract class BindableDqlStatement<E>(database: Database, val createEntity: () -> E) : DqlStatement(database) {
-    override val columns: List<BindableColumnExpression<E, *>>? = emptyList()
+interface BindableDqlStatement<E> : DqlStatement {
+    val createEntity: () -> E
+    override val columns: List<BindableColumnExpression<E, *>>? get() = emptyList()
 
-    open fun list(): List<E> {
+    fun list(): List<E> {
         val columns = columns.takeUnless { it.isNullOrEmpty() }
             ?: throw UnsupportedOperationException("No columns specified")
         return list { rs ->

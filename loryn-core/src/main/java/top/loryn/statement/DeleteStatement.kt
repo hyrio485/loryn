@@ -9,10 +9,10 @@ import top.loryn.support.LorynDsl
 import top.loryn.utils.SqlParamList
 
 class DeleteStatement(
-    database: Database,
+    override val database: Database,
     val table: Table,
     val where: SqlExpression<Boolean>?,
-) : DmlStatement(database) {
+) : DmlStatement {
     override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
         appendKeyword("DELETE").append(' ').appendKeyword("FROM").append(' ').append(table)
         where?.also { append(' ').appendKeyword("WHERE").append(' ').append(it, params) }

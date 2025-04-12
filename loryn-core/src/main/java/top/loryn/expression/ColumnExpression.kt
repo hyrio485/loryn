@@ -5,6 +5,7 @@ import top.loryn.support.WithAlias.Companion.getAliasOrNull
 import top.loryn.utils.SqlParamList
 import java.sql.ResultSet
 
+// TODO: alias, binding
 interface ColumnExpression<T> : SqlExpression<T> {
     val name: String?
 
@@ -20,4 +21,6 @@ interface ColumnExpression<T> : SqlExpression<T> {
 
     fun expr(value: T?) = SqlParam<T>(value, sqlType)
     fun getValue(resultSet: ResultSet) = sqlType.getResult(resultSet, (getAliasOrNull() ?: name)!!)
+
+    fun distinct() = UnaryExpression("DISTINCT", this, sqlType, false).asColumn<T>()
 }

@@ -14,11 +14,11 @@ import top.loryn.utils.SqlParamList
 import java.sql.ResultSet
 
 abstract class BaseInsertStatement(
-    database: Database,
+    override val database: Database,
     val table: Table,
     val columns: List<ColumnExpression<*>>,
-    useGeneratedKeys: Boolean,
-) : DmlStatement(database, useGeneratedKeys) {
+    override val useGeneratedKeys: Boolean,
+) : DmlStatement {
     protected fun SqlBuilder.appendInsertIntoColumns(params: SqlParamList) = also {
         appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ')
         append(table).append(" (").append(columns, params).append(") ")

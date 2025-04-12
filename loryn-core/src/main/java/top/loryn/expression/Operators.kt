@@ -7,30 +7,30 @@ import top.loryn.support.*
 // region comparison operators
 
 infix fun <C> SqlExpression<C>.eq(other: SqlExpression<C>) = infixExprBool<C>("=", other)
-infix fun <C> SqlExpression<C>.eq(value: C?) = eq(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.eq(value: C?) = eq(value.toSqlParam(sqlType))
 infix fun <C> SqlExpression<C>.gt(other: SqlExpression<C>) = infixExprBool<C>(">", other)
-infix fun <C> SqlExpression<C>.gt(value: C?) = gt(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.gt(value: C?) = gt(value.toSqlParam(sqlType))
 infix fun <C> SqlExpression<C>.lt(other: SqlExpression<C>) = infixExprBool<C>("<", other)
-infix fun <C> SqlExpression<C>.lt(value: C?) = lt(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.lt(value: C?) = lt(value.toSqlParam(sqlType))
 infix fun <C> SqlExpression<C>.neq(other: SqlExpression<C>) = infixExprBool<C>("!=", other)
-infix fun <C> SqlExpression<C>.neq(value: C?) = neq(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.neq(value: C?) = neq(value.toSqlParam(sqlType))
 infix fun <C> SqlExpression<C>.gte(other: SqlExpression<C>) = infixExprBool<C>(">=", other)
-infix fun <C> SqlExpression<C>.gte(value: C?) = gte(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.gte(value: C?) = gte(value.toSqlParam(sqlType))
 infix fun <C> SqlExpression<C>.lte(other: SqlExpression<C>) = infixExprBool<C>("<=", other)
-infix fun <C> SqlExpression<C>.lte(value: C?) = lte(value.toParameter(sqlType))
+infix fun <C> SqlExpression<C>.lte(value: C?) = lte(value.toSqlParam(sqlType))
 
 // endregion
 
 // region arithmetic operators
 
 operator fun SqlExpression<Int>.plus(other: SqlExpression<Int>) = infixExprInt<Int>("+", other)
-operator fun SqlExpression<Int>.plus(value: Int) = plus(value.toParameter())
+operator fun SqlExpression<Int>.plus(value: Int) = plus(value.toSqlParam())
 operator fun SqlExpression<Int>.minus(other: SqlExpression<Int>) = infixExprInt<Int>("-", other)
-operator fun SqlExpression<Int>.minus(value: Int) = minus(value.toParameter())
+operator fun SqlExpression<Int>.minus(value: Int) = minus(value.toSqlParam())
 operator fun SqlExpression<Int>.times(other: SqlExpression<Int>) = infixExprInt<Int>("*", other)
-operator fun SqlExpression<Int>.times(value: Int) = times(value.toParameter())
+operator fun SqlExpression<Int>.times(value: Int) = times(value.toSqlParam())
 operator fun SqlExpression<Int>.div(other: SqlExpression<Int>) = infixExprInt<Int>("/", other)
-operator fun SqlExpression<Int>.div(value: Int) = div(value.toParameter())
+operator fun SqlExpression<Int>.div(value: Int) = div(value.toSqlParam())
 
 // endregion
 
@@ -86,7 +86,7 @@ infix fun Tuple.notIn(list: List<Tuple>) = InExpression(this, list = list, not =
 // region other operators
 
 infix fun SqlExpression<String>.like(other: SqlExpression<String>) = infixExprBool<String>("LIKE", other)
-infix fun SqlExpression<String>.like(value: String) = like(value.toParameter())
+infix fun SqlExpression<String>.like(value: String) = like(value.toSqlParam())
 
 fun <C> Column<C>.isNull() =
     infixExprBool<C>("IS", NullSqlExpression<C>())
@@ -99,10 +99,10 @@ infix fun <C> Column<C>.eqNullable(value: C?) =
 
 fun <T> SqlExpression<T>.count() = UnaryExpression<T, Int>("COUNT", this, IntSqlType, addParentheses = true)
 
-fun <T> T?.toParameter(sqlType: SqlType<T>) = ParameterExpression(this, sqlType)
-fun Int?.toParameter() = toParameter(IntSqlType)
-fun String?.toParameter() = toParameter(StringSqlType)
-fun Boolean?.toParameter() = toParameter(BooleanSqlType)
+fun <T> T?.toSqlParam(sqlType: SqlType<T>) = SqlParam(this, sqlType)
+fun Int?.toSqlParam() = toSqlParam(IntSqlType)
+fun String?.toSqlParam() = toSqlParam(StringSqlType)
+fun Boolean?.toSqlParam() = toSqlParam(BooleanSqlType)
 
 fun <C> SqlExpression<C>.asColumn() =
     ColumnExpression.wrap<C>(this)

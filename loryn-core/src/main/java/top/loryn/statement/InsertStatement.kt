@@ -3,12 +3,15 @@ package top.loryn.statement
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
 import top.loryn.expression.ColumnExpression
-import top.loryn.expression.ParameterExpression
 import top.loryn.expression.SelectExpression
+import top.loryn.expression.SqlParam
+import top.loryn.schema.BindableColumn
+import top.loryn.schema.BindableTable
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 import top.loryn.utils.SqlParamList
+import java.sql.ResultSet
 
 abstract class BaseInsertStatement(
     database: Database,
@@ -21,27 +24,27 @@ abstract class BaseInsertStatement(
         append(table).append(" (").append(columns, params).append(") ")
     }
 
-    protected fun SqlBuilder.appendRowValues(
-        values: List<ParameterExpression<*>>,
-        params: SqlParamList,
-    ) = append('(').append(values, params).append(')')
+    protected fun SqlBuilder.appendRowValues(values: List<SqlParam<*>>, params: SqlParamList) =
+        append('(').append(values, params).append(')')
 
-    //    fun fillInPrimaryKeysForEachRow(entity: E, rs: ResultSet) {
-    //        val primaryKeys = table.primaryKeys
-    //        if (primaryKeys.isEmpty()) {
-    //            error("No primary keys found for table $table")
-    //        }
-    //        primaryKeys.forEachIndexed { index, column ->
-    //            column.setValue(entity, index, rs)
-    //        }
-    //    }
+    companion object {
+        fun <E> fillInPrimaryKeysForEachRow(table: BindableTable<E>, entity: E, rs: ResultSet) {
+            val primaryKeys = table.primaryKeys
+            if (primaryKeys.isEmpty()) {
+                error("No primary keys found for table $table")
+            }
+            primaryKeys.forEachIndexed { index, column ->
+                column.setValue(entity, index, rs)
+            }
+        }
+    }
 }
 
 class InsertStatement(
     database: Database,
     table: Table,
     columns: List<ColumnExpression<*>>,
-    val values: List<ParameterExpression<*>>? = null,
+    val values: List<SqlParam<*>>? = null,
     val select: SelectExpression? = null,
     useGeneratedKeys: Boolean = false,
 ) : BaseInsertStatement(database, table, columns, useGeneratedKeys) {
@@ -73,7 +76,7 @@ class InsertBuilder<T : Table>(
     table: T, private val useGeneratedKeys: Boolean = false,
 ) : StatementBuilder<T, InsertStatement>(table) {
     private val columns = mutableListOf<ColumnExpression<*>>()
-    private val values = mutableListOf<ParameterExpression<*>>()
+    private val values = mutableListOf<SqlParam<*>>()
     private var select: SelectExpression? = null
 
     fun <C> column(column: Column<C>) {
@@ -92,17 +95,17 @@ class InsertBuilder<T : Table>(
         require(select == null) { "Cannot set both values and select" }
     }
 
-    fun value(value: ParameterExpression<*>) {
+    fun value(value: SqlParam<*>) {
         requireNullSelect()
         this.values += value
     }
 
-    fun values(values: List<ParameterExpression<*>>) {
+    fun values(values: List<SqlParam<*>>) {
         requireNullSelect()
         this.values += values
     }
 
-    fun values(vararg values: ParameterExpression<*>) {
+    fun values(vararg values: SqlParam<*>) {
         values(values.toList())
     }
 
@@ -133,31 +136,31 @@ fun <T : Table> Database.insert(
     block: InsertBuilder<T>.(T) -> Unit = {},
 ) = InsertBuilder(table, useGeneratedKeys).apply { block(table) }.buildStatement(this)
 
-//// region 插入实体
-//
-//fun <T : Table> Database.insert(
-//    table: T,
-//    entity: E,
-//    useGeneratedKeys: Boolean = false,
-//    columns: List<Column<E, *>> = table.insertColumns,
-//) = columns.onEach(table::checkColumn).let { columns ->
-//    InsertStatement(
-//        this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
-//    ).let { it.execute { rs -> it.fillInPrimaryKeysForEachRow(entity, rs) } }
-//}
-//
-//fun <E, T : Table<E>> Database.insert(
-//    table: T,
-//    entity: E,
-//    useGeneratedKeys: Boolean = false,
-//    vararg columns: Column<E, *>,
-//) = insert(table, entity, useGeneratedKeys, columns.toList())
-//
-//fun <E, T : Table<E>> Database.insert(
-//    table: T,
-//    entity: E,
-//    useGeneratedKeys: Boolean = false,
-//    columnsSelector: ColumnSelectionBuilder<E>.(T) -> Unit,
-//) = insert(table, entity, useGeneratedKeys, table.selectColumns(columnsSelector))
-//
-//// endregion
+// region 插入实体
+
+fun <E, T : BindableTable<E>> Database.insert(
+    table: T,
+    entity: E,
+    useGeneratedKeys: Boolean = false,
+    columns: List<BindableColumn<E, *>> = table.insertColumns,
+) = columns.let { columns ->
+    InsertStatement(
+        this, table, columns, columns.map { it.getValueExpr(entity) }, useGeneratedKeys = useGeneratedKeys,
+    ).execute { BaseInsertStatement.fillInPrimaryKeysForEachRow(table, entity, it) }
+}
+
+fun <E, T : BindableTable<E>> Database.insert(
+    table: T,
+    entity: E,
+    useGeneratedKeys: Boolean = false,
+    vararg columns: BindableColumn<E, *>,
+) = insert(table, entity, useGeneratedKeys, columns.toList())
+
+fun <E, T : BindableTable<E>> Database.insert(
+    table: T,
+    entity: E,
+    useGeneratedKeys: Boolean = false,
+    columnsSelector: ColumnSelectionBuilder<BindableColumn<E, *>>.(T) -> Unit,
+) = insert(table, entity, useGeneratedKeys, table.selectColumns(columnsSelector))
+
+// endregion

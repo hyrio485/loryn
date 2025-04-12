@@ -9,7 +9,7 @@ data class AssignmentExpression<C>(
     val value: SqlExpression<C>,
 ) : SqlExpression<Nothing> {
     init {
-        if (column is Column<*> && column.notNull && value is ParameterExpression<*> && value.value == null) {
+        if (column is Column<*> && column.notNull && value is SqlParam<*> && value.value == null) {
             throw IllegalArgumentException("The column $column cannot be null.")
         }
     }

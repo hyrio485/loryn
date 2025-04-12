@@ -2,6 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
+import top.loryn.expression.BindableColumnExpression
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
@@ -72,14 +73,11 @@ abstract class DmlStatement(database: Database, val useGeneratedKeys: Boolean = 
 }
 
 abstract class DqlStatement(database: Database) : Statement(database) {
-    //    open val createEntity: (() -> E)? = null
     open val columns: List<ColumnExpression<*>>? = emptyList()
     open val usingIndex = true
 
-    open fun SqlBuilder.doGenerateCountSql(
-        column: ColumnExpression<*>?,
-        params: SqlParamList,
-    ): SqlBuilder = throw UnsupportedOperationException("SQL count generation not implemented")
+    open fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder =
+        throw UnsupportedOperationException("SQL count generation not implemented")
 
     open fun count(
         column: ColumnExpression<*>? = null,
@@ -101,51 +99,52 @@ abstract class DqlStatement(database: Database) : Statement(database) {
         statement.executeQuery().mapEachRow(block)
     }
 
-    //    open fun list(): List<E> {
-    //        val createEntity = createEntity ?: throw UnsupportedOperationException(
-    //            "Entity creation method is not specified"
-    //        )
-    //        val columns = columns.takeUnless { it.isNullOrEmpty() }
-    //            ?: throw UnsupportedOperationException("No columns specified")
-    //        return list { rs ->
-    //            createEntity().apply {
-    //                columns.forEachIndexed { index, column ->
-    //                    if (usingIndex) {
-    //                        column.applyValue(this, index, rs)
-    //                    } else {
-    //                        column.applyValue(this, rs)
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-
     fun <R> one(block: (ResultSet) -> R) = list(block).one()
+}
 
-    //    fun one() = list().one()
+abstract class BindableDqlStatement<E>(database: Database, val createEntity: () -> E) : DqlStatement(database) {
+    override val columns: List<BindableColumnExpression<E, *>>? = emptyList()
+
+    open fun list(): List<E> {
+        val columns = columns.takeUnless { it.isNullOrEmpty() }
+            ?: throw UnsupportedOperationException("No columns specified")
+        return list { rs ->
+            createEntity().apply {
+                columns.forEachIndexed { index, column ->
+                    if (usingIndex) {
+                        column.applyValue(this, index, rs)
+                    } else {
+                        column.applyValue(this, rs)
+                    }
+                }
+            }
+        }
+    }
+
+    fun one() = list().one()
 }
 
 @LorynDsl
-class ColumnSelectionBuilder(private val table: Table) {
-    private val columns = mutableListOf<Column<*>>()
+class ColumnSelectionBuilder<C : Column<*>> {
+    private val columns = mutableListOf<C>()
 
-    fun column(column: Column<*>) {
+    fun column(column: C) {
         this.columns += column
     }
 
-    fun columns(columns: List<Column<*>>) {
+    fun columns(columns: List<C>) {
         this.columns += columns
     }
 
-    fun columns(vararg columns: Column<*>) {
+    fun columns(vararg columns: C) {
         columns(columns.toList())
     }
 
-    fun build(): List<Column<*>> {
+    fun build(): List<C> {
         require(columns.isNotEmpty()) { "No columns selected" }
         return columns
     }
 }
 
-fun <T : Table> T.selectColumns(columnsSelector: ColumnSelectionBuilder.(T) -> Unit) =
-    ColumnSelectionBuilder(this).apply { columnsSelector(this@selectColumns) }.build()
+fun <T : Table, C : Column<*>> T.selectColumns(columnsSelector: ColumnSelectionBuilder<C>.(T) -> Unit) =
+    ColumnSelectionBuilder<C>().apply { columnsSelector(this@selectColumns) }.build()

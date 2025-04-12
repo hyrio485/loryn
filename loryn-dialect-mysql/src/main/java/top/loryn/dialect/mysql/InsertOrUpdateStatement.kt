@@ -50,12 +50,12 @@
 //        if (column.notNull && value == null) {
 //            throw IllegalArgumentException("Column ${column.name} cannot be null")
 //        }
-//        columns += column.also(table::checkColumn)
+//        columns += column
 //        values += column.expr(value)
 //    }
 //
 //    fun <C> set(column: TableColumn<E, C>, value: SqlExpression<C>) {
-//        require(column.also(table::checkColumn) in columns) { "Column $column is not in the insert columns" }
+//        require(column in columns) { "Column $column is not in the insert columns" }
 //        sets += AssignmentExpression(column, value)
 //    }
 //
@@ -86,7 +86,7 @@
 //    columns: List<TableColumn<E, *>> = table.insertColumns,
 //    updateColumns: List<TableColumn<E, *>> = table.updateColumns,
 //): Int {
-//    val columns = columns.onEach(table::checkColumn)
+//    val columns = columns
 //    return InsertOrUpdateStatement(
 //        this, table, columns,
 //        columns.map { it.getValueExpr(entity) },

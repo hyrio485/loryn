@@ -1,17 +1,15 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
 import top.loryn.utils.SqlParamList
 
-/**
- * SELECT表达式。
- */
-class SelectExpression(
-    val columns: List<ColumnExpression<*>>,
-    val from: QuerySource?,
+open class SelectExpression(
+    open val columns: List<ColumnExpression<*>>,
+    open val from: QuerySource?,
     val where: SqlExpression<Boolean>?,
     val groupBy: List<ColumnExpression<*>>,
     val having: SqlExpression<Boolean>?,
@@ -87,24 +85,24 @@ class SelectExpression(
         }
 
     @LorynDsl
-    class Builder<T : QuerySource>(private val from: T? = null) {
-        private val columns: MutableList<ColumnExpression<*>> = mutableListOf()
-        private var where: SqlExpression<Boolean>? = null
-        private val groupBy: MutableList<ColumnExpression<*>> = mutableListOf()
-        private var having: SqlExpression<Boolean>? = null
-        private val orderBy: MutableList<OrderByExpression> = mutableListOf()
-        private var paginationParams: PaginationParams? = null
-        private var distinct: Boolean = false
+    open class Builder<T : QuerySource>(protected val from: T? = null) {
+        protected val columns: MutableList<ColumnExpression<*>> = mutableListOf()
+        protected var where: SqlExpression<Boolean>? = null
+        protected val groupBy: MutableList<ColumnExpression<*>> = mutableListOf()
+        protected var having: SqlExpression<Boolean>? = null
+        protected val orderBy: MutableList<OrderByExpression> = mutableListOf()
+        protected var paginationParams: PaginationParams? = null
+        protected var distinct: Boolean = false
 
-        fun column(column: ColumnExpression<*>) = also {
+        open fun column(column: ColumnExpression<*>) = also {
             this.columns += column
         }
 
-        fun columns(columns: List<ColumnExpression<*>>) = also {
+        open fun columns(columns: List<ColumnExpression<*>>) = also {
             this.columns += columns
         }
 
-        fun columns(vararg columns: ColumnExpression<*>) = also {
+        open fun columns(vararg columns: ColumnExpression<*>) = also {
             columns(columns.toList())
         }
 
@@ -164,7 +162,7 @@ class SelectExpression(
             this.distinct = distinct
         }
 
-        fun build() =
+        open fun build() =
             SelectExpression(columns, from, where, groupBy, having, orderBy, paginationParams, distinct)
     }
 }
@@ -172,3 +170,49 @@ class SelectExpression(
 fun <T : QuerySource> T.select(
     block: SelectExpression.Builder<T>.(T) -> Unit = {},
 ) = SelectExpression.Builder(this).apply { block(this@select) }.build()
+
+class BindableSelectExpression<E>(
+    override val columns: List<BindableColumnExpression<E, *>>,
+    override val from: BindableQuerySource<E>,
+    where: SqlExpression<Boolean>?,
+    groupBy: List<ColumnExpression<*>>,
+    having: SqlExpression<Boolean>?,
+    orderBy: List<OrderByExpression>,
+    paginationParams: PaginationParams?,
+    distinct: Boolean,
+) : SelectExpression(columns, from, where, groupBy, having, orderBy, paginationParams, distinct) {
+    fun createEntity() = from.createEntity()
+
+    class Builder<E, T : BindableQuerySource<E>>(from: T) : SelectExpression.Builder<T>(from) {
+        private val bindableColumns: MutableList<BindableColumnExpression<E, *>> = mutableListOf()
+
+        override fun column(column: ColumnExpression<*>) =
+            throw UnsupportedOperationException("Cannot use ColumnExpression in BindableSelectExpression")
+
+        override fun columns(columns: List<ColumnExpression<*>>) =
+            throw UnsupportedOperationException("Cannot use ColumnExpression in BindableSelectExpression")
+
+        override fun columns(vararg columns: ColumnExpression<*>) =
+            throw UnsupportedOperationException("Cannot use ColumnExpression in BindableSelectExpression")
+
+        fun column(column: BindableColumnExpression<E, *>) = also {
+            this.columns += column
+        }
+
+        fun columns(columns: List<BindableColumnExpression<E, *>>) = also {
+            this.columns += columns
+        }
+
+        fun columns(vararg columns: BindableColumnExpression<E, *>) = also {
+            columns(columns.toList())
+        }
+
+        override fun build() = BindableSelectExpression(
+            bindableColumns, from!!, where, groupBy, having, orderBy, paginationParams, distinct
+        )
+    }
+}
+
+fun <E, T : BindableQuerySource<E>> T.select(
+    block: SelectExpression.Builder<T>.(T) -> Unit = {},
+) = BindableSelectExpression.Builder(this).apply { block(this@select) }.build()

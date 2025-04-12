@@ -1,7 +1,5 @@
 package top.loryn.support
 
-import top.loryn.schema.Column
-import top.loryn.schema.Table
 import java.math.BigDecimal
 import java.sql.*
 import java.time.*
@@ -23,10 +21,6 @@ object BooleanSqlType : SqlType<Boolean>(JDBCType.BOOLEAN, Boolean::class.java) 
     }
 }
 
-fun Table.boolean(name: String): Column<Boolean> {
-    return registerColumn(name, BooleanSqlType)
-}
-
 // Int -> INTEGER
 
 object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
@@ -37,10 +31,6 @@ object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): Int? {
         return rs.getInt(index)
     }
-}
-
-fun Table.int(name: String): Column<Int> {
-    return registerColumn(name, IntSqlType)
 }
 
 // Short -> SMALLINT
@@ -55,10 +45,6 @@ object ShortSqlType : SqlType<Short>(JDBCType.SMALLINT, Short::class.java) {
     }
 }
 
-fun Table.short(name: String): Column<Short> {
-    return registerColumn(name, ShortSqlType)
-}
-
 // Long -> BIGINT
 
 object LongSqlType : SqlType<Long>(JDBCType.BIGINT, Long::class.java) {
@@ -69,10 +55,6 @@ object LongSqlType : SqlType<Long>(JDBCType.BIGINT, Long::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): Long? {
         return rs.getLong(index)
     }
-}
-
-fun Table.long(name: String): Column<Long> {
-    return registerColumn(name, LongSqlType)
 }
 
 // Float -> FLOAT
@@ -87,10 +69,6 @@ object FloatSqlType : SqlType<Float>(JDBCType.FLOAT, Float::class.java) {
     }
 }
 
-fun Table.float(name: String): Column<Float> {
-    return registerColumn(name, FloatSqlType)
-}
-
 // Double -> DOUBLE
 
 object DoubleSqlType : SqlType<Double>(JDBCType.DOUBLE, Double::class.java) {
@@ -101,10 +79,6 @@ object DoubleSqlType : SqlType<Double>(JDBCType.DOUBLE, Double::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): Double? {
         return rs.getDouble(index)
     }
-}
-
-fun Table.double(name: String): Column<Double> {
-    return registerColumn(name, DoubleSqlType)
 }
 
 // BigDecimal -> DECIMAL
@@ -119,10 +93,6 @@ object DecimalSqlType : SqlType<BigDecimal>(JDBCType.DECIMAL, BigDecimal::class.
     }
 }
 
-fun Table.decimal(name: String): Column<BigDecimal> {
-    return registerColumn(name, DecimalSqlType)
-}
-
 // String -> VARCHAR
 
 object VarcharSqlType : SqlType<String>(JDBCType.VARCHAR, String::class.java) {
@@ -135,12 +105,7 @@ object VarcharSqlType : SqlType<String>(JDBCType.VARCHAR, String::class.java) {
     }
 }
 
-fun Table.varchar(name: String): Column<String> {
-    return registerColumn(name, VarcharSqlType)
-}
-
 val StringSqlType = VarcharSqlType
-fun Table.string(name: String) = varchar(name)
 
 // String -> LONGVARCHAR
 
@@ -152,10 +117,6 @@ object TextSqlType : SqlType<String>(JDBCType.LONGVARCHAR, String::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): String? {
         return rs.getString(index)
     }
-}
-
-fun Table.text(name: String): Column<String> {
-    return registerColumn(name, TextSqlType)
 }
 
 // ByteArray -> BLOB
@@ -176,10 +137,6 @@ object BlobSqlType : SqlType<ByteArray>(JDBCType.BLOB, ByteArray::class.java) {
     }
 }
 
-fun Table.blob(name: String): Column<ByteArray> {
-    return registerColumn(name, BlobSqlType)
-}
-
 // ByteArray -> BINARY
 
 object BytesSqlType : SqlType<ByteArray>(JDBCType.BINARY, ByteArray::class.java) {
@@ -190,10 +147,6 @@ object BytesSqlType : SqlType<ByteArray>(JDBCType.BINARY, ByteArray::class.java)
     override fun doGetResult(rs: ResultSet, index: Int): ByteArray? {
         return rs.getBytes(index)
     }
-}
-
-fun Table.bytes(name: String): Column<ByteArray> {
-    return registerColumn(name, BytesSqlType)
 }
 
 // Timestamp -> TIMESTAMP
@@ -208,10 +161,6 @@ object TimestampSqlType : SqlType<Timestamp>(JDBCType.TIMESTAMP, Timestamp::clas
     }
 }
 
-fun Table.jdbcTimestamp(name: String): Column<Timestamp> {
-    return registerColumn(name, TimestampSqlType)
-}
-
 // Date -> DATE
 
 object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
@@ -222,10 +171,6 @@ object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): SqlDate? {
         return rs.getDate(index)
     }
-}
-
-fun Table.jdbcDate(name: String): Column<SqlDate> {
-    return registerColumn(name, JdbcDateSqlType)
 }
 
 // Date -> DATE
@@ -240,10 +185,6 @@ object JavaDateSqlType : SqlType<JavaDate>(JDBCType.DATE, JavaDate::class.java) 
     }
 }
 
-fun Table.javaDate(name: String): Column<JavaDate> {
-    return registerColumn(name, JavaDateSqlType)
-}
-
 // Time -> TIME
 
 object TimeSqlType : SqlType<Time>(JDBCType.TIME, Time::class.java) {
@@ -254,10 +195,6 @@ object TimeSqlType : SqlType<Time>(JDBCType.TIME, Time::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): Time? {
         return rs.getTime(index)
     }
-}
-
-fun Table.jdbcTime(name: String): Column<Time> {
-    return registerColumn(name, TimeSqlType)
 }
 
 // Instant -> TIMESTAMP
@@ -272,10 +209,6 @@ object InstantSqlType : SqlType<Instant>(JDBCType.TIMESTAMP, Instant::class.java
     }
 }
 
-fun Table.timestamp(name: String): Column<Instant> {
-    return registerColumn(name, InstantSqlType)
-}
-
 // LocalDateTime -> TIMESTAMP
 
 object LocalDateTimeSqlType : SqlType<LocalDateTime>(JDBCType.TIMESTAMP, LocalDateTime::class.java) {
@@ -286,10 +219,6 @@ object LocalDateTimeSqlType : SqlType<LocalDateTime>(JDBCType.TIMESTAMP, LocalDa
     override fun doGetResult(rs: ResultSet, index: Int): LocalDateTime? {
         return rs.getTimestamp(index).toLocalDateTime()
     }
-}
-
-fun Table.datetime(name: String): Column<LocalDateTime> {
-    return registerColumn(name, LocalDateTimeSqlType)
 }
 
 // LocalDate -> DATE
@@ -304,10 +233,6 @@ object LocalDateSqlType : SqlType<LocalDate>(JDBCType.DATE, LocalDate::class.jav
     }
 }
 
-fun Table.date(name: String): Column<LocalDate> {
-    return registerColumn(name, LocalDateSqlType)
-}
-
 // LocalTime -> TIME
 
 object LocalTimeSqlType : SqlType<LocalTime>(JDBCType.TIME, LocalTime::class.java) {
@@ -318,10 +243,6 @@ object LocalTimeSqlType : SqlType<LocalTime>(JDBCType.TIME, LocalTime::class.jav
     override fun doGetResult(rs: ResultSet, index: Int): LocalTime? {
         return rs.getTime(index).toLocalTime()
     }
-}
-
-fun Table.time(name: String): Column<LocalTime> {
-    return registerColumn(name, LocalTimeSqlType)
 }
 
 // MonthDay -> VARCHAR
@@ -338,10 +259,6 @@ object MonthDaySqlType : SqlType<MonthDay>(JDBCType.VARCHAR, MonthDay::class.jav
     }
 }
 
-fun Table.monthDay(name: String): Column<MonthDay> {
-    return registerColumn(name, MonthDaySqlType)
-}
-
 // YearMonth -> VARCHAR
 
 object YearMonthSqlType : SqlType<YearMonth>(JDBCType.VARCHAR, YearMonth::class.java) {
@@ -356,10 +273,6 @@ object YearMonthSqlType : SqlType<YearMonth>(JDBCType.VARCHAR, YearMonth::class.
     }
 }
 
-fun Table.yearMonth(name: String): Column<YearMonth> {
-    return registerColumn(name, YearMonthSqlType)
-}
-
 // Year -> INTEGER
 
 object YearSqlType : SqlType<Year>(JDBCType.INTEGER, Year::class.java) {
@@ -370,10 +283,6 @@ object YearSqlType : SqlType<Year>(JDBCType.INTEGER, Year::class.java) {
     override fun doGetResult(rs: ResultSet, index: Int): Year? {
         return Year.of(rs.getInt(index))
     }
-}
-
-fun Table.year(name: String): Column<Year> {
-    return registerColumn(name, YearSqlType)
 }
 
 // UUID
@@ -388,16 +297,9 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
     }
 }
 
-fun Table.uuid(name: String): Column<UUID> {
-    return registerColumn(name, UuidSqlType)
-}
-
 // enum
 
 class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OTHER, enumClass) {
-    @Suppress("UNCHECKED_CAST")
-    constructor(typeRef: TypeReference<C>) : this(typeRef.referencedClass as Class<C>)
-
     private companion object {
         private val pgStatementClass = try {
             Class.forName("org.postgresql.PGStatement")
@@ -431,8 +333,4 @@ class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OT
     override fun doGetResult(rs: ResultSet, index: Int): C? {
         return rs.getString(index)?.let { java.lang.Enum.valueOf(enumClass, it) }
     }
-}
-
-fun <C : Enum<C>> Table.enum(name: String, clazz: Class<C>): Column<C> {
-    return registerColumn(name, EnumSqlType(clazz))
 }

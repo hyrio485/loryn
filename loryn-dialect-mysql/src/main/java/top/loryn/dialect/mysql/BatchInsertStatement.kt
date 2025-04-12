@@ -38,7 +38,7 @@
 //    useGeneratedKeys: Boolean = false,
 //    columns: List<TableColumn<E, *>> = table.insertColumns,
 //): Int {
-//    val columns = columns.onEach(table::checkColumn)
+//    val columns = columns
 //    return BatchInsertStatement(
 //        this, table, columns,
 //        entities.map { entity -> columns.map { it.getValueExpr(entity) } },

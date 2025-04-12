@@ -9,32 +9,32 @@ abstract class Table(
     val schema: String? = null,
     val category: String? = null,
 ) : QuerySource {
-    private val columnsMapMutable = LinkedHashMap<String, Column<*>>()
+    // region columns
 
-    override val columns get() = columnsMapMutable.values.toList()
+    private val columnsMapMutable = mutableListOf<Column<*>>()
+
+    override val columns get() = columnsMapMutable.toList()
 
     /** 过滤出所有主键列（可能为空） */
-    val primaryKeysMayEmpty get() = columns.filter { it.primaryKey }
+    open val primaryKeysMayEmpty get() = columnsMapMutable.filter { it.primaryKey }
 
     /** 所有主键列（包含一个或多个，没有定义主键时抛出异常） */
-    val primaryKeys
+    open val primaryKeys
         get() = primaryKeysMayEmpty.takeIf { it.isNotEmpty() }
             ?: error("Table $this does not have a primary key")
 
     /** 主键列（只有一个时才不为空） */
-    val primaryKeySingleOrNull get() = primaryKeys.singleOrNull()
+    open val primaryKeySingleOrNull get() = primaryKeys.singleOrNull()
 
     /** 主键列（非只有一个时抛出异常） */
-    val primaryKey
+    open val primaryKey
         get() = primaryKeys.singleOrNull()
             ?: error("Table $this has more than one primary keys, use primaryKeys instead")
 
-    fun <T> registerColumn(column: Column<T>) {
-        columnsMapMutable[column.name] = column
-    }
+    open fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean = false, notNull: Boolean = false) =
+        Column(this, name, sqlType, primaryKey, notNull).also { columnsMapMutable += it }
 
-    fun <T> registerColumn(name: String, sqlType: SqlType<T>) =
-        Column<T>(this, name, sqlType).also(this::registerColumn)
+    // endregion
 
     override fun SqlBuilder.appendSql(params: SqlParamList) =
         append(this@Table).appendAlias(this@Table) { appendKeyword("AS").append(' ').appendRef(it) }

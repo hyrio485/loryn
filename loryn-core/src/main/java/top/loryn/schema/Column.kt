@@ -11,22 +11,9 @@ open class Column<T>(
     override val name: String,
     override val sqlType: SqlType<T>,
     val primaryKey: Boolean = false,
-    val notNull: Boolean = false,
-) : ColumnExpression<T>(name) {
-    // region 数据库表描述方法
-
-    private fun copy(
-        table: Table = this.table,
-        name: String = this.name,
-        sqlType: SqlType<T> = this.sqlType,
-        primaryKey: Boolean = this.primaryKey,
-        notNull: Boolean = this.notNull,
-    ) = Column<T>(table, name, sqlType, primaryKey, notNull).also { table.registerColumn(it) }
-
-    fun primaryKey(primaryKey: Boolean = true) = copy(primaryKey = primaryKey, notNull = true)
-    fun notNull(notNull: Boolean = true) = copy(notNull = notNull)
-
-    // endregion
+    notNull: Boolean = false,
+) : ColumnExpression<T> {
+    val notNull = primaryKey || notNull
 
     override fun SqlBuilder.appendSql(params: SqlParamList) =
         appendAlias(table) { appendRef(it).append('.') }.appendRef(name)

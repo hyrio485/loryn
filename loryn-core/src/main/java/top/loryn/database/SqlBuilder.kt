@@ -1,11 +1,11 @@
 package top.loryn.database
 
 import top.loryn.expression.SqlExpression
-import top.loryn.expression.SqlParam
 import top.loryn.schema.Table
 import top.loryn.support.PaginationParams
 import top.loryn.support.SqlAppender
-import top.loryn.support.WithAlias
+import top.loryn.support.WithAlias.Companion.getAliasOrNull
+import top.loryn.utils.SqlParamList
 
 open class SqlBuilder(
     keywords: Set<String>,
@@ -36,9 +36,9 @@ open class SqlBuilder(
 
     open fun <T> appendList(
         list: List<T>,
-        params: MutableList<SqlParam<*>>,
+        params: SqlParamList,
         separator: String = ", ",
-        block: SqlBuilder.(T, MutableList<SqlParam<*>>) -> Unit,
+        block: SqlBuilder.(T, SqlParamList) -> Unit,
     ) = also {
         list.forEachIndexed { index, item ->
             if (index > 0) append(separator)
@@ -52,10 +52,10 @@ open class SqlBuilder(
         appendRef(tableName)
     }
 
-    open fun append(sqlAppender: SqlAppender, params: MutableList<SqlParam<*>>) =
+    open fun append(sqlAppender: SqlAppender, params: SqlParamList) =
         sqlAppender.run { appendSql(params) }
 
-    open fun append(expressions: List<SqlExpression<*>>, params: MutableList<SqlParam<*>>) =
+    open fun append(expressions: List<SqlExpression<*>>, params: SqlParamList) =
         appendList(expressions, params) { expression, params ->
             append(expression, params)
         }
@@ -66,9 +66,7 @@ open class SqlBuilder(
 
     /** 如果对象有别名，则调用 [block]，其参数为别名（非空）。 */
     open fun appendAlias(any: Any, block: SqlBuilder.(String) -> Unit) = also {
-        if (any is WithAlias) {
-            any.alias?.also { block(it) }
-        }
+        any.getAliasOrNull()?.also { block(it) }
     }
 
     fun build() = end().let { builder.toString() }

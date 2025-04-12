@@ -1,6 +1,7 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.utils.SqlParamList
 
 abstract class BaseCaseExpression<T, R>(
     val branches: List<Pair<SqlExpression<T>, SqlExpression<R>>>,
@@ -11,8 +12,8 @@ abstract class BaseCaseExpression<T, R>(
     }
 
     protected inline fun SqlBuilder.doAppendSqlOriginal(
-        params: MutableList<SqlParam<*>>,
-        appendValue: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit = {},
+        params: SqlParamList,
+        appendValue: SqlBuilder.(SqlParamList) -> Unit = {},
     ) = also {
         appendKeyword("CASE").append(' ').appendValue(params)
         branches.forEach { (condition, result) ->

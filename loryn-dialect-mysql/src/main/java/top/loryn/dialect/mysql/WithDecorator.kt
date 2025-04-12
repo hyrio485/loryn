@@ -7,7 +7,7 @@
 //
 //private fun SqlBuilder.appendWithClause(
 //    selects: List<Pair<Table<*>, SelectExpression<*>>>,
-//    params: MutableList<SqlParam<*>>,
+//    params: ParamList,
 //) = also {
 //    appendKeyword("WITH").append(' ').appendList(selects, params) { (table, select), params ->
 //        appendRef(table.tableName).append(' ').appendKeyword("AS").append(' ')
@@ -24,7 +24,7 @@
 //        statement: DmlStatement,
 //    ) : this(selects.toList(), statement)
 //
-//    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
+//    override fun SqlBuilder.doGenerateSql(params: ParamList) = also {
 //        appendWithClause(selects, params)
 //        with(statement) { doGenerateSql(params) }
 //    }
@@ -43,13 +43,13 @@
 //        statement: DqlStatement<E>,
 //    ) : this(selects.toList(), statement)
 //
-//    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
+//    override fun SqlBuilder.doGenerateSql(params: ParamList) = also {
 //        appendWithClause(selects, params)
 //        with(statement) { doGenerateSql(params) }
 //    }
 //
 //    override fun SqlBuilder.doGenerateCountSql(
-//        column: ColumnExpression<*>?, params: MutableList<SqlParam<*>>,
+//        column: ColumnExpression<*>?, params: ParamList,
 //    ) = also {
 //        appendWithClause(selects, params)
 //        with(statement) { doGenerateCountSql(column, params) }

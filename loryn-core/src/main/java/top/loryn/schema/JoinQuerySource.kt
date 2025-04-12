@@ -1,7 +1,9 @@
-package top.loryn.expression
+package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
-import top.loryn.schema.QuerySource
+import top.loryn.expression.ColumnExpression
+import top.loryn.expression.SqlExpression
+import top.loryn.utils.SqlParamList
 
 class JoinQuerySource(
     val left: QuerySource,
@@ -30,7 +32,7 @@ class JoinQuerySource(
 
     override val columns = emptyList<ColumnExpression<*>>()
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         append(left, params)
         joinType?.also { append(' ').append(it) }
         append(' ').appendKeyword("JOIN").append(' ').append(right, params)

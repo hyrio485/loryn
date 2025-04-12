@@ -27,7 +27,7 @@
 //        require(sets.isNotEmpty()) { "At least one column for update must be set" }
 //    }
 //
-//    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
+//    override fun SqlBuilder.doGenerateSql(params: ParamList) = also {
 //        appendInsertIntoColumns(params).appendKeyword("VALUES")
 //        append(' ').appendRowValues(values, params)
 //        append(' ').appendKeyword("ON")

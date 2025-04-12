@@ -2,6 +2,7 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
+import top.loryn.utils.SqlParamList
 
 class InfixExpression<T1, T2, R>(
     val operators: List<String>,
@@ -14,7 +15,7 @@ class InfixExpression<T1, T2, R>(
         require(operators.isNotEmpty()) { "At least one operator must be provided" }
     }
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         if (addParentheses) append('(')
         append(expr1, params)
         if (addParentheses) append(')')

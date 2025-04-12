@@ -8,10 +8,11 @@ abstract class BindableTable<E>(
 ) : Table(tableName, schema, category), BindableQuerySource<E> {
     constructor(tableName: String, createEntity: () -> E) : this(tableName, null, null, createEntity)
 
-//    open val insertColumns: List<Column<E, *>> get() = errorColumn("insert columns")
-//    open val updateColumns: List<Column<E, *>> get() = errorColumn("update columns")
-//    open val revColumn: Column<E, Int> get() = errorColumn("revision column")
-//    open val deletedColumn: Column<E, Boolean> get() = errorColumn("deleted column")
+    private fun errorColumn(name: String): Nothing = error("The $name of table $this is not specified")
+    open val insertColumns: List<BindableColumn<E, *>> get() = errorColumn("insert columns")
+    open val updateColumns: List<BindableColumn<E, *>> get() = errorColumn("update columns")
+    open val revColumn: BindableColumn<E, Int> get() = errorColumn("revision column")
+    open val deletedColumn: BindableColumn<E, Boolean> get() = errorColumn("deleted column")
 
     override fun createEntity() = createEntity.invoke()
 }

@@ -4,6 +4,7 @@ import top.loryn.database.SqlBuilder
 import top.loryn.schema.QuerySource
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
+import top.loryn.utils.SqlParamList
 
 /**
  * SELECT表达式。
@@ -18,7 +19,7 @@ class SelectExpression(
     val paginationParams: PaginationParams?,
     val distinct: Boolean,
 ) : SqlExpression<Nothing> {
-    private fun SqlBuilder.appendMain(params: MutableList<SqlParam<*>>) = also {
+    private fun SqlBuilder.appendMain(params: SqlParamList) = also {
         from?.also {
             append(' ').appendKeyword("FROM").append(' ').append(it, params)
         }
@@ -36,7 +37,7 @@ class SelectExpression(
         }
     }
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         appendKeyword("SELECT").append(' ')
         if (distinct) {
             appendKeyword("DISTINCT").append(' ')
@@ -54,7 +55,7 @@ class SelectExpression(
         paginationParams?.also { append(' ').append(it) }
     }
 
-    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*>?, params: MutableList<SqlParam<*>>) = also {
+    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*>?, params: SqlParamList) = also {
         appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append('(')
         if (column == null) {
             append('1')
@@ -65,6 +66,7 @@ class SelectExpression(
     }
 
     inline fun <reified T> asExpression(): ColumnExpression<T> {
+        // TODO：这里需要支持多列
         require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
         val column = columns[0]
         if (column.sqlType.clazz != T::class.java) {
@@ -78,7 +80,7 @@ class SelectExpression(
         object : QuerySource {
             override val columns = this@SelectExpression.columns
 
-            override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+            override fun SqlBuilder.appendSql(params: SqlParamList) = also {
                 append('(').append(this@SelectExpression, params).append(')')
                 alias?.also { append(' ').appendRef(it) }
             }

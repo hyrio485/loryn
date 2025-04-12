@@ -1,6 +1,7 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.utils.SqlParamList
 
 abstract class ColumnExpression<T>(
     open val name: String? = null,
@@ -9,7 +10,7 @@ abstract class ColumnExpression<T>(
         fun <T> wrap(expression: SqlExpression<T>) = object : ColumnExpression<T>() {
             override val sqlType = expression.sqlType
 
-            override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) =
+            override fun SqlBuilder.appendSql(params: SqlParamList) =
                 append(expression, params)
         }
     }

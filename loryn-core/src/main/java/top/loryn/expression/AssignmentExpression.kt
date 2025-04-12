@@ -2,6 +2,7 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.Column
+import top.loryn.utils.SqlParamList
 
 data class AssignmentExpression<C>(
     val column: ColumnExpression<C>,
@@ -13,6 +14,6 @@ data class AssignmentExpression<C>(
         }
     }
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) =
+    override fun SqlBuilder.appendSql(params: SqlParamList) =
         append(column, params).append(' ').appendKeyword("=").append(' ').append(value, params)
 }

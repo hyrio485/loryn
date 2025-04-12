@@ -2,6 +2,7 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
+import top.loryn.utils.SqlParamList
 
 class FunctionExpression<R>(
     val name: String,
@@ -11,7 +12,7 @@ class FunctionExpression<R>(
 ) : SqlExpression<R> {
     constructor(name: String, sqlType: SqlType<R>, vararg args: SqlExpression<*>) : this(name, sqlType, args.toList())
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         appendKeyword(name)
         if (args.isEmpty()) {
             if (addParenthesesWhenNoArgs) {

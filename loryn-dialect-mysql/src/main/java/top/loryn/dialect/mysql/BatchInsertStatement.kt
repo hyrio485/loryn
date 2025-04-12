@@ -24,7 +24,7 @@
 //        }
 //    }
 //
-//    override fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>) = also {
+//    override fun SqlBuilder.doGenerateSql(params: ParamList) = also {
 //        appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
 //        appendList(values, params) { values, params ->
 //            appendRowValues(values, params)

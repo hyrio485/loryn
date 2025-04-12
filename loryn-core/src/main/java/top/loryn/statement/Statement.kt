@@ -9,6 +9,7 @@ import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
 import top.loryn.support.WrappedSqlException
+import top.loryn.utils.SqlParamList
 import top.loryn.utils.mapEachRow
 import top.loryn.utils.one
 import java.sql.PreparedStatement
@@ -25,11 +26,11 @@ abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T
  * 和更新语句（preparedStatement.executeUpdate()）。
  */
 abstract class Statement(val database: Database) {
-    open fun SqlBuilder.doGenerateSql(params: MutableList<SqlParam<*>>): SqlBuilder =
+    open fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder =
         throw UnsupportedOperationException("SQL generation not implemented")
 
     open fun Database.generateSql(
-        block: SqlBuilder.(MutableList<SqlParam<*>>) -> Unit = { doGenerateSql(it) },
+        block: SqlBuilder.(SqlParamList) -> Unit = { doGenerateSql(it) },
     ): SqlAndParams {
         val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords).start()
         val params = mutableListOf<SqlParam<*>>()
@@ -77,7 +78,7 @@ abstract class DqlStatement(database: Database) : Statement(database) {
 
     open fun SqlBuilder.doGenerateCountSql(
         column: ColumnExpression<*>?,
-        params: MutableList<SqlParam<*>>,
+        params: SqlParamList,
     ): SqlBuilder = throw UnsupportedOperationException("SQL count generation not implemented")
 
     open fun count(

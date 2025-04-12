@@ -1,5 +1,6 @@
 package top.loryn.expression
 
+import top.loryn.expression.OrderByExpression.OrderByType
 import top.loryn.schema.Column
 import top.loryn.support.*
 
@@ -113,10 +114,10 @@ fun <C> ColumnExpression<C>.toOrderBy(type: OrderByType) =
     OrderByExpression(this, type)
 
 fun <C> SqlExpression<C>.toOrderBy(ascending: Boolean = true) =
-    toOrderBy<C>(if (ascending) OrderByType.ASC else OrderByType.DESC)
+    OrderByExpression(asColumn<C>(), ascending)
 
 fun <C> ColumnExpression<C>.toOrderBy(ascending: Boolean = true) =
-    toOrderBy(if (ascending) OrderByType.ASC else OrderByType.DESC)
+    OrderByExpression(this, ascending)
 
 // endregion
 

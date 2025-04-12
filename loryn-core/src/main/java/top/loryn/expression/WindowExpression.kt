@@ -1,6 +1,7 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.utils.SqlParamList
 
 class WindowExpression<R>(
     val function: FunctionExpression<R>,
@@ -13,7 +14,7 @@ class WindowExpression<R>(
 
     override val sqlType = function.sqlType
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         append(function, params).append(' ').appendKeyword("OVER").append(' ').append('(')
         if (partitionBy.isNotEmpty()) {
             appendKeyword("PARTITION").append(' ').appendKeyword("BY").append(' ')

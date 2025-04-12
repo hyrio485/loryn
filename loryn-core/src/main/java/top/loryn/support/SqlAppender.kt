@@ -1,8 +1,8 @@
 package top.loryn.support
 
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.SqlParam
+import top.loryn.utils.SqlParamList
 
 interface SqlAppender {
-    fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>): SqlBuilder
+    fun SqlBuilder.appendSql(params: SqlParamList): SqlBuilder
 }

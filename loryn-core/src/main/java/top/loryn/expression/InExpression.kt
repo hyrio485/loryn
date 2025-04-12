@@ -2,6 +2,7 @@ package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
 import top.loryn.support.BooleanSqlType
+import top.loryn.utils.SqlParamList
 
 class InExpression(
     val expr: SqlExpression<*>,
@@ -17,7 +18,7 @@ class InExpression(
 
     override val sqlType = BooleanSqlType
 
-    override fun SqlBuilder.appendSql(params: MutableList<SqlParam<*>>) = also {
+    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
         append(expr, params).append(' ')
         if (not) appendKeyword("NOT").append(' ')
         appendKeyword("IN").append(" (")

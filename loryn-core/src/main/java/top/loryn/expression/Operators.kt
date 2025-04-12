@@ -61,7 +61,7 @@ inline fun <A> SqlExpression<Boolean>.orIfNotNull(param: A?, getOther: (A) -> Sq
     if (param != null) this or getOther(param) else this
 
 operator fun SqlExpression<Boolean>.not() =
-    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = true)
+    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = false)
 
 // endregion
 

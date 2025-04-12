@@ -1,10 +1,13 @@
 package top.loryn.schema
 
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.and
 import top.loryn.expression.eq
 import top.loryn.expression.`in`
 import top.loryn.support.SqlType
 import top.loryn.support.Tuple
+import top.loryn.support.WithAlias
+import top.loryn.utils.SqlParamList
 import kotlin.reflect.KMutableProperty1
 
 abstract class BindableTable<E>(
@@ -77,4 +80,12 @@ abstract class BindableTable<E>(
     open val deletedColumn: BindableColumn<E, Boolean> get() = errorColumn("deleted column")
 
     override fun createEntity() = createEntity.invoke()
+
+    override fun aliased(alias: String): BindableTable<E> =
+        object : BindableTable<E>(tableName, schema, category, createEntity), WithAlias {
+            private val this0 = this@BindableTable
+            override val alias = alias
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
 }

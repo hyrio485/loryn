@@ -14,7 +14,11 @@ fun Database.dml(
     useGeneratedKeys: Boolean = false,
 ) = object : DmlStatement {
     override val database = this@dml
+
     override val useGeneratedKeys = useGeneratedKeys
+
+    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+        throw UnsupportedOperationException("Not needed")
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())
@@ -27,6 +31,12 @@ fun Database.dql(
 ) = object : DqlStatement {
     override val database = this@dql
     override val columns = columns.toList()
+
+    override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
+        throw UnsupportedOperationException("Query using native SQL does not support count")
+
+    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+        throw UnsupportedOperationException("Not needed")
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())
@@ -41,6 +51,12 @@ fun <E> Database.bindableDql(
     override val database = this@bindableDql
     override val createEntity = createEntity
     override val columns = columns.toList()
+
+    override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
+        throw UnsupportedOperationException("Query using native SQL does not support count")
+
+    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+        throw UnsupportedOperationException("Not needed")
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())

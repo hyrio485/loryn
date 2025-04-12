@@ -2,6 +2,7 @@ package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
+import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
 
 // TODO: alias, binding
@@ -41,4 +42,19 @@ abstract class Table(
         append(this@Table).appendAlias(this@Table) { appendKeyword("AS").append(' ').appendRef(it) }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")
+
+    fun <E> bind(createEntity: () -> E) =
+        object : BindableTable<E>(tableName, schema, category, createEntity) {
+            private val this0 = this@Table
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
+
+    open fun aliased(alias: String): Table =
+        object : Table(tableName, schema, category), WithAlias {
+            private val this0 = this@Table
+            override val alias = alias
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
 }

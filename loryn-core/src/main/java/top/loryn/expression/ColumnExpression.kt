@@ -5,8 +5,8 @@ import top.loryn.support.WithAlias
 import top.loryn.support.WithAlias.Companion.getAliasOrNull
 import top.loryn.utils.SqlParamList
 import java.sql.ResultSet
+import kotlin.reflect.KMutableProperty1
 
-// TODO: alias, binding
 interface ColumnExpression<T> : SqlExpression<T> {
     val name: String?
 
@@ -24,13 +24,28 @@ interface ColumnExpression<T> : SqlExpression<T> {
 
     fun getValue(resultSet: ResultSet) = sqlType.getResult(resultSet, (getAliasOrNull() ?: name)!!)
 
+    fun <E> bind(getter: (E.() -> T?)? = null, setter: (E.(T?) -> Unit)? = null): BindableColumnExpression<E, T> =
+        object : BindableColumnExpression<E, T> {
+            private val this0 = this@ColumnExpression
+
+            override val name = this0.name
+            override val sqlType = this0.sqlType
+            override val getter = getter
+            override val setter = setter
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
+
+    fun <E> bind(property: KMutableProperty1<E, T?>) =
+        bind<E>({ property.get(this) }, { property.set(this, it) })
+
     fun aliased(alias: String): ColumnExpression<T> =
         object : ColumnExpression<T>, WithAlias {
             private val this0 = this@ColumnExpression
 
             override val name = this0.name
-            override val alias = alias
             override val sqlType = this0.sqlType
+            override val alias = alias
 
             override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
         }

@@ -17,6 +17,8 @@ open class SelectExpression(
     val paginationParams: PaginationParams?,
     val distinct: Boolean,
 ) : SqlExpression<Nothing> {
+    override val sqlType get() = throw UnsupportedOperationException("SelectExpression does not have a sqlType")
+
     private fun SqlBuilder.appendMain(params: SqlParamList) = also {
         from?.also {
             append(' ').appendKeyword("FROM").append(' ').append(it, params)

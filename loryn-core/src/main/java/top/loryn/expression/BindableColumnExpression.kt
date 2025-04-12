@@ -1,6 +1,9 @@
 package top.loryn.expression
 
+import top.loryn.database.SqlBuilder
 import top.loryn.support.SqlType
+import top.loryn.support.WithAlias
+import top.loryn.utils.SqlParamList
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 
@@ -16,6 +19,9 @@ interface BindableColumnExpression<E, T> : ColumnExpression<T> {
             override val sqlType = sqlType
             override val getter = getter
             override val setter = setter
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) =
+                throw UnsupportedOperationException("Easy creation of BindableColumnExpression can only be used in ResultSet's column mapping.")
         }
 
         operator fun <E, T> invoke(
@@ -26,10 +32,11 @@ interface BindableColumnExpression<E, T> : ColumnExpression<T> {
             name,
             sqlType,
             getter = { property.get(this) },
-            setter = { property.set(this, it) }
+            setter = { property.set(this, it) },
         )
     }
 
+    // 某些情况可能只需要 getter 或 setter，如使用原始 SQL 时，因此要指定为可空类型
     val getter: (E.() -> T?)?
     val setter: (E.(T?) -> Unit)?
 
@@ -62,4 +69,17 @@ interface BindableColumnExpression<E, T> : ColumnExpression<T> {
     // 主要为了解决泛型问题
     fun <T1> getValueAndTransform(entity: E, block: (BindableColumnExpression<E, T>, T?) -> SqlExpression<T1>) =
         block(this, getValue(entity))
+
+    override fun aliased(alias: String): BindableColumnExpression<E, T> =
+        object : BindableColumnExpression<E, T>, WithAlias {
+            private val this0 = this@BindableColumnExpression
+
+            override val name = this0.name
+            override val sqlType = this0.sqlType
+            override val alias = alias
+            override val getter = this0.getter
+            override val setter = this0.setter
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
 }

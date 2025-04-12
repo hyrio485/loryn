@@ -29,8 +29,7 @@ abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T
 interface Statement {
     val database: Database
 
-    fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder =
-        throw UnsupportedOperationException("SQL generation not implemented")
+    fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder
 
     fun Database.generateSql(
         block: SqlBuilder.(SqlParamList) -> Unit = { doGenerateSql(it) },
@@ -80,16 +79,12 @@ interface DqlStatement : Statement {
     val columns: List<ColumnExpression<*>>? get() = emptyList()
     val usingIndex get() = true
 
-    fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder =
-        throw UnsupportedOperationException("SQL count generation not implemented")
+    fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder
 
+    // 这里column不为空可以指定统计某列的个数，为null则为COUNT(1)
     fun count(
         column: ColumnExpression<*>? = null,
-        getSqlAndParams: () -> SqlAndParams = {
-            database.generateSql { params ->
-                doGenerateCountSql(column, params)
-            }
-        },
+        getSqlAndParams: () -> SqlAndParams = { database.generateSql { params -> doGenerateCountSql(column, params) } },
     ) = database.doExecute(getSqlAndParams = getSqlAndParams) { statement ->
         statement.executeQuery().use { resultSet ->
             if (!resultSet.next()) {

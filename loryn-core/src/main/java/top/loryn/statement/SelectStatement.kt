@@ -14,8 +14,7 @@ class SelectStatement(
     override val columns = select.columns.takeIf { it.isNotEmpty() } ?: select.from?.columns
     override val usingIndex = select.columns.isNotEmpty()
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
-        append(select, params)
+    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = append(select, params)
 
     override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
         select.run { appendSqlCount(column, params) }

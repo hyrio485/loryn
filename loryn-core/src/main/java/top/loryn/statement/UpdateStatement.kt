@@ -152,9 +152,11 @@ private fun <E, T> BindableColumn<E, T>.caseValueExpr(
     primaryKeys: List<BindableColumn<E, *>>,
     entities: List<E>,
 ) = CaseValueExpression<Nothing, T>(
-    Tuple(primaryKeys), entities.map { entity ->
+    Tuple(primaryKeys),
+    entities.map { entity ->
         Tuple(primaryKeys.map { it.getValueExpr(entity) }) to getValueExpr(entity)
-    }
+    },
+    sqlType = null,
 )
 
 fun <E, T : BindableTable<E>> Database.update(

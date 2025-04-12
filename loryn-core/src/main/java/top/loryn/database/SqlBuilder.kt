@@ -69,5 +69,8 @@ open class SqlBuilder(
         any.getAliasOrNull()?.also { block(it) }
     }
 
+    open fun appendAliasUsingAs(any: Any) =
+        appendAlias(any) { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
+
     fun build() = end().let { builder.toString() }
 }

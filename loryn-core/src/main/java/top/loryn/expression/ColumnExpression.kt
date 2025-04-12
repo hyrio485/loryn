@@ -11,13 +11,15 @@ interface ColumnExpression<T> : SqlExpression<T> {
     val name: String?
 
     companion object {
-        fun <T> wrap(expression: SqlExpression<T>) = object : ColumnExpression<T> {
-            override val name = null
-            override val sqlType = expression.sqlType
+        fun <T> wrap(expression: SqlExpression<T>): ColumnExpression<T> =
+            object : ColumnExpression<T>, WithAlias {
+                override val name = null
+                override val sqlType = expression.sqlType
+                override val alias = expression.getAliasOrNull()
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) =
-                append(expression, params)
-        }
+                override fun SqlBuilder.appendSql(params: SqlParamList) =
+                    append(expression, params)
+            }
     }
 
     fun expr(value: T?) = SqlParam<T>(value, sqlType)
@@ -25,13 +27,14 @@ interface ColumnExpression<T> : SqlExpression<T> {
     fun getValue(resultSet: ResultSet) = sqlType.getResult(resultSet, (getAliasOrNull() ?: name)!!)
 
     fun <E> bind(getter: (E.() -> T?)? = null, setter: (E.(T?) -> Unit)? = null): BindableColumnExpression<E, T> =
-        object : BindableColumnExpression<E, T> {
+        object : BindableColumnExpression<E, T>, WithAlias {
             private val this0 = this@ColumnExpression
 
             override val name = this0.name
             override val sqlType = this0.sqlType
             override val getter = getter
             override val setter = setter
+            override val alias = this0.getAliasOrNull()
 
             override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
         }

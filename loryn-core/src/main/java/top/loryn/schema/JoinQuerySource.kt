@@ -10,7 +10,6 @@ class JoinQuerySource(
     val right: QuerySource,
     val joinType: String?,
     val on: SqlExpression<Boolean>,
-    //    val createEntity: (() -> E)? = null,
 ) : QuerySource {
     enum class JoinType(val keyword: String?) {
         DEFAULT(null),
@@ -27,15 +26,14 @@ class JoinQuerySource(
         right: QuerySource,
         joinType: JoinType,
         on: SqlExpression<Boolean>,
-        //        createEntity: (() -> E)? = null,
     ) : this(left, right, joinType.keyword, on)
 
     override val columns = emptyList<ColumnExpression<*>>()
 
     override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        append(left, params)
+        append(left, params).appendAliasUsingAs(left)
         joinType?.also { append(' ').append(it) }
-        append(' ').appendKeyword("JOIN").append(' ').append(right, params)
+        append(' ').appendKeyword("JOIN").append(' ').append(right, params).appendAliasUsingAs(right)
         append(' ').appendKeyword("ON").append(' ').append(on, params)
     }
 }

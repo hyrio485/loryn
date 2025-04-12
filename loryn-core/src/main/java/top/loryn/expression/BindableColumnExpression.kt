@@ -67,8 +67,10 @@ interface BindableColumnExpression<E, T> : ColumnExpression<T> {
     }
 
     // 主要为了解决泛型问题
-    fun <T1> getValueAndTransform(entity: E, block: (BindableColumnExpression<E, T>, T?) -> SqlExpression<T1>) =
-        block(this, getValue(entity))
+    fun <T1> getValueAndTransform(
+        entity: E,
+        block: (BindableColumnExpression<E, T>, T?) -> SqlExpression<T1>,
+    ) = block(this, getValue(entity))
 
     override fun aliased(alias: String): BindableColumnExpression<E, T> =
         object : BindableColumnExpression<E, T>, WithAlias {

@@ -44,9 +44,7 @@ open class SelectExpression(
         }
         if (columns.isNotEmpty()) {
             appendList(columns, params) { column, params ->
-                with(column) {
-                    appendSql(params).appendAlias(this) { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
-                }
+                with(column) { appendSql(params).appendAliasUsingAs(this) }
             }
         } else {
             append('*')
@@ -76,7 +74,6 @@ open class SelectExpression(
         return column as ColumnExpression<T>
     }
 
-    // TODO：alias
     fun asQuerySource(alias: String?) = object : QuerySource {
         private val this0 = this@SelectExpression
 
@@ -84,7 +81,7 @@ open class SelectExpression(
 
         override fun SqlBuilder.appendSql(params: SqlParamList) =
             append('(').append(this0, params).append(')').appendAlias(this0) { append(' ').appendRef(it) }
-    }
+    }.let { if (alias == null) it else it.aliased(alias) }
 
     abstract class AbstractBuilder<T : QuerySource>(
         protected val from: T?,

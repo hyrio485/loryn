@@ -88,4 +88,8 @@ abstract class BindableTable<E>(
 
             override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
         }
+
+    operator fun <T> get(column: BindableColumn<E, T>) = BindableColumn(
+        this, column.name, column.sqlType, column.primaryKey, column.notNull, column.getter, column.setter
+    )
 }

@@ -74,15 +74,15 @@ open class SelectExpression(
         return column as ColumnExpression<T>
     }
 
-    fun asQuerySource(alias: String?) =
-        object : QuerySource {
-            override val columns = this@SelectExpression.columns
+    // TODO：alias
+    fun asQuerySource(alias: String?) = object : QuerySource {
+        private val this0 = this@SelectExpression
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-                append('(').append(this@SelectExpression, params).append(')')
-                alias?.also { append(' ').appendRef(it) }
-            }
-        }
+        override val columns = this0.columns
+
+        override fun SqlBuilder.appendSql(params: SqlParamList) =
+            append('(').append(this0, params).append(')').appendAlias(this0) { append(' ').appendRef(it) }
+    }
 
     abstract class AbstractBuilder<T : QuerySource>(
         protected val from: T?,

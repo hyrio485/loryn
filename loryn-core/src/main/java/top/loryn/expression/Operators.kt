@@ -104,19 +104,22 @@ fun Int?.toSqlParam() = toSqlParam(IntSqlType)
 fun String?.toSqlParam() = toSqlParam(StringSqlType)
 fun Boolean?.toSqlParam() = toSqlParam(BooleanSqlType)
 
-fun <C> SqlExpression<C>.asColumn() =
-    ColumnExpression.wrap<C>(this)
+fun <T> SqlExpression<T>.distinct(alias: String? = null) =
+    UnaryExpression("DISTINCT", this, sqlType, false).asColumn(alias)
 
-fun <C> SqlExpression<C>.toOrderBy(type: OrderByType) =
-    OrderByExpression(asColumn<C>(), type)
+fun <T> SqlExpression<T>.asColumn(alias: String? = null) =
+    ColumnExpression.wrap<T>(this).let { if (alias == null) it else it.aliased(alias) }
 
-fun <C> ColumnExpression<C>.toOrderBy(type: OrderByType) =
+fun <T> SqlExpression<T>.toOrderBy(type: OrderByType) =
+    OrderByExpression(asColumn(), type)
+
+fun <T> ColumnExpression<T>.toOrderBy(type: OrderByType) =
     OrderByExpression(this, type)
 
-fun <C> SqlExpression<C>.toOrderBy(ascending: Boolean = true) =
-    OrderByExpression(asColumn<C>(), ascending)
+fun <T> SqlExpression<T>.toOrderBy(ascending: Boolean = true) =
+    OrderByExpression(asColumn(), ascending)
 
-fun <C> ColumnExpression<C>.toOrderBy(ascending: Boolean = true) =
+fun <T> ColumnExpression<T>.toOrderBy(ascending: Boolean = true) =
     OrderByExpression(this, ascending)
 
 // endregion

@@ -1,6 +1,6 @@
 package top.loryn.utils
 
-import top.loryn.schema.Column
+import top.loryn.expression.ColumnExpression
 import java.sql.ResultSet
 
 fun <R> ResultSet.mapEachRow(block: ResultSet.() -> R): List<R> = use {
@@ -11,4 +11,4 @@ fun <R> ResultSet.mapEachRow(block: ResultSet.() -> R): List<R> = use {
     }
 }
 
-operator fun <C> ResultSet.get(column: Column<C>) = column.getValue(this)
+operator fun <T> ResultSet.get(column: ColumnExpression<T>) = column.getValue(this)

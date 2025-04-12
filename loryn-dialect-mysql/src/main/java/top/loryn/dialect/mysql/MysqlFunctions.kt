@@ -13,7 +13,7 @@ fun <T> SqlExpression<T>.ifnull(default: SqlExpression<T>) =
 fun <T> SqlExpression<T>.ifnull(default: T?) =
     ifnull(default.toSqlParam(sqlType))
 
-fun <C> Column<C>.max() =
+fun <T> Column<T>.max() =
     FunctionExpression("MAX", sqlType, this)
 
 fun rowNumber(partitionBy: List<ColumnExpression<*>>, orderBy: List<OrderByExpression>) =

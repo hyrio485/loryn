@@ -1,6 +1,7 @@
 package top.loryn.expression
 
 import top.loryn.database.SqlBuilder
+import top.loryn.support.WithAlias
 import top.loryn.support.WithAlias.Companion.getAliasOrNull
 import top.loryn.utils.SqlParamList
 import java.sql.ResultSet
@@ -20,7 +21,17 @@ interface ColumnExpression<T> : SqlExpression<T> {
     }
 
     fun expr(value: T?) = SqlParam<T>(value, sqlType)
+
     fun getValue(resultSet: ResultSet) = sqlType.getResult(resultSet, (getAliasOrNull() ?: name)!!)
 
-    fun distinct() = UnaryExpression("DISTINCT", this, sqlType, false).asColumn<T>()
+    fun aliased(alias: String): ColumnExpression<T> =
+        object : ColumnExpression<T>, WithAlias {
+            private val this0 = this@ColumnExpression
+
+            override val name = this0.name
+            override val alias = alias
+            override val sqlType = this0.sqlType
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+        }
 }

@@ -6,6 +6,7 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.sql.rowset.serial.SerialBlob
+import kotlin.reflect.KClass
 import java.sql.Date as SqlDate
 import java.util.Date as JavaDate
 
@@ -299,7 +300,11 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
 
 // enum
 
-class EnumSqlType<C : Enum<C>>(val enumClass: Class<C>) : SqlType<C>(JDBCType.OTHER, enumClass) {
+class EnumSqlType<C : Enum<C>>(
+    val enumClass: Class<C>,
+) : SqlType<C>(JDBCType.OTHER, enumClass) {
+    constructor(enumClass: KClass<C>) : this(enumClass.java)
+
     private companion object {
         private val pgStatementClass = try {
             Class.forName("org.postgresql.PGStatement")

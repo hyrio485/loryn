@@ -7,11 +7,11 @@ import top.loryn.support.IntSqlType
 fun <T> SqlExpression<T>.`if`(condition: SqlExpression<Boolean>, elseBranch: SqlExpression<T>) =
     FunctionExpression("IF", sqlType, condition, this, elseBranch)
 
-fun <T> SqlExpression<T>.ifnull(default: SqlExpression<T>) =
+fun <T> SqlExpression<T>.ifNull(default: SqlExpression<T>) =
     FunctionExpression("IFNULL", sqlType, this, default)
 
-fun <T> SqlExpression<T>.ifnull(default: T?) =
-    ifnull(default.toSqlParam(sqlType))
+fun <T> SqlExpression<T>.ifNull(default: T?) =
+    ifNull(default.toSqlParam(sqlType))
 
 fun <T> Column<T>.max() =
     FunctionExpression("MAX", sqlType, this)

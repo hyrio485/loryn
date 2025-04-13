@@ -40,4 +40,15 @@ interface QuerySource : SqlAppender {
 
             override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
         }
+
+    fun allColumns(): ColumnExpression<Nothing> =
+        object : ColumnExpression<Nothing> {
+            private val this0 = this@QuerySource
+
+            override val name = null
+            override val sqlType get() = throw UnsupportedOperationException("Query source's all columns does not have a SQL type")
+
+            override fun SqlBuilder.appendSql(params: SqlParamList) =
+                appendAlias(this0) { appendRef(it).append(' ') }.append('*')
+        }
 }

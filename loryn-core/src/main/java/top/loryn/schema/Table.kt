@@ -64,6 +64,5 @@ abstract class Table(
     operator fun <T> get(column: Column<T>) =
         Column(this, column.name, column.sqlType, column.primaryKey, column.notNull)
 
-    operator fun <T> get(columns: List<Column<T>>) =
-        columns.map { this[it] }
+    fun <T> map(columns: List<Column<T>>) = columns.map { this[it] }
 }

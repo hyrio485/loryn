@@ -92,4 +92,7 @@ abstract class BindableTable<E>(
     operator fun <T> get(column: BindableColumn<E, T>) = BindableColumn(
         this, column.name, column.sqlType, column.primaryKey, column.notNull, column.getter, column.setter
     )
+
+    operator fun <T> get(columns: List<BindableColumn<E, T>>) =
+        columns.map { this[it] }
 }

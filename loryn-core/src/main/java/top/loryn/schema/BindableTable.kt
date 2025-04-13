@@ -93,5 +93,5 @@ abstract class BindableTable<E>(
         this, column.name, column.sqlType, column.primaryKey, column.notNull, column.getter, column.setter
     )
 
-    fun <T> map(columns: List<BindableColumn<E, T>>) = columns.map { this[it] }
+    fun <T> mapBindable(columns: List<BindableColumn<E, T>>) = columns.map { this[it] }
 }

@@ -108,7 +108,7 @@ fun <T> SqlExpression<T>.distinct(alias: String? = null) =
     UnaryExpression("DISTINCT", this, sqlType, false).asColumn(alias)
 
 fun <T> SqlExpression<T>.asColumn(alias: String? = null) =
-    ColumnExpression.wrap<T>(this).let { if (alias == null) it else it.aliased(alias) }
+    ColumnExpression.wrap<T>(this, alias)
 
 fun <T> SqlExpression<T>.toOrderBy(type: OrderByType) =
     OrderByExpression(asColumn(), type)

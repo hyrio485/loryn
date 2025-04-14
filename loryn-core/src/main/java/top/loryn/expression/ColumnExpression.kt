@@ -11,11 +11,11 @@ interface ColumnExpression<T> : SqlExpression<T> {
     val name: String?
 
     companion object {
-        fun <T> wrap(expression: SqlExpression<T>): ColumnExpression<T> =
+        fun <T> wrap(expression: SqlExpression<T>, alias: String? = null): ColumnExpression<T> =
             object : ColumnExpression<T>, WithAlias {
                 override val name = null
                 override val sqlType = expression.sqlType
-                override val alias = expression.getAliasOrNull()
+                override val alias = alias ?: expression.getAliasOrNull()
 
                 override fun SqlBuilder.appendSql(params: SqlParamList) =
                     append(expression, params)

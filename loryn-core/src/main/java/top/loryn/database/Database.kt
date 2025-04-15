@@ -216,11 +216,11 @@ class Database(
         }
 
         fun connect(
-            connector: () -> Connection,
             logger: Logger = defaultLogger,
             dialect: SqlDialect = detectDialectImplementation(),
             exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
+            connector: () -> Connection,
         ) = Database(
             transactionManager = JdbcTransactionManager(connector = connector),
             logger = logger,

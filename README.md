@@ -470,17 +470,72 @@ Loryn提供了丰富的SQL DSL语法来支持各种DQL与DML操作，用户可�
 `BindableTable`类则需要额外传入绑定的实体对象的属性引用或getter/setter方法（本质上属性引用在构造方法内部也会被转换为getter/setter方法）。
 
 `Table`与`BindableTable`均为抽象类，通常我们推荐使用Kotlin的`object`关键字来定义单例的数据表描述对象，但这不是必须的。
+
 某些情况下我们可能需要两张除了表名外完全相同的表结构（如数据备份等场景），此时我们可以使用`class`关键字来定义数据表描述对象，
 并将可变内容（如表名、数据库名等）作为参数传递。
+
+```kotlin
+sealed class Users(tableName: String) : Table(tableName) {
+    val id = column("id", IntSqlType, primaryKey = true)
+    val userName = column("username", StringSqlType, notNull = true)
+    val createdAt = column("created_at", LocalDateTimeSqlType, notNull = true)
+    val lastLogin = column("last_login", LocalDateTimeSqlType)
+}
+
+object NormalUsers : Users("tb_normal_users")
+
+object ArchivedUsers : Users("tb_archived_users")
+```
+
 极端情况下我们可能需要某些只会在特定场景使用或是只使用一次的表结构，此时我们可以使用Kotlin的匿名对象表达式来定义数据表描述对象。
+
+```kotlin
+val tempUsers = object : Table("temp_users") {
+    val id = column("id", IntSqlType, primaryKey = true)
+    val userName = column("username", StringSqlType, notNull = true)
+    val createdAt = column("created_at", LocalDateTimeSqlType, notNull = true)
+    val lastLogin = column("last_login", LocalDateTimeSqlType)
+}
+```
 
 灵活使用Kotlin的语法特性可以帮助我们减少重复代码、提高项目的可维护性。
 
+### 绑定实体后的便捷操作
+
+如上文所述，`BindableTable`类相较于`Table`类额外保存了绑定的实体的泛型类型与无参构造方法。
+除此之外，`BindableTable`类中声明列的`column()`方法还需要指定实体列的属性引用或getter/setter方法。
+
+当完成以上操作后，我们可以使用`Database.selectBindable()`方法来查询数据并将结果映射到实体类中。
+
+对于DML语句，Loryn也提供了`insert()`、`update()`、`delete()`等方法通过实体类直接操作数据表而无需手动指定需要增删改的列。
+对于实体的增加和修改操作，为了实现实体对象与数据库行的操作映射，
+我们需要重写`BindableTable`类中的`insertColumns`、`updateColumns`属性以指定需要增删改的列。
+
+除此之外，Loryn还支持逻辑删除（`deleteLogically()`）与乐观锁更新（`updateOptimistic()`），
+这同样需要我们重写`BindableTable`类中的`revColumn`、`deletedColumn`属性以指定版本号列与逻辑删除列。
+
+详细说明与示例代码可参考[DQL语句](#DQL语句)与[DML语句](#DML语句)章节。
+
 ## SqlType
+
+## DQL语句
+
+## DML语句
 
 # 最佳实践
 
-在实际项目中，我们需要首先对我们可能用到的表进行描述，方便后续
+Loryn作为一个轻量级的ORM框架，旨在为开发者提供一种简单易用的方式来操作数据库，而在实际项目中，光有数据库连接对象和表结构描述对象是不够的，
+我们还需要考虑如何管理这些对象的生命周期、如何处理异常、如何进行日志输出等问题。以下是最佳实践的一些建议：
+
+1. 根据需要对每个可能操作的数据库创建`Database`对象，并保存于全局变量或容器中（如Spring容器）。
+2. 对所有可能用到的表创建描述对象，推荐使用`object`关键字来定义单例的数据表描述对象并绑定实体类。
+   > 实体及数据表描述对象命名规范：数据库表绑定的实体对象应为名词的单数形式，且以`Po`结尾，如`UserPo`、`ProductPo`等；
+   数据库表描述对象应为名词的复数形式，如`Users`、`Products`等。
+3. 根据业务划分功能边界，创建不同的DAO（Data Access Object）类来处理不同模块的数据库操作。
+   这里的业务边界可以是一个功能模块、一个业务场景、一个数据表等，具体划分方式可以根据项目的实际情况来决定。
+   > DAO类的命名规范：`功能模块名 + Dao`，如`UserDao`（处理用户相关的数据库操作）、`ProductDao`（处理商品相关的数据库操作）等。
+4. 在DAO类中注入需要的数据库连接对象，同时借助`withLogger()`方法创建一个新的`Database`对象以实现不同的日志输出。
+5. 数据库连接对象只在DAO类内部使用，不暴露给外部，避免外部直接操作数据库连接对象；在DAO类内部只操作指定功能边界内的数据表，避免跨模块操作数据库。
 
 # 关于 Loryn 项目
 
@@ -528,10 +583,12 @@ Loryn 并非要替代成熟的 ORM 生态，而是聚焦于解决两个核心痛
 Loryn 的成长始终站在巨人的肩膀之上。特别感谢 Ktorm 项目在类型安全 DSL 领域的开创性实践，其源码结构为 Loryn 的模块划分提供了重要参考；
 同时也受益于社区关于 Exposed、Jimmer 等框架的讨论，这些声音帮助我们更精准地定位了差异化价值。
 
-当前，项目已支持主流关系型数据库的 90% 常用语法，并在三个中大型项目中验证了生产可用性。
+目前，项目已支持主流关系型数据库的 90% 常用语法，并在三个中大型项目中验证了生产可用性。
 我们始终相信，优秀的工具应当让开发者专注于业务逻辑而非框架约束。
 如果您也厌倦了在 SQL 字符串和抽象过度之间反复权衡，欢迎体验 Loryn 。
 
-——您的每一次 Star 都是对「简洁之道」的投票，每一个 Issue 都是推动项目向前的燃料。~~
+您的每一次 Star 都是对「简洁之道」的投票，每一个 Issue 都是推动项目向前的燃料。~~
 
-https://github.com/hyrio485/loryn/issues/new
+[点我快速提交GitHub Issue](#https://github.com/hyrio485/loryn/issues/new)
+
+[点我快速提交Gitee Issue](#https://gitee.com/hyrio485/loryn/issues/new)

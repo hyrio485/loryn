@@ -1,13 +1,18 @@
 package com.example
 
+import org.springframework.dao.DuplicateKeyException
+import org.springframework.jdbc.datasource.SingleConnectionDataSource
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator
 import top.loryn.database.Database
 import top.loryn.expression.eq
 import top.loryn.expression.like
 import top.loryn.expression.or
 import top.loryn.schema.BindableTable
 import top.loryn.schema.Table
+import top.loryn.statement.insert
 import top.loryn.statement.select
 import top.loryn.statement.selectBindable
+import top.loryn.statement.update
 import top.loryn.support.DoubleSqlType
 import top.loryn.support.IntSqlType
 import top.loryn.support.LocalDateTimeSqlType
@@ -96,7 +101,7 @@ object BindableOrders : BindableTable<OrderPo>("orders", ::OrderPo) {
     val status = column("status", StringSqlType, OrderPo::status, notNull = true)
 }
 
-fun main() {
+fun main1() {
     val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
 
     val userPairs1 = database.select(Users).list {
@@ -131,4 +136,54 @@ fun main() {
             }
         }
     }
+}
+
+fun main2() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+
+    class DummyException : Exception()
+    try {
+        database.useTransaction {
+            database.insert(Users) {
+                assign(it.userName, "aaa")
+                assign(it.createdAt, LocalDateTime.now())
+            }.execute()
+            println("----> " + database.select(Users).count())
+            throw DummyException()
+        }
+    } catch (_: DummyException) {
+        println("----> " + database.select(Users).count())
+    }
+}
+
+fun main3() {
+    val dataSource = SingleConnectionDataSource(
+        "jdbc:mysql://localhost:3306/loryn_test", "root", "root", true
+    )
+    val translator = SQLErrorCodeSQLExceptionTranslator(dataSource)
+    val database = Database.connect(
+        dataSource,
+        exceptionTranslator = {
+            val (sqlException, sql) = it
+            translator.translate("[Loryn] ${it.message}", sql, sqlException)
+        },
+    )
+    try {
+        database.insert(Users) {
+            assign(it.id, 101)
+            assign(it.userName, "abc")
+            assign(it.createdAt, LocalDateTime.now())
+        }.execute()
+    } catch (_: DuplicateKeyException) {
+        database.update(Users) {
+            set(it.userName, "abc")
+            where { it.id eq 101 }
+        }
+    }
+}
+
+fun main() {
+    //    main1()
+    //    main2()
+    main3()
 }

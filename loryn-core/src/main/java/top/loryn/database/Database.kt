@@ -123,7 +123,11 @@ class Database(
     }
 
     @OptIn(ExperimentalContracts::class)
-    inline fun <T> useTransaction(isolation: TransactionIsolation? = null, block: (Transaction) -> T): T {
+    inline fun <T> useTransaction(
+        rollbackFor: Class<out Throwable> = Throwable::class.java,
+        isolation: TransactionIsolation? = null,
+        block: (Transaction) -> T,
+    ): T {
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
         }
@@ -146,7 +150,11 @@ class Database(
         } finally {
             if (isOuter) {
                 try {
-                    if (throwable == null) transaction.commit() else transaction.rollback()
+                    if (throwable == null || !rollbackFor.isInstance(throwable)) {
+                        transaction.commit()
+                    } else {
+                        transaction.rollback()
+                    }
                 } finally {
                     transaction.close()
                 }

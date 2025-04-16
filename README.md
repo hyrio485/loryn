@@ -2,7 +2,7 @@
 
 [![Apache 2.0](https://img.shields.io/badge/license-Apache%202-red.svg)](LICENSE)
 [![gitee star](https://gitee.com/hyrio485/loryn/badge/star.svg?theme=dark)](https://gitee.com/hyrio485/loryn/stargazers)
-![github star](https://img.shields.io/github/stars/hyrio485/loryn.svg)
+[![github star](https://img.shields.io/github/stars/hyrio485/loryn.svg)](https://github.com/hyrio485/loryn/stargazers)
 
 Loryn是为Kotlin量身定制的，基于JDBC的极简ORM框架，它提供了强类型的SQL DSL，旨在减少我们手动拼接SQL出错的可能。
 同时，Loryn还提供了一个简单的对象关系映射（ORM）功能，允许我们将数据库表映射到Kotlin数据类，从而简化了数据访问和操作的过程。
@@ -161,7 +161,7 @@ Loryn提供了丰富的DSL语法来支持各种DQL与DML操作，用法详见后
 
 首先我们需要定义实体类（Persistent Object）：
 
-> 目前仅支持使用无餐构造器创建实体类；使用属性引用或使用getter/setter方法访问属性。
+> 目前仅支持使用无参构造器创建实体类，使用属性引用或使用getter/setter方法访问属性。
 
 ```kotlin
 class UserPo {
@@ -232,7 +232,7 @@ val users = database.selectBindable(BindableUsers).list()
 
 同样，Loryn也支持基于实体类的DML操作，详见后续章节。
 
-# 数据库连接相关
+# 连接管理
 
 ## 连接到数据库
 
@@ -279,7 +279,7 @@ val database = Database.connect(
 ```
 
 根据以上代码很容易理解`Database.connect()`方法的参数含义。
-需要注意的是，Loryn在方法调用是会自动加载JDBC驱动，同时使用连接获取数据库元信息，之后立刻关闭连接。
+需要注意的是，Loryn在方法调用时会自动加载JDBC驱动，同时使用连接获取数据库元信息，之后立刻关闭连接。
 使用此方法Loryn并不会在内存中保存连接对象，每次进行数据库操作时都会重新连接数据库，没有任何复用连接的行为。
 众所周知，创建连接是一个开销很大的操作，因此此方法只建议在开发或测试阶段临时使用，在实际项目中我们通常会使用连接池来管理连接对象。
 
@@ -303,3 +303,150 @@ val database = Database.connect(dataSource)
 对于大型项目而言，我们可能需要连接多个数据库，此时我们可以通过上述几种方式，多次调用`Database.connect()`方法来连接多个数据库。
 
 ## 事务管理
+
+数据库事务是数据库管理的一个重要概念，它是指一组操作要么全部成功，要么全部失败。Loryn对JDBC事务进行了封装，提供了简单易用的事务管理API。
+
+### 简单事务
+
+数据库连接对象提供了`useTransaction()`函数来执行简单事务。该方法接收一个闭包函数作为参数，在闭包函数中执行数据库操作。
+
+```kotlin
+database.useTransaction {
+    // 在事务中执行一组操作
+}
+```
+
+在闭包函数中，我们可以执行多条SQL语句，这些语句会在同一个事务中执行。当代码块中抛出异常时，事务会自动回滚。
+默认情况下，所有Throwable异常都会导致事务回滚，但我们也可以通过指定`useTransaction`方法的`rollbackFor`参数来指定哪些异常会导致事务回滚。
+
+事务代码示例：
+
+```kotlin
+class DummyException : Exception()
+try {
+    database.useTransaction {
+        database.insert(Users) {
+            assign(it.userName, "aaa")
+            assign(it.createdAt, LocalDateTime.now())
+        }.execute()
+        println("----> " + database.select(Users).count())
+        throw DummyException()
+    }
+} catch (_: DummyException) {
+    println("----> " + database.select(Users).count())
+}
+```
+
+需要注意的是，`useTransaction`函数是可重入的，因此可以嵌套使用，但是内层并没有开启新的事务，而是与外层共享同一个事务。
+
+### 事务管理器
+
+在某些情况下，简单地使用`useTransaction()`方法来管理事务可能不够灵活，
+例如需要在多个线程中共享同一个事务，或者需要在不同的数据库之间进行分布式事务操作，亦或是需要在满足特定的情况下才回滚事务。
+此时，我们可以使用`database.transactionManager`方法获取事务管理器对象来管理事务。
+
+示例代码：
+
+```kotlin
+val transactionManager = database.transactionManager
+val transaction = transactionManager.newTransaction(isolation = TransactionIsolation.READ_COMMITTED)
+var throwable: Throwable? = null
+
+try {
+    // do something...
+} catch (e: Throwable) {
+    throwable = e
+    throw e
+} finally {
+    try {
+        if (shouldRollback(throwable)) transaction.rollback() else transaction.commit()
+    } finally {
+        transaction.close()
+    }
+}
+```
+
+在默认情况下，Loryn使用`JdbcTransactionManager`来作为`TransactionManager`的实现类，这是基于JDBC提供的功能来实现的事务管理器。
+而对于Spring项目而言，更推荐将事务管理的功能交由Spring来处理，
+此时Loryn会使用`SpringManagedTransactionManager`来作为`TransactionManager`的实现类，详见下一章节。
+
+## 与Spring集成
+
+对于服务端项目而言，Spring是一个非常流行的框架。Spring JDBC提供了对JDBC的封装，简化了数据库操作的复杂性。
+Loryn对Spring的集成基于Spring JDBC的功能，其中也包含了对Spring事务管理的支持。
+
+当需要Loryn与Spring集成时，请保证项目直接或间接地引入了Spring JDBC的依赖：
+
+```xml
+
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-jdbc</artifactId>
+  <version>${spring.version}</version>
+</dependency>
+```
+
+### 创建Database对象
+
+Loryn提供了`Database.connectWithSpringSupport()`方法，传入`DataSource`对象即可完成对Spring的集成：
+
+```kotlin
+@Configuration
+class LorynConfiguration {
+    @Bean
+    fun database(dataSource: DataSource) = Database.connectWithSpringSupport(dataSource)
+}
+```
+
+> 注意：在Loryn与Spring集成后，`database.useTransaction()`函数将不再可用；开启新事物需要借助Spring的事务管理器或相关注解实现。
+
+### 异常转换
+
+除了事务管理，Spring JDBC还提供了异常转换的功能，
+借助此功能可以实现将JDBC驱动抛出的`SQLException`转换为Spring的`DataAccessException`异常，这样做有很多好处：
+
+- **统一异常体系，屏蔽数据库差异，提供更清晰的异常分类与语义**：
+  传统JDBC抛出`SQLException`，但不同数据库厂商的错误码（Error Code）和SQL状态码（SQLState）差异较大。
+  Spring通过`DataAccessException`及其子类（如`DuplicateKeyException`、`DeadlockLoserDataAccessException`
+  等）将这类底层异常统一封装，开发者无需关注具体数据库实现，只需处理Spring的异常类型
+  例如，当插入重复主键时，无论底层是MySQL还是Oracle，Spring均抛出`DuplicateKeyException`，代码兼容性更强。
+- **异常类型为运行时异常，减少冗余代码**：
+  JDBC的`SQLException`是Checked异常，强制开发者使用try-catch处理，导致代码冗余。
+  而`Spring的DataAccessException`是`RuntimeException`，开发者可根据业务需求选择性捕获异常，避免不必要的异常处理逻辑。
+  不过受检异常的概念仅存在于Java程序中，Kotlin中并不存在此问题。
+
+除此之外，Spring JDBC的异常转换还有其他一些好处，如提供更丰富的异常信息、支持自定义异常转换等，此处不再展开。
+Loryn在与Spring集成后，将使用`SQLErrorCodeSQLExceptionTranslator`进行异常转换，用户无需额外配置。
+
+示例程序：
+
+```kotlin
+try {
+    database.insert(Users) {
+        assign(it.id, 101)
+        assign(it.userName, "abc")
+        assign(it.createdAt, LocalDateTime.now())
+    }.execute()
+} catch (_: DuplicateKeyException) {
+    database.update(Users) {
+        set(it.userName, "abc")
+        where { it.id eq 101 }
+    }
+}
+```
+
+上述代码首先尝试添加一条用户记录，如果主键冲突，则捕获`DuplicateKeyException`异常并更新该记录。
+
+## 日志输出
+
+在使用Loryn时，程序会将其内部一些操作的参数以日志的形式进行输出，如生成的SQL语句、参数值、影响行数等。
+目前Loryn仅支持使用SLF4J作为日志框架，用户可以根据需要选择合适的日志实现，如Logback、Log4j2等。
+
+在成功连接到数据库后，Loryn会以`INFO`级别输出一条日志，内容为连接的数据库URL、用户名、驱动类名等信息。
+在执行SQL语句时，Loryn会以`DEBUG`级别输出日志，内容为生成的SQL语句、参数值、影响行数（DML）等信息。
+
+# SQL DSL及实体映射
+
+Loryn提供了丰富的SQL DSL语法来支持各种DQL与DML操作，用户可以根据需要选择合适的DSL语法来构建SQL语句。
+
+为了方便说明，以下示例均采用[快速开始](#快速开始)一节中的表结构及数据。

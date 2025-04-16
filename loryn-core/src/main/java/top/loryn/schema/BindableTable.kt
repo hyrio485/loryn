@@ -9,6 +9,7 @@ import top.loryn.support.Tuple
 import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KProperty1
 
 abstract class BindableTable<E>(
     tableName: String,
@@ -51,16 +52,16 @@ abstract class BindableTable<E>(
     }
 
     override fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean, notNull: Boolean) =
-        throw UnsupportedOperationException("For BindableTable, please add a BindableColumn instead of a normal column.")
+        column(name, sqlType, null, null, primaryKey, notNull)
 
     fun <T> column(
         name: String,
         sqlType: SqlType<T>,
-        getter: E.() -> T?,
-        setter: E.(T?) -> Unit,
+        getter: (E.() -> T?)?,
+        setter: (E.(T?) -> Unit)?,
         primaryKey: Boolean = false,
         notNull: Boolean = false,
-    ) = BindableColumn(this, name, sqlType, primaryKey, notNull, getter, setter).also { columnsMapMutable += it }
+    ) = BindableColumn(this, name, sqlType, getter, setter, primaryKey, notNull).also { columnsMapMutable += it }
 
     fun <T> column(
         name: String,
@@ -68,7 +69,15 @@ abstract class BindableTable<E>(
         property: KMutableProperty1<E, T?>,
         primaryKey: Boolean = false,
         notNull: Boolean = false,
-    ) = BindableColumn(this, name, sqlType, primaryKey, notNull, property).also { columnsMapMutable += it }
+    ) = BindableColumn(this, name, sqlType, property, primaryKey, notNull).also { columnsMapMutable += it }
+
+    fun <T> column(
+        name: String,
+        sqlType: SqlType<T>,
+        property: KProperty1<E, T?>,
+        primaryKey: Boolean = false,
+        notNull: Boolean = false,
+    ) = BindableColumn(this, name, sqlType, property, primaryKey, notNull).also { columnsMapMutable += it }
 
     // endregion
 
@@ -90,7 +99,7 @@ abstract class BindableTable<E>(
         }
 
     operator fun <T> get(column: BindableColumn<E, T>) = BindableColumn(
-        this, column.name, column.sqlType, column.primaryKey, column.notNull, column.getter, column.setter
+        this, column.name, column.sqlType, column.getter, column.setter, column.primaryKey, column.notNull
     )
 
     fun mapBindable(columns: List<BindableColumn<E, *>>) = columns.map { this[it] }

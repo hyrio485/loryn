@@ -4,15 +4,13 @@ import org.springframework.dao.DuplicateKeyException
 import org.springframework.jdbc.datasource.SingleConnectionDataSource
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator
 import top.loryn.database.Database
-import top.loryn.expression.eq
-import top.loryn.expression.like
-import top.loryn.expression.or
+import top.loryn.dialect.mysql.MysqlSqlDialect
+import top.loryn.dialect.mysql.insertOrUpdate
+import top.loryn.expression.*
 import top.loryn.schema.BindableTable
+import top.loryn.schema.JoinQuerySource
 import top.loryn.schema.Table
-import top.loryn.statement.insert
-import top.loryn.statement.select
-import top.loryn.statement.selectBindable
-import top.loryn.statement.update
+import top.loryn.statement.*
 import top.loryn.support.DoubleSqlType
 import top.loryn.support.IntSqlType
 import top.loryn.support.LocalDateTimeSqlType
@@ -83,6 +81,9 @@ object BindableUsers : BindableTable<UserPo>("users", ::UserPo) {
     val userName = column("username", StringSqlType, UserPo::userName, notNull = true)
     val createdAt = column("created_at", LocalDateTimeSqlType, UserPo::createdAt, notNull = true)
     val lastLogin = column("last_login", LocalDateTimeSqlType, UserPo::lastLogin)
+
+    override val insertColumns = listOf(userName, createdAt, lastLogin)
+    override val updateColumns = listOf(userName, createdAt, lastLogin)
 }
 
 object BindableProducts : BindableTable<ProductPo>("products", ::ProductPo) {
@@ -110,7 +111,7 @@ fun main1() {
     println(userPairs1)
 
     val userPairs2 = database.select(Users) {
-        where { (it.id eq 101) or (it.userName like "%白%") }
+        where((it.id eq 101) or (it.userName like "%白%"))
     }.list {
         it[Users.id] to it[Users.userName]
     }
@@ -167,6 +168,7 @@ fun main3() {
             val (sqlException, sql) = it
             translator.translate("[Loryn] ${it.message}", sql, sqlException)
         },
+        dialect = MysqlSqlDialect()
     )
     try {
         database.insert(Users) {
@@ -177,13 +179,110 @@ fun main3() {
     } catch (_: DuplicateKeyException) {
         database.update(Users) {
             set(it.userName, "abc")
-            where { it.id eq 101 }
+            where(it.id eq 101)
         }
     }
+}
+
+fun main4() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    database.insertOrUpdate(Users) {
+        assign(it.id, 101)
+        assign(it.userName, "abc")
+        assign(it.createdAt, LocalDateTime.now())
+        set(it.userName, "abc")
+    }.execute()
+    database.insertOrUpdate(BindableUsers, UserPo().apply {
+        id = 101
+        userName = "abc"
+        createdAt = LocalDateTime.now()
+    })
+}
+
+fun main5() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    val idColumn = ColumnExpression("id", IntSqlType)
+    val userNameColumn = ColumnExpression("username", StringSqlType)
+    database
+        .dql(
+            "SELECT * FROM users WHERE id = ?",
+            101.toSqlParam(),
+            columns = listOf(ColumnExpression("id", IntSqlType))
+        )
+        //        .list { it[idColumn] to it[userNameColumn] }
+        .list {
+            it[Users.id] to it[Users.userName]
+        }
+        .forEach { println(it) }
+}
+
+fun main6() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+
+    val effects = database.dml(
+        "INSERT INTO users (id, username, created_at) VALUES (?, ?, ?)",
+        101.toSqlParam(),
+        "abc".toSqlParam(),
+        LocalDateTime.now().toSqlParam(LocalDateTimeSqlType),
+    ).execute()
+
+    val idColumn = BindableColumnExpression("id", IntSqlType, UserPo::id)
+    val userNameColumn = BindableColumnExpression("username", StringSqlType, UserPo::userName)
+    database
+        .dqlBindable(
+            "SELECT * FROM users WHERE id = ?",
+            101.toSqlParam(),
+            createEntity = ::UserPo,
+            columns = listOf(idColumn, userNameColumn)
+        )
+        .list()
+        .forEach { println(it) }
+}
+
+fun main7() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    database.useConnection { conn ->
+        conn.prepareStatement("SELECT * FROM users WHERE id = ?").use { statement ->
+            statement.setInt(1, 101)
+            statement.executeQuery().use {
+                while (it.next()) {
+                    val id = it.getInt("id")
+                    val userName = it.getString("username")
+                    println("id: $id, username: $userName")
+                }
+            }
+        }
+    }
+}
+
+fun main8() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    val i = Users.id.aliased("i")
+    database.select(Users) {
+        column(i)
+        where(i gte 102)
+    }.list { it[i] }.also(::println)
+}
+
+fun main9() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    val u = Users.aliased("u")
+    val o = Orders.aliased("o")
+    var userNameColumn = Users.userName
+    var productIdColumn = Orders.productId
+    database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = u[Users.id] eq o[Orders.userId])) {
+        columns(u[userNameColumn], o[productIdColumn])
+    }.list { it[u[userNameColumn]] to it[o[productIdColumn]] }.also(::println)
 }
 
 fun main() {
     //    main1()
     //    main2()
-    main3()
+    //    main3()
+    //    main4()
+    //    main5()
+    //    main6()
+    //    main7()
+    //    main8()
+    main9()
 }

@@ -13,9 +13,9 @@ class DeleteStatement(
     val table: Table,
     val where: SqlExpression<Boolean>?,
 ) : DmlStatement {
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendKeyword("DELETE").append(' ').appendKeyword("FROM").append(' ').append(table)
-        where?.also { append(' ').appendKeyword("WHERE").append(' ').append(it, params) }
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendKeywords(listOf("DELETE", "FROM"), params).append(' ').appendTable(table)
+        where?.also { builder.append(' ').appendKeyword("WHERE").append(' ').append(it, params) }
     }
 }
 
@@ -23,8 +23,8 @@ class DeleteStatement(
 class DeleteBuilder<T : Table>(table: T) : StatementBuilder<T, DeleteStatement>(table) {
     private var where: SqlExpression<Boolean>? = null
 
-    fun where(block: (T) -> SqlExpression<Boolean>) {
-        this.where = block(table)
+    fun where(where: SqlExpression<Boolean>) {
+        this.where = where
     }
 
     override fun buildStatement(database: Database) = DeleteStatement(database, table, where)
@@ -36,9 +36,9 @@ fun <T : Table> Database.delete(table: T, block: DeleteBuilder<T>.(T) -> Unit = 
 // region 删除实体
 
 fun <E, T : BindableTable<E>> Database.delete(table: T, entity: E) =
-    delete(table) { where { it.primaryKeyFilter(entity) } }
+    delete(table) { where(it.primaryKeyFilter(entity)) }
 
 fun <E, T : BindableTable<E>> Database.delete(table: T, entities: List<E>) =
-    delete(table) { where { it.primaryKeyFilter(entities) } }
+    delete(table) { where(it.primaryKeyFilter(entities)) }
 
 // endregion

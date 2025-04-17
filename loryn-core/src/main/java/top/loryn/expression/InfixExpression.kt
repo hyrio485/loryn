@@ -11,19 +11,24 @@ class InfixExpression<T1, T2, R>(
     override val sqlType: SqlType<R>,
     val addParentheses: Boolean = false,
 ) : SqlExpression<R> {
+    constructor(
+        operator: String,
+        expr1: SqlExpression<T1>,
+        expr2: SqlExpression<T2>,
+        sqlType: SqlType<R>,
+        addParentheses: Boolean = false,
+    ) : this(listOf(operator), expr1, expr2, sqlType, addParentheses)
+
     init {
         require(operators.isNotEmpty()) { "At least one operator must be provided" }
     }
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        if (addParentheses) append('(')
-        append(expr1, params)
-        if (addParentheses) append(')')
-        append(' ').appendList(operators, params, " ") { operator, _ ->
-            appendKeyword(operator)
-        }.append(' ')
-        if (addParentheses) append('(')
-        append(expr2, params)
-        if (addParentheses) append(')')
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder
+            .append(expr1, params, addParentheses)
+            .append(' ')
+            .appendKeywords(operators, params, " ")
+            .append(' ')
+            .append(expr2, params, addParentheses)
     }
 }

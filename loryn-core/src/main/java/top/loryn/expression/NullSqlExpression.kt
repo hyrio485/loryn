@@ -6,5 +6,7 @@ import top.loryn.utils.SqlParamList
 class NullSqlExpression<T> : SqlExpression<T> {
     override val sqlType get() = throw UnsupportedOperationException("NullSqlExpression does not have a sqlType")
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) = appendKeyword("NULL")
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendKeyword("NULL")
+    }
 }

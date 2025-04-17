@@ -93,9 +93,13 @@ abstract class BindableTable<E>(
     override fun aliased(alias: String): BindableTable<E> =
         object : BindableTable<E>(tableName, schema, category, createEntity), WithAlias {
             private val this0 = this@BindableTable
-            override val alias = alias
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+            override val alias = alias
+            override val original = this0
+
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                builder.appendTable(this)
+            }
         }
 
     operator fun <T> get(column: BindableColumn<E, T>) = BindableColumn(

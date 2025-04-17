@@ -19,16 +19,22 @@ interface QuerySource : SqlAppender {
     fun leftJoin(right: QuerySource, on: SqlExpression<Boolean>) =
         JoinQuerySource(this, right, JoinType.LEFT, on)
 
+    fun innerJoin(right: QuerySource, on: SqlExpression<Boolean>) =
+        JoinQuerySource(this, right, JoinType.INNER, on)
+
+    fun rightJoin(right: QuerySource, on: SqlExpression<Boolean>) =
+        JoinQuerySource(this, right, JoinType.RIGHT, on)
+
     fun <E> bind(createEntity: () -> E): BindableQuerySource<E> =
         object : BindableQuerySource<E>, WithAlias {
             private val this0 = this@QuerySource
 
             override val columns = emptyList<BindableColumnExpression<E, *>>()
+
             override val alias = this0.getAliasOrNull()
+            override val original = this0
 
             override fun createEntity() = createEntity.invoke()
-
-            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
         }
 
     fun aliased(alias: String): QuerySource =
@@ -36,9 +42,9 @@ interface QuerySource : SqlAppender {
             private val this0 = this@QuerySource
 
             override val columns = this0.columns
-            override val alias = alias
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+            override val alias = alias
+            override val original = this0
         }
 
     fun allColumns(): ColumnExpression<Nothing> =
@@ -48,7 +54,8 @@ interface QuerySource : SqlAppender {
             override val name = null
             override val sqlType get() = throw UnsupportedOperationException("Query source's all columns does not have a SQL type")
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) =
-                appendAlias(this0) { appendRef(it).append(' ') }.append('*')
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                builder.appendAlias(this0) { appendRef(it).append(' ') }.append('*')
+            }
         }
 }

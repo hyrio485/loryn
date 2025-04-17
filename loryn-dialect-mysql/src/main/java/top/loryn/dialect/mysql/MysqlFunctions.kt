@@ -11,7 +11,7 @@ fun <T> SqlExpression<T>.ifNull(default: SqlExpression<T>) =
     FunctionExpression("IFNULL", sqlType, this, default)
 
 fun <T> SqlExpression<T>.ifNull(default: T?) =
-    ifNull(default.toSqlParam(sqlType))
+    ifNull(expr(default))
 
 fun <T> Column<T>.max() =
     FunctionExpression("MAX", sqlType, this)

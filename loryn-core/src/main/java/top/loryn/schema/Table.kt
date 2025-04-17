@@ -38,8 +38,9 @@ abstract class Table(
 
     // endregion
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) =
-        append(this@Table).appendAliasUsingAs(this@Table)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendTable(this)
+    }
 
     override fun toString() = listOfNotNull(category, schema, tableName).joinToString(".")
 
@@ -48,8 +49,11 @@ abstract class Table(
             private val this0 = this@Table
 
             override val alias = this0.getAliasOrNull()
+            override val original = this0
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                builder.appendTable(this)
+            }
         }
 
     override fun aliased(alias: String): Table =
@@ -57,8 +61,11 @@ abstract class Table(
             private val this0 = this@Table
 
             override val alias = alias
+            override val original = this0
 
-            override fun SqlBuilder.appendSql(params: SqlParamList) = with(this0) { appendSql(params) }
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                builder.appendTable(this)
+            }
         }
 
     operator fun <T> get(column: Column<T>) =

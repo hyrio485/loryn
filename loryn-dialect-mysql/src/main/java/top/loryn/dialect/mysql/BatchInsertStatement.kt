@@ -28,11 +28,14 @@ class BatchInsertStatement(
         }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
-        appendList(values, params) { values, params ->
-            appendRowValues(values, params)
-        }
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder
+            .appendInsertIntoColumns(params)
+            .appendKeyword("VALUES")
+            .append(' ')
+            .appendList(values, params) { values, params ->
+                appendRowValues(values, params)
+            }
     }
 }
 

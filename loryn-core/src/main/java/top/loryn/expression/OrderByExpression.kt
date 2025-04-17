@@ -20,10 +20,10 @@ class OrderByExpression(
         ;
     }
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        append(column, params)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.append(column, params)
         if (type == OrderByType.DESC) {
-            append(' ').appendKeyword(type.keyword)
+            builder.append(' ').appendKeyword(type.keyword)
         }
     }
 }

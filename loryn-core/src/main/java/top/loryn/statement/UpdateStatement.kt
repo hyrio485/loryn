@@ -21,10 +21,11 @@ class UpdateStatement(
         require(sets.isNotEmpty()) { "At least one column must be set" }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendKeyword("UPDATE").append(' ').append(table).append(' ')
-        appendKeyword("SET").append(' ').append(sets, params)
-        where?.also { append(' ').appendKeyword("WHERE").append(' ').append(it, params) }
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder
+            .appendKeyword("UPDATE").append(' ').appendTable(table).append(' ')
+            .appendKeyword("SET").append(' ').append(sets, params)
+        where?.also { builder.append(' ').appendKeyword("WHERE").append(' ').append(it, params) }
     }
 }
 
@@ -45,8 +46,8 @@ class UpdateBuilder<T : Table>(table: T) : StatementBuilder<T, UpdateStatement>(
         set(column, column.expr(value))
     }
 
-    fun where(block: (T) -> SqlExpression<Boolean>) {
-        this.where = block(table)
+    fun where(where: SqlExpression<Boolean>) {
+        this.where = where
     }
 
     override fun buildStatement(database: Database) = UpdateStatement(database, table, sets, where)
@@ -74,8 +75,8 @@ class BindableUpdateBuilder<E, T : BindableTable<E>>(table: T) : StatementBuilde
         set(column, column.expr(value))
     }
 
-    fun where(block: (T) -> SqlExpression<Boolean>) {
-        this.where = block(table)
+    fun where(where: SqlExpression<Boolean>) {
+        this.where = where
     }
 
     override fun buildStatement(database: Database) = UpdateStatement(database, table, sets, where)
@@ -94,7 +95,7 @@ fun <E, T : BindableTable<E>> Database.update(
     columns: List<BindableColumn<E, *>> = table.updateColumns,
 ) = updateBindable(table) {
     columns.forEach { set(it) { it.getValueExpr(entity) } }
-    where { it.primaryKeyFilter(entity) }
+    where(it.primaryKeyFilter(entity))
 }
 
 fun <E, T : BindableTable<E>> Database.update(
@@ -125,7 +126,7 @@ fun <E, T : BindableTable<E>> Database.updateOptimistic(
             set(column) { it.getValueExpr(entity) }
             set(revColumn, revColumn.getValue(entity)!! + 1)
         }
-        where { it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)) }
+        where(it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)))
     }
 }
 
@@ -166,7 +167,7 @@ fun <E, T : BindableTable<E>> Database.update(
 ) = updateBindable(table) {
     val primaryKeys = it.primaryKeys
     columns.forEach { set(it) { it.caseValueExpr(primaryKeys, entities) } }
-    where { it.primaryKeyFilter(entities) }
+    where(it.primaryKeyFilter(entities))
 }
 
 fun <E, T : BindableTable<E>> Database.update(
@@ -191,7 +192,7 @@ fun <E, T : BindableTable<E>> Database.deleteLogically(
     deletedColumn: BindableColumn<E, Boolean> = table.deletedColumn,
 ) = update(table) {
     set(deletedColumn, true)
-    where { it.primaryKeyFilter(entity) }
+    where(it.primaryKeyFilter(entity))
 }
 
 fun <E, T : BindableTable<E>> Database.deleteLogically(
@@ -210,7 +211,7 @@ fun <E, T : BindableTable<E>> Database.deleteLogically(
     deletedColumn: BindableColumn<E, Boolean> = table.deletedColumn,
 ) = update(table) {
     set(deletedColumn, true)
-    where { it.primaryKeyFilter(entities) }
+    where(it.primaryKeyFilter(entities))
 }
 
 fun <E, T : BindableTable<E>> Database.deleteLogically(

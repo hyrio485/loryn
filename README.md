@@ -15,6 +15,7 @@ Loryn基于Apache 2.0协议开源，欢迎大家使用和贡献代码。
 ## 特性
 
 - **轻量级**：Loryn是一个轻量级的ORM框架，无需配置文件、注解等，无三方依赖，易于集成和使用。
+- **高性能**：Loryn基于JDBC实现，性能接近原生JDBC，未使用反射等性能开销较大的特性，适合高并发场景。
 - **强类型SQL DSL**：Loryn提供了一个强类型的SQL DSL，允许我们使用Kotlin的类型系统来构建SQL查询，避免了手动拼接SQL时可能出现的错误。
 - **简单易用**：Loryn的API设计简单易用，使用起来非常方便。用户可以选择自动实体映射或操作原生ResultSet，在性能和易用性之间取得平衡。
 - **支持多种数据库**：Loryn提供了方言接口，支持多种数据库，用户可以根据需要选择合适的方言。
@@ -134,7 +135,7 @@ fun main() {
 
 ```kotlin
 val users1 = database.select(Users) {
-    where { (it.id eq 101) or (it.userName like "%白%") }
+    where((it.id eq 101) or (it.userName like "%白%"))
 }.list {
     it[Users.id] to it[Users.userName]
 }
@@ -430,7 +431,7 @@ try {
 } catch (_: DuplicateKeyException) {
     database.update(Users) {
         set(it.userName, "abc")
-        where { it.id eq 101 }
+        where(it.id eq 101)
     }
 }
 ```
@@ -518,9 +519,342 @@ val tempUsers = object : Table("temp_users") {
 
 ## SqlType
 
+SqlType是Loryn中对底层JDBC类型与Kotlin类型的封装，其本身是一个抽象类。
+子类继承SqlType类需要实现从JDBC ResultSet中获取和设置数据的方法。
+
+示例代码：（`IntSqlType`）
+
+```kotlin
+object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: Int) {
+        ps.setInt(index, parameter)
+    }
+
+    override fun doGetResult(rs: ResultSet, index: Int): Int? {
+        return rs.getInt(index)
+    }
+}
+```
+
+Loryn预设了多种SqlType类型以支持不同的JDBC类型与Kotlin类型的映射，具体如下：
+
+| 类型名                              | Kotlin/Java类型                             | JDBC类型（`java.sql.JDBCType`）       |
+|----------------------------------|-------------------------------------------|-----------------------------------|
+| `BooleanSqlType`                 | `Boolean`                                 | `BOOLEAN`                         |
+| `IntSqlType`                     | `Int`/`Integer`                           | `INTEGER`                         |
+| `ShortSqlType`                   | `Short`                                   | `SMALLINT`                        |
+| `LongSqlType`                    | `Long`                                    | `BIGINT`                          |
+| `FloatSqlType`                   | `Float`                                   | `FLOAT`                           |
+| `DoubleSqlType`                  | `Double`                                  | `DOUBLE`                          |
+| `DecimalSqlType`                 | `java.math.BigDecimal`                    | `DECIMAL`                         |
+| `VarcharSqlType`/`StringSqlType` | `String`                                  | `VARCHAR`                         |
+| `TextSqlType`                    | `String`                                  | `LONGVARCHAR`                     |
+| `BlobSqlType`                    | `ByteArray`/`byte[]`                      | `BLOB`                            |
+| `BytesSqlType`                   | `ByteArray`/`byte[]`                      | `BINARY`                          |
+| `TimestampSqlType`               | `java.sql.Timestamp`                      | `TIMESTAMP`                       |
+| `JdbcDateSqlType`                | `java.sql.Date`                           | `DATE`                            |
+| `JavaDateSqlType`                | `java.util.Date`                          | `DATE`                            |
+| `TimeSqlType`                    | `java.sql.Time`                           | `TIME`                            |
+| `InstantSqlType`                 | `java.time.Instant`                       | `TIMESTAMP`                       |
+| `LocalDateTimeSqlType`           | `java.time.LocalDateTime`                 | `TIMESTAMP`                       |
+| `LocalDateSqlType`               | `java.time.LocalDate`                     | `DATE`                            |
+| `LocalTimeSqlType`               | `java.time.LocalTime`                     | `TIME`                            |
+| `MonthDaySqlType`                | `java.time.MonthDay`                      | `VARCHAR`                         |
+| `YearMonthSqlType`               | `java.time.YearMonth`                     | `VARCHAR`                         |
+| `YearSqlType`                    | `java.time.Year`                          | `INTEGER`                         |
+| `UuidSqlType`                    | `java.util.UUID`                          | `OTHER`                           |
+| `EnumSqlType<C>`                 | `C extends Enum<C>`                       | `OTHER`（PostgreSQL）/`VARCHAR`（其他） |
+| `JsonSqlType`                    | `com.fasterxml.jackson.databind.JsonNode` | `VARCHAR`                         |
+
+如果上述类型不能满足需求，用户也可以自定义SqlType类型，只需继承`SqlType`类并实现`doSetParameter()`与`doGetResult()`方法即可。
+
+除此之外，`SqlType`类还提供了`transform()`方法来实现基于已有的类型导出一个新类型，
+如预设的`JsonObjectSqlType`就是基于`JsonSqlType`导出的一个新类型。
+
+```kotlin
+val JsonObjectSqlType = JsonSqlType.transform(ObjectNode::class.java, { it as ObjectNode }, { it })
+```
+
+但需要注意的是，SqlType的转换在每次读取数据时都会执行一次，因此需要避免在转换方法中执行耗时的操作，以免对于实体映射的性能造成影响。
+
+## SQL表达式
+
+Loryn使用`SqlExpression<T>`类对SQL表达式进行了抽象，多个SQL表达式的排列组合组成了语句。
+
+Loryn预设了多个`SqlExpression`的子类用以描述不同类型的SQL表达式，如：
+
+- `ColumnExpression`：表示列表达式，通常用于描述数据表的列。
+- `UnaryExpression`：表示一元运算符表达式，如`+`、`-`等。
+- `BinaryExpression`：表示二元运算符表达式，如`+`、`-`、`*`、`/`等。
+- `FunctionExpression`：表示函数表达式，如`SUM()`、`COUNT()`等。
+- ……
+
+除此之外，Loryn还预设了多个运算符（扩展函数）以快速生成不同类型的SQL表达式，详见[Operators.kt](loryn-core/src/main/java/top/loryn/expression/Operators.kt)。
+
+### 运算符优先级
+
+运算符从Kotlin语法层面看，我们可将其分为三类：
+
+1. 使用`operator`关键字定义的运算符，如`+`、`-`、`*`、`/`等；
+2. 使用`infix`关键字定义的运算符，如`eq`、`ne`、`lt`、`gt`等；
+3. 普通的函数调用，如`in`、`like`、`isNull`等。
+
+运算符函数可连续调用，但这必定会出现运算符优先级的相关问题。Kotlin在语法层面对其进行了处理，
+具体请参考[Kotlin 语言规范](#https://kotlinlang.org/docs/reference/grammar.html#expressions)中的相关规定。
+
+### 自定义运算符
+
+Loryn允许用户自定义运算符，只需根据需要定义返回值类型为`SqlExpression<T>`的函数即可。
+
+对于主流的数据库而言，Loryn提供了多种方言包以支持不同的数据库，如MySQL、PostgreSQL、Oracle等。具体内容详见[数据库方言](#数据库方言)
+章节。
+
+（此处待完善）
+
 ## DQL语句
 
+在[快速开始](#快速开始)一节中，我们曾执行了一个简单的查询操作：
+
+```kotlin
+val users = database.select(Users).list { resultSet ->
+    resultSet[Users.id] to resultSet[Users.userName]
+}
+```
+
+在这个查询中，我们使用了`select()`方法来创建一个`SelectStatement`对象，并使用`list()`方法来执行查询并将结果集映射为实体对象，最后返回一个列表。
+
+对于绑定了实体类的数据表描述对象，我们可以使用`selectBindable()`方法来创建一个`BindableSelectStatement`对象。
+在调用`list()`方法时，我们快速地将结果集映射为实体对象。
+
+> 同样的，Loryn也提供了`one()`方法来获取单条记录，当查询结果包含多条记录时会抛出异常。
+
+如需要对表数据进行过滤，可在Builder方法中设置过滤条件；同样的，也可设置排序条件、分组条件、分页参数等：
+
+```kotlin
+database.select(Users) {
+    where(it.id gte 101)
+    orderBy(it.userName.toOrderBy())
+}
+```
+
+### 设置别名
+
+若希望在后续的条件中使用之前列的值，则可以使用`alias()`方法为列设置别名：
+
+```kotlin
+val i = Users.id.aliased("i")
+database.select(Users) {
+    column(i)
+    where(i gte 102)
+}.list { it[i] }.also(::println)
+```
+
+生成的SQL为：
+
+```sql
+SELECT id AS i
+FROM users
+WHERE id >= ?;
+```
+
+### 联表查询
+
+Loryn支持联表查询，用户可以对`QuerySource`对象使用`join()`方法来连接其他表：
+
+```kotlin
+val u = Users.aliased("u")
+val o = Orders.aliased("o")
+var userNameColumn = Users.userName
+var productIdColumn = Orders.productId
+database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = u[Users.id] eq o[Orders.userId])) {
+    columns(u[userNameColumn], o[productIdColumn])
+}.list { it[u[userNameColumn]] to it[o[productIdColumn]] }.also(::println)
+```
+
+生成的SQL为：
+
+```sql
+SELECT u.username, o.product_id
+FROM users AS u
+         LEFT JOIN orders AS o ON u.id = o.user_id;
+```
+
+在上述代码中，我们使用了`join()`方法来连接`Users`与`Orders`表，并指定了连接类型为左连接（`LEFT JOIN`）。
+
+> 提示：对于连接的两张表不存在同名字段时，由于不会造成歧义，因此此种情况下无需使用`aliased()`方法为表设置别名。
+
+对于左、右、内连接，Loryn提供了`leftJoin()`、`rightJoin()`、`innerJoin()`等方法来简化连接操作。
+
 ## DML语句
+
+## 数据库方言
+
+数据库方言指不同数据库在SQL标准之外实现的差异化特性。
+虽然SQL语言存在统一规范，但实际应用中，各数据库（如MySQL、Oracle）会基于性能优化或场景需求，形成各自的扩展语法（如分页参数、内置函数等）。
+
+Loryn框架的核心模块（loryn-core）主要实现标准SQL的通用支持，如需使用特定数据库的独有功能，则需借助方言模块。
+方言包通过适配不同数据库的语法规则、数据类型映射及特有函数，让开发者能够轻松调用各类数据库所读有的特性，同时保持ORM层代码的统一。
+Loryn为主流的数据库方言提供了支持包，只需要引入对应的依赖并在创建连接时指定要使用的方言即可。各方言包基于Java的SPI机制自动加载。
+
+由于作者精力有限，很难较为全面的覆盖数据库的所有方言特性；不过Loryn是一个具备良好扩展性的框架，用户可以根据自己的需求实现自定义的方言包或对已有方言包进行补充。
+欢迎社区开发者为Loryn开发扩展，fork我们的仓库，提交pr，期待各位开发者的贡献！
+
+### 使用方言包
+
+我们以MySQL为例，我们需要在项目中引入MySQL的方言包依赖：
+
+```xml
+
+<dependency>
+  <groupId>top.loryn</groupId>
+  <artifactId>loryn-dialect-mysql</artifactId>
+  <version>${loryn.version}</version>
+</dependency>
+```
+
+在创建连接时，我们指定要使用的方言：
+
+```kotlin
+val database = Database.connect(
+    // ... 省略其他参数
+    dialect = MysqlSqlDialect()
+)
+```
+
+在后续的查询中，Loryn会自动使用MySQL的方言来生成SQL语句。另外，开发者还可以使用方言包中定义的数据库特有函数，
+但需要注意的是使用此类函数生成SQL时不会校验当前数据库是否支持，对于多种数据源时需要谨慎使用。
+
+以MySQL的`ON DUPLICATE KEY UPDATE`语法举例：
+
+```kotlin
+database.insertOrUpdate(Users) {
+    assign(it.id, 101)
+    assign(it.userName, "abc")
+    assign(it.createdAt, LocalDateTime.now())
+    set(it.userName, "abc")
+}.execute()
+```
+
+或使用绑定实体的方式：（需要在定义表结构时重写`insertColumns`与`updateColumns`属性）
+
+```kotlin
+database.insertOrUpdate(BindableUsers, UserPo().apply {
+    id = 101
+    userName = "abc"
+    createdAt = LocalDateTime.now()
+})
+```
+
+生成的SQL为：
+
+```sql
+INSERT INTO users (id, username, created_at)
+VALUES (?, ?, ?)
+ON DUPLICATE KEY UPDATE username = ?;
+```
+
+### 分页参数
+
+标准SQL并未**明确定义分页查询的通用语法**。主流数据库厂商的具体实现方式如下：
+
+- **MySQL**：使用`LIMIT offset, row_count`或`LIMIT row_count OFFSET offset`
+- **Oracle**：通过`ROWNUM`伪列结合子查询实现（例如
+  `SELECT * FROM (SELECT t.*, ROWNUM rn FROM table t WHERE ROWNUM <=30) WHERE rn >20`）
+- **PostgreSQL**：采用`LIMIT num OFFSET offset`标准写法
+- **SQL Server 2012+**：引入`OFFSET...FETCH`子句（例如
+  `SELECT * FROM table ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY`）
+
+由于分页查询是在实际项目中最常用的操作之一，因此Loryn核心模块对DQL语句提供了分页查询的定义，但并未实现具体的分页查询方法，这部分内容交由方言包来实现。
+
+在`SelectExpression.AbstractBuilder`类中，Loryn提供三个方法来设置分页参数：
+
+- `limit()`：用于简单设置获取的行数；
+- `pagination(paginationParams: PaginationParams）`：用于设置分页参数（当前页及页面大小）；
+- `pagination(currentPage: Int, pageSize: Int)`：方法二重载的简易版。
+
+代码示例：
+
+```kotlin
+val users = database.selectBindable(BindableUsers) {
+    pagination(1, 10)
+}
+```
+
+### 使用原生SQL
+
+在某些场景中，开发者可能会遇到如下情况：
+
+1. 需要处理复杂业务逻辑或数据库专有特性
+2. 执行表结构变更（DDL）语句
+3. 框架当前版本尚未支持的特定语法
+
+在这些情况下，Loryn允许开发者使用原生SQL语句来操作数据库。我们建议开发者优先使用框架提供的强类型 DSL，但在必要时可通过以下方式直接操作数据库：
+
+**方案一**：使用Loryn的列映射功能
+
+```kotlin
+val effects = database.dml(
+    "INSERT INTO users (id, username, created_at) VALUES (?, ?, ?)",
+    101.toSqlParam(),
+    "abc".toSqlParam(),
+    LocalDateTime.now().toSqlParam(LocalDateTimeSqlType),
+).execute()
+```
+
+```kotlin
+val idColumn = ColumnExpression("id", IntSqlType)
+val userNameColumn = ColumnExpression("username", StringSqlType)
+database
+    .dql(
+        "SELECT * FROM users WHERE id = ?",
+        101.toSqlParam(),
+        columns = listOf(ColumnExpression("id", IntSqlType))
+    )
+    .list {
+        it[idColumn] to it[userNameColumn]
+        // it[Users.id] to it[Users.userName]
+    }
+    .forEach { println(it) }
+```
+
+```kotlin
+val idColumn = BindableColumnExpression("id", IntSqlType, UserPo::id)
+val userNameColumn = BindableColumnExpression("username", StringSqlType, UserPo::userName)
+database
+    .dqlBindable(
+        "SELECT * FROM users WHERE id = ?",
+        101.toSqlParam(),
+        createEntity = ::UserPo,
+        columns = listOf(idColumn, userNameColumn)
+    )
+    .list()
+    .forEach { println(it) }
+```
+
+优势：自动完成结果集到实体类的映射，支持参数预编译防注入。
+
+**方案二**：使用 JDBC 原生 API
+
+```kotlin
+val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+database.useConnection { conn ->
+    conn.prepareStatement("SELECT * FROM users WHERE id = ?").use { statement ->
+        statement.setInt(1, 101)
+        statement.executeQuery().use {
+            while (it.next()) {
+                val id = it.getInt("id")
+                val userName = it.getString("username")
+                println("id: $id, username: $userName")
+            }
+        }
+    }
+}
+```
+
+适用场景：存储过程调用、数据库专有函数等深度定制化操作。
+
+> 需要注意的是：使用原生 SQL 将导致框架的强类型校验、跨库兼容等核心特性失效，可能引发 SQL 注入风险、数据库方言耦合、执行计划不可控等问题，
+> 同时会破坏代码可维护性与框架的统一监控体系。建议仅作为临时方案并严格限制在隔离层，使用时采用预编译参数并标注废弃计划。
 
 # 最佳实践
 

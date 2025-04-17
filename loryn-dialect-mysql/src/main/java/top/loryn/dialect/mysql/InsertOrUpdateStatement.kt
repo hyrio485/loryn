@@ -33,14 +33,12 @@ class InsertOrUpdateStatement(
         require(sets.isNotEmpty()) { "At least one column for update must be set" }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendInsertIntoColumns(params).appendKeyword("VALUES")
-        append(' ').appendRowValues(values, params)
-        append(' ').appendKeyword("ON")
-        append(' ').appendKeyword("DUPLICATE")
-        append(' ').appendKeyword("KEY")
-        append(' ').appendKeyword("UPDATE")
-        append(' ').append(sets, params)
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder
+            .appendInsertIntoColumns(params).appendKeyword("VALUES").append(' ')
+            .appendRowValues(values, params).append(' ')
+            .appendKeywords(listOf("ON", "DUPLICATE", "KEY", "UPDATE"), params).append(' ')
+            .append(sets, params)
     }
 }
 

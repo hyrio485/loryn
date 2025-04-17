@@ -20,8 +20,9 @@ abstract class BaseInsertStatement(
     override val useGeneratedKeys: Boolean,
 ) : DmlStatement {
     protected fun SqlBuilder.appendInsertIntoColumns(params: SqlParamList) = also {
-        appendKeyword("INSERT").append(' ').appendKeyword("INTO").append(' ')
-        append(table).append(" (").append(columns, params).append(") ")
+        appendKeywords(listOf("INSERT", "INTO"), params).append(' ')
+        appendTable(table).append(' ')
+        append(columns, params, addParentheses = true).append(' ')
     }
 
     protected fun SqlBuilder.appendRowValues(values: List<SqlParam<*>>, params: SqlParamList) =
@@ -61,12 +62,12 @@ class InsertStatement(
         }
     }
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendInsertIntoColumns(params)
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendInsertIntoColumns(params)
         if (values != null) {
-            appendKeyword("VALUES").append(' ').appendRowValues(values, params)
+            builder.appendKeyword("VALUES").append(' ').appendRowValues(values, params)
         } else {
-            append(select!!, params)
+            builder.append(select!!, params)
         }
     }
 }

@@ -17,10 +17,11 @@ fun Database.dml(
 
     override val useGeneratedKeys = useGeneratedKeys
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
         throw UnsupportedOperationException("Not needed")
+    }
 
-    override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
+    override fun Database.generateSql(block: (SqlBuilder, SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())
 }
 
@@ -32,30 +33,30 @@ fun Database.dql(
     override val database = this@dql
     override val columns = columns.toList()
 
-    override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
+    override fun doGenerateCountSql(builder: SqlBuilder, column: ColumnExpression<*>?, params: SqlParamList) =
         throw UnsupportedOperationException("Query using native SQL does not support count")
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) =
         throw UnsupportedOperationException("Not needed")
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =
         SqlAndParams(sql, params.toList())
 }
 
-fun <E> Database.bindableDql(
+fun <E> Database.dqlBindable(
     sql: String,
     vararg params: SqlParam<*>,
     createEntity: () -> E,
     columns: List<BindableColumnExpression<E, *>>,
 ) = object : BindableDqlStatement<E> {
-    override val database = this@bindableDql
+    override val database = this@dqlBindable
     override val createEntity = createEntity
     override val columns = columns.toList()
 
-    override fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList) =
+    override fun doGenerateCountSql(builder: SqlBuilder, column: ColumnExpression<*>?, params: SqlParamList) =
         throw UnsupportedOperationException("Query using native SQL does not support count")
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) =
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) =
         throw UnsupportedOperationException("Not needed")
 
     override fun Database.generateSql(block: SqlBuilder.(SqlParamList) -> Unit) =

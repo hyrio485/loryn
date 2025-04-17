@@ -1,5 +1,6 @@
 package top.loryn.support
 
+import top.loryn.expression.SqlParam
 import java.sql.JDBCType
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -37,6 +38,8 @@ abstract class SqlType<T>(val jdbcType: JDBCType, val clazz: Class<T>) {
             override fun doGetResult(rs: ResultSet, index: Int): R? =
                 this@SqlType.doGetResult(rs, index)?.let(fromBasedTypeToNew)
         }
+
+    fun expr(value: T?) = SqlParam<T>(value, this)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

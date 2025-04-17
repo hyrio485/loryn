@@ -11,10 +11,11 @@ data class Tuple(val expressions: List<SqlExpression<*>>) : SqlExpression<Nothin
 
     val size = expressions.size
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) =
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
         if (expressions.size == 1) {
-            append(expressions[0], params)
+            builder.append(expressions[0], params)
         } else {
-            append('(').append(expressions, params).append(')')
+            builder.append(expressions, params, addParentheses = true)
         }
+    }
 }

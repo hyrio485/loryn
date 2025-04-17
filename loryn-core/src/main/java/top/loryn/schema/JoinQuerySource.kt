@@ -30,10 +30,10 @@ class JoinQuerySource(
 
     override val columns = emptyList<ColumnExpression<*>>()
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        append(left, params).appendAliasUsingAs(left)
-        joinType?.also { append(' ').append(it) }
-        append(' ').appendKeyword("JOIN").append(' ').append(right, params).appendAliasUsingAs(right)
-        append(' ').appendKeyword("ON").append(' ').append(on, params)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.append(left, params).appendAliasUsingAs(left).append(' ')
+        joinType?.also { builder.append(it).append(' ') }
+        builder.appendKeyword("JOIN").append(' ').append(right, params).appendAliasUsingAs(right).append(' ')
+        builder.appendKeyword("ON").append(' ').append(on, params)
     }
 }

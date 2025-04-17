@@ -8,4 +8,6 @@ import top.loryn.support.SqlType
  */
 interface SqlExpression<T> : SqlAppender {
     val sqlType: SqlType<T>
+
+    fun expr(value: T?) = SqlParam<T>(value, sqlType)
 }

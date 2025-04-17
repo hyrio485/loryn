@@ -22,5 +22,4 @@ object JsonSqlType : SqlType<JsonNode>(JDBCType.VARCHAR, JsonNode::class.java) {
 
 // ObjectNode -> VARCHAR
 
-val JsonObjectSqlType =
-    JsonSqlType.transform(ObjectNode::class.java, { it as ObjectNode }, { it })
+val JsonObjectSqlType = JsonSqlType.transform(ObjectNode::class.java, { it as ObjectNode }, { it })

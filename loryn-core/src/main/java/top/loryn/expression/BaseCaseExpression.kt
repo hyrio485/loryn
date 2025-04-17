@@ -15,18 +15,19 @@ abstract class BaseCaseExpression<T, R>(
 
     override val sqlType get() = sqlTypeNullable ?: throw UnsupportedOperationException("sqlType not specified")
 
-    protected inline fun SqlBuilder.doAppendSqlOriginal(
+    protected inline fun doBuildSql(
+        builder: SqlBuilder,
         params: SqlParamList,
         appendValue: SqlBuilder.(SqlParamList) -> Unit = {},
-    ) = also {
-        appendKeyword("CASE").append(' ').appendValue(params)
+    ) {
+        builder.appendKeyword("CASE").append(' ').appendValue(params)
         branches.forEach { (condition, result) ->
-            append(' ').appendKeyword("WHEN").append(' ').append(condition, params)
-            append(' ').appendKeyword("THEN").append(' ').append(result, params)
+            builder.append(' ').appendKeyword("WHEN").append(' ').append(condition, params)
+            builder.append(' ').appendKeyword("THEN").append(' ').append(result, params)
         }
         elseExpr?.also {
-            append(' ').appendKeyword("ELSE").append(' ').append(it, params)
+            builder.append(' ').appendKeyword("ELSE").append(' ').append(it, params)
         }
-        append(' ').appendKeyword("END")
+        builder.append(' ').appendKeyword("END")
     }
 }

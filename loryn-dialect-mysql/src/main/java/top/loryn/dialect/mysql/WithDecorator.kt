@@ -31,9 +31,9 @@ class WithDmlDecorator(
 
     override val database = statement.database
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendWithClause(selects, params)
-        with(statement) { doGenerateSql(params) }
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendWithClause(selects, params)
+        statement.doGenerateSql(builder, params)
     }
 }
 
@@ -43,16 +43,17 @@ abstract class BaseWithDqlDecorator(
     abstract val selects: List<Pair<Table, SelectExpression>>
     abstract val statement: DqlStatement
 
-    override fun SqlBuilder.doGenerateSql(params: SqlParamList) = also {
-        appendWithClause(selects, params)
-        with(statement) { doGenerateSql(params) }
+    override fun doGenerateSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendWithClause(selects, params)
+        statement.doGenerateSql(builder, params)
     }
 
-    override fun SqlBuilder.doGenerateCountSql(
+    override fun doGenerateCountSql(
+        builder: SqlBuilder,
         column: ColumnExpression<*>?, params: SqlParamList,
-    ) = also {
-        appendWithClause(selects, params)
-        with(statement) { doGenerateCountSql(column, params) }
+    ) {
+        builder.appendWithClause(selects, params)
+        statement.doGenerateCountSql(builder, column, params)
     }
 }
 

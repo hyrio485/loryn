@@ -29,14 +29,14 @@ abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T
 interface Statement {
     val database: Database
 
-    fun SqlBuilder.doGenerateSql(params: SqlParamList): SqlBuilder
+    fun doGenerateSql(builder: SqlBuilder, params: SqlParamList)
 
     fun Database.generateSql(
-        block: SqlBuilder.(SqlParamList) -> Unit = { doGenerateSql(it) },
+        block: (SqlBuilder, SqlParamList) -> Unit = { builder, params -> doGenerateSql(builder, params) },
     ): SqlAndParams {
         val builder = dialect.newSqlBuilder(metadata.keywords, config.uppercaseKeywords).start()
         val params = mutableListOf<SqlParam<*>>()
-        builder.block(params)
+        block(builder, params)
         return SqlAndParams(builder.build(), params)
     }
 
@@ -79,12 +79,16 @@ interface DqlStatement : Statement {
     val columns: List<ColumnExpression<*>>? get() = emptyList()
     val usingIndex get() = true
 
-    fun SqlBuilder.doGenerateCountSql(column: ColumnExpression<*>?, params: SqlParamList): SqlBuilder
+    fun doGenerateCountSql(builder: SqlBuilder, column: ColumnExpression<*>?, params: SqlParamList)
 
     // 这里column不为空可以指定统计某列的个数，为null则为COUNT(1)
     fun count(
         column: ColumnExpression<*>? = null,
-        getSqlAndParams: () -> SqlAndParams = { database.generateSql { params -> doGenerateCountSql(column, params) } },
+        getSqlAndParams: () -> SqlAndParams = {
+            database.generateSql { builder, params ->
+                doGenerateCountSql(builder, column, params)
+            }
+        },
     ) = database.doExecute(getSqlAndParams = getSqlAndParams) { statement ->
         statement.executeQuery().use { resultSet ->
             if (!resultSet.next()) {

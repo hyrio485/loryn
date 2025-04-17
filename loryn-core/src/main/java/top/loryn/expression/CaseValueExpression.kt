@@ -10,6 +10,7 @@ class CaseValueExpression<T, R>(
     elseExpr: SqlExpression<R>? = null,
     sqlType: SqlType<R>?,
 ) : BaseCaseExpression<T, R>(branches, elseExpr, sqlType) {
-    override fun SqlBuilder.appendSql(params: SqlParamList) =
-        doAppendSqlOriginal(params) { append(value, params) }
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        doBuildSql(builder, params) { append(value, params) }
+    }
 }

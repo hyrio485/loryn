@@ -5,6 +5,7 @@ import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
+import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
 
 open class SelectExpression(
@@ -19,9 +20,9 @@ open class SelectExpression(
 ) : SqlExpression<Nothing> {
     override val sqlType get() = throw UnsupportedOperationException("SelectExpression does not have a sqlType")
 
-    private fun SqlBuilder.appendMain(params: SqlParamList) = also {
+    private fun SqlBuilder.buildSqlMain(params: SqlParamList) = also {
         from?.also {
-            append(' ').appendKeyword("FROM").append(' ').append(it, params)
+            append(' ').appendKeyword("FROM").append(' ').append(it, params).appendAliasUsingAs(it)
         }
         where?.also {
             append(' ').appendKeyword("WHERE").append(' ').append(it, params)
@@ -37,30 +38,30 @@ open class SelectExpression(
         }
     }
 
-    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        appendKeyword("SELECT").append(' ')
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendKeyword("SELECT").append(' ')
         if (distinct) {
-            appendKeyword("DISTINCT").append(' ')
+            builder.appendKeyword("DISTINCT").append(' ')
         }
         if (columns.isNotEmpty()) {
-            appendList(columns, params) { column, params ->
-                with(column) { appendSql(params).appendAliasUsingAs(this) }
+            builder.appendList(columns, params) { column, params ->
+                append(column.let { if (it is WithAlias) it.original else it }, params).appendAliasUsingAs(column)
             }
         } else {
-            append('*')
+            builder.append('*')
         }
-        appendMain(params)
-        paginationParams?.also { append(' ').append(it) }
+        builder.buildSqlMain(params)
+        paginationParams?.also { builder.append(' ').appendPagination(it) }
     }
 
-    fun SqlBuilder.appendSqlCount(column: ColumnExpression<*>?, params: SqlParamList) = also {
-        appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append('(')
+    fun buildCountSql(builder: SqlBuilder, column: ColumnExpression<*>?, params: SqlParamList) {
+        builder.appendKeyword("SELECT").append(' ').appendKeyword("COUNT").append('(')
         if (column == null) {
-            append('1')
+            builder.append('1')
         } else {
-            append(column, params)
+            builder.append(column, params)
         }
-        append(')').appendMain(params)
+        builder.append(')').buildSqlMain(params)
     }
 
     inline fun <reified T> asExpression(): ColumnExpression<T> {
@@ -74,14 +75,20 @@ open class SelectExpression(
         return column as ColumnExpression<T>
     }
 
-    fun asQuerySource(alias: String?) = object : QuerySource {
-        private val this0 = this@SelectExpression
+    fun asQuerySource(alias: String?): QuerySource =
+        object : QuerySource, WithAlias {
+            private val this0 = this@SelectExpression
 
-        override val columns = this0.columns
+            override val columns = this0.columns
 
-        override fun SqlBuilder.appendSql(params: SqlParamList) =
-            append('(').append(this0, params).append(')').appendAlias(this0) { append(' ').appendRef(it) }
-    }.let { if (alias == null) it else it.aliased(alias) }
+            override val alias = alias
+            override val original = this0
+
+            // 因为这里是将子查询包装成了 QuerySource ，要在构建的SQL前后加括号（与其他情况的默认行为不同），因此要重写此方法。
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                builder.append(this, params, addParentheses = true)
+            }
+        }
 
     abstract class AbstractBuilder<T : QuerySource>(
         protected val from: T?,
@@ -93,12 +100,8 @@ open class SelectExpression(
         protected var paginationParams: PaginationParams? = null
         protected var distinct: Boolean = false
 
-        fun where(block: (T) -> SqlExpression<Boolean>) = also {
-            this.where = block(from!!)
-        }
-
-        fun whereN(block: () -> SqlExpression<Boolean>) = also {
-            this.where = block()
+        fun where(where: SqlExpression<Boolean>) = also {
+            this.where = where
         }
 
         fun groupBy(column: ColumnExpression<*>) = also {
@@ -113,12 +116,8 @@ open class SelectExpression(
             groupBys(columns.toList())
         }
 
-        fun having(block: (T) -> SqlExpression<Boolean>) = also {
-            this.having = block(from!!)
-        }
-
-        fun havingN(block: () -> SqlExpression<Boolean>) = also {
-            this.having = block()
+        fun having(having: SqlExpression<Boolean>) = also {
+            this.having = having
         }
 
         fun orderBy(orderBy: OrderByExpression) = also {

@@ -9,9 +9,18 @@ class UnaryExpression<T, R>(
     val expr: SqlExpression<T>,
     override val sqlType: SqlType<R>,
     val addParentheses: Boolean = true,
+    val addWhiteSpace: Boolean = true,
 ) : SqlExpression<R> {
-    override fun SqlBuilder.appendSql(params: SqlParamList) = also {
-        appendKeyword(operator).append(if (addParentheses) '(' else ' ').append(expr, params)
-        if (addParentheses) append(')')
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        builder.appendKeyword(operator)
+        if (addParentheses) {
+            builder.append('(')
+        } else if (addWhiteSpace) {
+            builder.append(' ')
+        }
+        builder.append(expr, params)
+        if (addParentheses) {
+            builder.append(')')
+        }
     }
 }

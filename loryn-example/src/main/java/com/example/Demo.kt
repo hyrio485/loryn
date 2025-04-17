@@ -268,11 +268,40 @@ fun main9() {
     val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
     val u = Users.aliased("u")
     val o = Orders.aliased("o")
-    var userNameColumn = Users.userName
-    var productIdColumn = Orders.productId
-    database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = u[Users.id] eq o[Orders.userId])) {
-        columns(u[userNameColumn], o[productIdColumn])
-    }.list { it[u[userNameColumn]] to it[o[productIdColumn]] }.also(::println)
+    var userIdColumn = u[Users.id]
+    var userNameColumn = u[Users.userName]
+    var productIdColumn = o[Orders.productId]
+    database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = userIdColumn eq o[Orders.userId])) {
+        columns(userNameColumn, productIdColumn)
+        where(userIdColumn gte 102)
+    }.list { it[userNameColumn] to it[productIdColumn] }.also(::println)
+}
+
+fun main10() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    database.selectBindable(BindableOrders) {
+        where(it.userId `in` Users.select {
+            column(it.id)
+            where(it.id gte 102)
+        })
+    }.list().also(::println)
+}
+
+fun main11() {
+    val database = Database.connect("jdbc:mysql://localhost:3306/loryn_test", "root", "root")
+    val user = UserPo().apply { /* 省略字段赋值操作 */ }
+    database.insert(BindableUsers, user, useGeneratedKeys = true)
+
+    val effects1 = database.delete(Users) { where(it.id eq 101) }
+    val effects2 = database.delete(BindableUsers, user)
+    val effects3 = database.update(Users) {
+        set(it.userName, "abc")
+        where(it.id eq 101)
+    }
+    val effects4 = database.update(BindableUsers, user)
+
+    val effects5 = database.deleteLogically(BindableUsers, user)
+    val effects6 = database.updateOptimistic(BindableUsers, user)
 }
 
 fun main() {
@@ -285,4 +314,5 @@ fun main() {
     //    main7()
     //    main8()
     main9()
+    //    main10()
 }

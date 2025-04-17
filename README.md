@@ -602,15 +602,6 @@ Loryn预设了多个`SqlExpression`的子类用以描述不同类型的SQL表达
 运算符函数可连续调用，但这必定会出现运算符优先级的相关问题。Kotlin在语法层面对其进行了处理，
 具体请参考[Kotlin 语言规范](#https://kotlinlang.org/docs/reference/grammar.html#expressions)中的相关规定。
 
-### 自定义运算符
-
-Loryn允许用户自定义运算符，只需根据需要定义返回值类型为`SqlExpression<T>`的函数即可。
-
-对于主流的数据库而言，Loryn提供了多种方言包以支持不同的数据库，如MySQL、PostgreSQL、Oracle等。具体内容详见[数据库方言](#数据库方言)
-章节。
-
-（此处待完善）
-
 ## DQL语句
 
 在[快速开始](#快速开始)一节中，我们曾执行了一个简单的查询操作：
@@ -664,11 +655,11 @@ Loryn支持联表查询，用户可以对`QuerySource`对象使用`join()`方法
 ```kotlin
 val u = Users.aliased("u")
 val o = Orders.aliased("o")
-var userNameColumn = Users.userName
-var productIdColumn = Orders.productId
+var userNameColumn = u[Users.userName]
+var productIdColumn = o[Orders.productId]
 database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = u[Users.id] eq o[Orders.userId])) {
-    columns(u[userNameColumn], o[productIdColumn])
-}.list { it[u[userNameColumn]] to it[o[productIdColumn]] }.also(::println)
+    columns(userNameColumn, productIdColumn)
+}.list { it[userNameColumn] to it[productIdColumn] }.also(::println)
 ```
 
 生成的SQL为：
@@ -685,7 +676,115 @@ FROM users AS u
 
 对于左、右、内连接，Loryn提供了`leftJoin()`、`rightJoin()`、`innerJoin()`等方法来简化连接操作。
 
+### 子查询
+
+实际业务中，我们可能需要在查询中使用子查询来实现更复杂的查询逻辑。
+Loryn为`QuerySource`对象提供了扩展函数`select()`创建一个`SelectExpression`对象，是`QuerySource`的子类，可以在查询中使用。
+
+```kotlin
+database.selectBindable(BindableOrders) {
+    where(it.userId `in` Users.select {
+        column(it.id)
+        where(it.id gte 102)
+    })
+}.list().also(::println)
+```
+
+生成的SQL为：
+
+```sql
+SELECT *
+FROM orders
+WHERE user_id IN (SELECT id FROM users WHERE id >= ?);
+```
+
 ## DML语句
+
+与DQL语句类似，Loryn也提供了丰富的DSL语法来支持各种DML操作，如插入、更新、删除等，三类操作均可按是否绑定了实体分为两类。
+
+### 插入操作
+
+`database.insert()`方法用于可用于插入数据，方法返回一个`InsertStatement`对象，调用其`execute()`方法即可执行插入操作。
+`execute()`方法返回一个`Int`类型的值，表示插入操作影响的行数。
+
+```kotlin
+database.insert(Users) {
+    assign(it.id, 101)
+    assign(it.userName, "abc")
+    assign(it.createdAt, LocalDateTime.now())
+}.execute()
+```
+
+在上述代码中，我们使用了`insert()`方法来创建一个`InsertStatement`对象，并使用`assign()`方法来指定要插入的列及对应的值。
+
+`insert()`方法还可指定是否使用自生成的主键；如果需要在插入数据后获取自生成的主键值，
+则可以在`execute()`方法中传入一个Lambda函数，操作`ResultSet`对象来获取自生成的主键值。
+
+```kotlin
+database.insert(Users, useGeneratedKeys = true) {
+    assign(it.id, 101)
+    assign(it.userName, "abc")
+    assign(it.createdAt, LocalDateTime.now())
+}.execute {
+    if (it.next()) {
+        println("Inserted user with id: ${it.getInt(1)}")
+    } else {
+        throw IllegalStateException("No generated keys returned")
+    }
+}
+```
+
+除了`INSERT ... VALUES`语法，Loryn还支持`INSERT ... SELECT`语法：
+
+```kotlin
+database.insert(Users) {
+    columns(it.userName, it.createdAt)
+    select(Users.select {
+        columns(it.userName, it.createdAt)
+        where(it.id eq 101)
+    })
+}.execute()
+```
+
+对于绑定了实体的表，我们可直接插入实体对象：
+
+```kotlin
+val user = UserPo().apply { /* 省略字段赋值操作 */ }
+database.insert(BindableUsers, user, useGeneratedKeys = true)
+```
+
+注意这里的`insert()`执行后将会直接将实体对象的所有字段插入到数据库中，无需额外调用`execute()`方法；
+直接插入实体对象需要数据表描述类重写`insertColumns`属性以指定需要插入的列。
+
+### 删除与更新操作
+
+Loryn的删除与更新操作与插入操作类似，也可按是否绑定了实体分为两类。
+
+```kotlin
+val effects1 = database.delete(Users) { where(it.id eq 101) }
+val effects2 = database.delete(BindableUsers, user)
+val effects3 = database.update(Users) {
+    set(it.userName, "abc")
+    where(it.id eq 101)
+}
+val effects4 = database.update(BindableUsers, user)
+```
+
+需要注意的是，`delete()`方法与`update()`方法均会直接返回影响的行数，因此无需额外调用`execute()`方法。
+同样，使用实体直接进行修改操作的前提是数据表描述类重写`updateColumns`属性以指定需要更新的列。
+
+初次之外，Loryn还支持逻辑删除与乐观锁更新操作：
+
+```kotlin
+val effects5 = database.deleteLogically(BindableUsers, user)
+val effects6 = database.updateOptimistic(BindableUsers, user)
+```
+
+> 注意：逻辑删除与乐观锁更新仅支持实体对象操作，前者依赖删除标记字段，后者依赖版本号字段，
+> 分别需要在数据表描述类中重写`deletedColumn`与`revColumn`属性以指定删除标记字段与版本号字段才能完成对应操作。
+
+对于某些数据库如MySQL而言，在SQL层面允许同时插入多条数据，
+或是提供了如`ON DUPLICATE KEY UPDATE`的语法来实现插入或更新操作，详见[使用方言包](#使用方言包)一节。
 
 ## 数据库方言
 
@@ -855,6 +954,98 @@ database.useConnection { conn ->
 
 > 需要注意的是：使用原生 SQL 将导致框架的强类型校验、跨库兼容等核心特性失效，可能引发 SQL 注入风险、数据库方言耦合、执行计划不可控等问题，
 > 同时会破坏代码可维护性与框架的统一监控体系。建议仅作为临时方案并严格限制在隔离层，使用时采用预编译参数并标注废弃计划。
+
+# 设计理念
+
+## SQL是如何生成的？
+
+我们以一个简单的联表查询SQL为例：
+
+```sql
+SELECT u.username, o.product_id
+FROM users AS u
+         LEFT JOIN orders AS o ON u.id = o.user_id
+WHERE u.id >= 102;
+```
+
+在Loryn中我们可以使用如下代码来生成上述SQL：
+
+```kotlin
+val u = Users.aliased("u")
+val o = Orders.aliased("o")
+var userIdColumn = u[Users.id]
+var userNameColumn = u[Users.userName]
+var productIdColumn = o[Orders.productId]
+database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = userIdColumn eq o[Orders.userId])) {
+    columns(userNameColumn, productIdColumn)
+    where(userIdColumn gte 102)
+}.list { it[userNameColumn] to it[productIdColumn] }.also(::println)
+```
+
+在程序内部会构建如下所示的AST（Abstract Syntax Tree，抽象语法树）：
+
+```
+SelectExpression
+├── (columns): *(empty)
+├── (from): JoinQuerySource
+│   ├── (left): Table
+│   │   ├── (name): Users
+│   │   └── (alias): u
+│   ├── (right): Table
+│   │   ├── (name): Orders
+│   │   └── (alias): o
+│   ├── (joinType): LEFT
+│   └── (on): InfixExpression
+│       ├── (operator): eq(=)
+│       ├── (expr1): Column
+│       │   ├── (table): Users
+│       │   │   └── (alias): u
+│       │   └── (name): id
+│       └── (expr2): Column
+│           ├── (table): Orders
+│           │   └── (alias): o
+│           └── (name): user_id
+└── (where): InfixExpression
+    ├── (operator): gte(>=)
+    ├── (expr1): Column
+    │   ├── (table): Users
+    │   │   └── (alias): u
+    │   └── (name): id
+    └── (expr2): SqlParam
+        ├── (sqlType): IntSqlType
+        └── (value): 102
+```
+
+AST的每个节点都是`SqlAppender`接口的一个子类，表示SQL语句中的一个表达式。
+在构建SQL语句时，Loryn会创建一个`SqlBuilder`对象用以构建SQL语句。
+扩展的方言包需要提供一个创建`SqlBuilder`子类对象的方法，核心模块将在需要创建SQL语句时调用该方法以创建`SqlBuilder`对象。
+
+`SqlBuilder`会按照AST的结构访问每个节点，节点内部需要实现`buildSql()`方法向`SqlBuilder`对象添加SQL语句片段。
+当所有节点都访问完成后，`SqlBuilder`对象会将SQL语句拼接完成，同时返回所有的参数值，最后调用JDBC的API来执行SQL语句。
+
+生成SQL语句的过程用到了访问者模式（Visitor Pattern）。当需要适配新的数据库时，只需要实现一个新的`SqlBuilder`类，
+重写对应方法，根据不同的节点类型决定如何拼接SQL语句即可。
+
+## 如何自定义运算符及函数
+
+Loryn允许用户自定义SQL运算符及函数，只需根据需要定义返回值类型为`SqlExpression<T>`的函数即可。
+
+定义运算符示例：
+
+```kotlin
+infix fun <C> SqlExpression<C>.eq(other: SqlExpression<C>) = InfixExpression("=", this, other, BooleanSqlType)
+```
+
+对于函数，Loryn预设了[InfixExpression.kt](loryn-core/src/main/java/top/loryn/expression/InfixExpression.kt)及
+[FunctionExpression.kt](loryn-core/src/main/java/top/loryn/expression/FunctionExpression.kt)用于描述函数的表达式。
+用户可以根据需要定义函数表达式的名称、参数列表、返回值类型等信息。
+
+```kotlin
+fun <T> SqlExpression<T>.ifNull(default: SqlExpression<T>) = FunctionExpression("IFNULL", sqlType, this, default)
+fun <T> Column<T>.max() = FunctionExpression("MAX", sqlType, this)
+```
+
+Loryn是一个高度可扩展的框架，用户可以根据需要自定义运算符及函数，以满足不同的业务需求。
 
 # 最佳实践
 

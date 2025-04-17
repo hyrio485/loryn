@@ -45,6 +45,13 @@
       <artifactId>spring-boot-starter-jdbc</artifactId>
       <version>${spring-boot.version}</version>
     </dependency>
+
+    <!-- JUnit 5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.11.4</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -65,6 +65,12 @@ inline fun <P> SqlExpression<Boolean>.andIfNotNull(param: P?, getOther: (P) -> S
 inline fun <P> SqlExpression<Boolean>.orIfNotNull(param: P?, getOther: (P) -> SqlExpression<Boolean>) =
     if (param != null) this or getOther(param) else this
 
+fun andAll(vararg expressions: SqlExpression<Boolean>) =
+    expressions.reduce { acc, expression -> acc and expression }
+
+fun orAll(vararg expressions: SqlExpression<Boolean>) =
+    expressions.reduce { acc, expression -> acc or expression }
+
 operator fun SqlExpression<Boolean>.not() =
     UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = false)
 

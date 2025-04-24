@@ -7,6 +7,7 @@ import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
 import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
+import top.loryn.utils.boxed
 
 open class SelectExpression(
     open val columns: List<ColumnExpression<*>>,
@@ -68,8 +69,9 @@ open class SelectExpression(
         // TODO：这里需要支持多列
         require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
         val column = columns[0]
-        if (column.sqlType.clazz != T::class.java) {
-            throw IllegalArgumentException("The column type is not ${T::class.java}")
+        val boxedClass = T::class.java.boxed
+        if (column.sqlType.clazz.boxed != boxedClass) {
+            throw IllegalArgumentException("The column type is not $boxedClass")
         }
         @Suppress("UNCHECKED_CAST")
         return column as ColumnExpression<T>

@@ -106,32 +106,24 @@ open class SelectExpression(
             this.where = where
         }
 
-        fun groupBy(column: ColumnExpression<*>) = also {
-            this.groupBy += column
-        }
-
-        fun groupBys(columns: List<ColumnExpression<*>>) = also {
+        fun groupBy(columns: List<ColumnExpression<*>>) = also {
             this.groupBy += columns
         }
 
-        fun groupBys(vararg columns: ColumnExpression<*>) = also {
-            groupBys(columns.toList())
+        fun groupBy(vararg columns: ColumnExpression<*>) = also {
+            groupBy(columns.toList())
         }
 
         fun having(having: SqlExpression<Boolean>) = also {
             this.having = having
         }
 
-        fun orderBy(orderBy: OrderByExpression) = also {
-            this.orderBy += orderBy
-        }
-
-        fun orderBys(orderBys: List<OrderByExpression>) = also {
+        fun orderBy(orderBys: List<OrderByExpression>) = also {
             this.orderBy += orderBys
         }
 
-        fun orderBys(vararg orderBys: OrderByExpression) = also {
-            orderBys(orderBys.toList())
+        fun orderBy(vararg orderBys: OrderByExpression) = also {
+            orderBy(orderBys.toList())
         }
 
         fun pagination(paginationParams: PaginationParams) = also {
@@ -155,16 +147,12 @@ open class SelectExpression(
     open class Builder<T : QuerySource>(from: T? = null) : AbstractBuilder<T>(from) {
         protected val columns: MutableList<ColumnExpression<*>> = mutableListOf()
 
-        open fun column(column: ColumnExpression<*>) = also {
-            this.columns += column
-        }
-
-        open fun columns(columns: List<ColumnExpression<*>>) = also {
+        open fun column(columns: List<ColumnExpression<*>>) = also {
             this.columns += columns
         }
 
-        open fun columns(vararg columns: ColumnExpression<*>) = also {
-            columns(columns.toList())
+        open fun column(vararg columns: ColumnExpression<*>) = also {
+            column(columns.toList())
         }
 
         open fun build() =
@@ -191,16 +179,12 @@ class BindableSelectExpression<E>(
     class Builder<E, T : BindableQuerySource<E>>(from: T) : AbstractBuilder<T>(from) {
         private val columns: MutableList<BindableColumnExpression<E, *>> = mutableListOf()
 
-        fun column(column: BindableColumnExpression<E, *>) = also {
-            this.columns += column
-        }
-
-        fun columns(columns: List<BindableColumnExpression<E, *>>) = also {
+        fun column(columns: List<BindableColumnExpression<E, *>>) = also {
             this.columns += columns
         }
 
-        fun columns(vararg columns: BindableColumnExpression<E, *>) = also {
-            columns(columns.toList())
+        fun column(vararg columns: BindableColumnExpression<E, *>) = also {
+            column(columns.toList())
         }
 
         fun build() =

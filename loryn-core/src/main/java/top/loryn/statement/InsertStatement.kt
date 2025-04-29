@@ -80,16 +80,12 @@ class InsertBuilder<T : Table>(
     private val values = mutableListOf<SqlParam<*>>()
     private var select: SelectExpression? = null
 
-    fun <C> column(column: Column<C>) {
-        columns += column
-    }
-
-    fun columns(columns: List<Column<*>>) {
+    fun column(columns: List<Column<*>>) {
         this.columns += columns
     }
 
-    fun columns(vararg columns: Column<*>) {
-        columns(columns.toList())
+    fun column(vararg columns: Column<*>) {
+        column(columns.toList())
     }
 
     private fun requireNullSelect() {

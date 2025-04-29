@@ -197,7 +197,7 @@ class Test {
         var userNameColumn = u[Users.userName]
         var productIdColumn = o[Orders.productId]
         database.select(u.join(o, joinType = JoinQuerySource.JoinType.LEFT, on = userIdColumn eq o[Orders.userId])) {
-            columns(userNameColumn, productIdColumn)
+            column(userNameColumn, productIdColumn)
             where(userIdColumn gte 102)
         }.list { it[userNameColumn] to it[productIdColumn] }.also(::println)
     }

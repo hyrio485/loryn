@@ -132,16 +132,12 @@ interface BindableDqlStatement<E> : DqlStatement {
 class ColumnSelectionBuilder<C : Column<*>> {
     private val columns = mutableListOf<C>()
 
-    fun column(column: C) {
-        this.columns += column
-    }
-
-    fun columns(columns: List<C>) {
+    fun column(columns: List<C>) {
         this.columns += columns
     }
 
-    fun columns(vararg columns: C) {
-        columns(columns.toList())
+    fun column(vararg columns: C) {
+        column(columns.toList())
     }
 
     fun build(): List<C> {

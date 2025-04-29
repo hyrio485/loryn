@@ -33,10 +33,10 @@ operator fun SqlExpression<Int>.rem(other: SqlExpression<Int>) = InfixExpression
 operator fun SqlExpression<Int>.rem(value: Int) = rem(expr(value))
 
 operator fun SqlExpression<Int>.unaryPlus() =
-    UnaryExpression<Int, Int>("+", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
+    UnaryExpression("+", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
 
 operator fun SqlExpression<Int>.unaryMinus() =
-    UnaryExpression<Int, Int>("-", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
+    UnaryExpression("-", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
 
 // endregion
 // region logical operators
@@ -72,7 +72,7 @@ fun orAll(vararg expressions: SqlExpression<Boolean>) =
     expressions.reduce { acc, expression -> acc or expression }
 
 operator fun SqlExpression<Boolean>.not() =
-    UnaryExpression<Boolean, Boolean>("NOT", this, BooleanSqlType, addParentheses = false)
+    UnaryExpression("NOT", this, BooleanSqlType, addParentheses = false)
 
 // endregion
 // region in operator
@@ -122,7 +122,7 @@ infix fun <C> ColumnExpression<C>.eqNullable(value: C?) =
     if (value == null) isNull() else eq(value)
 
 fun <T> SqlExpression<T>.count() =
-    UnaryExpression<T, Int>("COUNT", this, IntSqlType, addParentheses = true)
+    UnaryExpression("COUNT", this, IntSqlType, addParentheses = true)
 
 fun <T> T?.toSqlParam(sqlType: SqlType<T>) = sqlType.expr(this)
 fun Int?.toSqlParam() = toSqlParam(IntSqlType)
@@ -136,7 +136,7 @@ fun <T> SqlExpression<T>.distinct(alias: String? = null) =
     UnaryExpression("DISTINCT", this, sqlType, false).asColumn(alias)
 
 fun <T> SqlExpression<T>.asColumn(alias: String? = null) =
-    ColumnExpression.wrap<T>(this, alias)
+    ColumnExpression.wrap(this, alias)
 
 fun <T> SqlExpression<T>.toOrderBy(type: OrderByType) =
     OrderByExpression(asColumn(), type)

@@ -39,7 +39,7 @@ abstract class SqlType<T>(val jdbcType: JDBCType, val clazz: Class<T>) {
                 this@SqlType.doGetResult(rs, index)?.let(fromBasedTypeToNew)
         }
 
-    fun expr(value: T?) = SqlParam<T>(value, this)
+    fun expr(value: T?) = SqlParam(value, this)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

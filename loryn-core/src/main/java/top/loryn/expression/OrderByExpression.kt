@@ -12,7 +12,7 @@ class OrderByExpression(
         if (ascending) OrderByType.ASC else OrderByType.DESC
     )
 
-    override val sqlType get() = throw UnsupportedOperationException("OrderByExpression does not have a sqlType")
+    override val sqlType get() = sqlTypeNoNeed()
 
     enum class OrderByType(val keyword: String) {
         ASC("ASC"),

@@ -152,7 +152,7 @@ fun <E, T : BindableTable<E>> Database.updateOptimistic(
 private fun <E, T> BindableColumn<E, T>.caseValueExpr(
     primaryKeys: List<BindableColumn<E, *>>,
     entities: List<E>,
-) = CaseValueExpression<Nothing, T>(
+) = CaseValueExpression(
     Tuple(primaryKeys),
     entities.map { entity ->
         Tuple(primaryKeys.map { it.getValueExpr(entity) }) to getValueExpr(entity)

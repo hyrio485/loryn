@@ -9,5 +9,10 @@ import top.loryn.support.SqlType
 interface SqlExpression<T> : SqlAppender {
     val sqlType: SqlType<T>
 
-    fun expr(value: T?) = SqlParam<T>(value, sqlType)
+    fun expr(value: T?) = SqlParam(value, sqlType)
+
+    fun sqlTypeNoNeed(obj: String): Nothing =
+        throw UnsupportedOperationException("$obj does not have a sqlType")
+
+    fun sqlTypeNoNeed(): Nothing = sqlTypeNoNeed(javaClass.simpleName)
 }

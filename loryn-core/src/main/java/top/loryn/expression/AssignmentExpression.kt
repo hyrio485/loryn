@@ -14,7 +14,7 @@ data class AssignmentExpression<C>(
         }
     }
 
-    override val sqlType get() = throw UnsupportedOperationException("AssignmentExpression does not have a sqlType")
+    override val sqlType get() = sqlTypeNoNeed()
 
     override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
         builder.append(column, params).append(' ').appendKeyword("=").append(' ').append(value, params)

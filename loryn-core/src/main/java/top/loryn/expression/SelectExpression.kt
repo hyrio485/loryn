@@ -19,7 +19,7 @@ open class SelectExpression(
     val paginationParams: PaginationParams?,
     val distinct: Boolean,
 ) : SqlExpression<Nothing> {
-    override val sqlType get() = throw UnsupportedOperationException("SelectExpression does not have a sqlType")
+    override val sqlType get() = sqlTypeNoNeed()
 
     private fun SqlBuilder.buildSqlMain(params: SqlParamList) = also {
         from?.also {
@@ -141,6 +141,10 @@ open class SelectExpression(
         fun distinct(distinct: Boolean = true) = also {
             this.distinct = distinct
         }
+
+        fun countStar(alias: String? = null) = StarSqlExpression.count().asColumn(alias)
+
+        fun count1(alias: String? = null) = 1.toSqlParam().count().asColumn(alias)
     }
 
     @LorynDsl

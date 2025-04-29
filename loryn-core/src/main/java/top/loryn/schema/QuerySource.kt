@@ -4,6 +4,7 @@ import top.loryn.database.SqlBuilder
 import top.loryn.expression.BindableColumnExpression
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlExpression
+import top.loryn.expression.StarSqlExpression
 import top.loryn.schema.JoinQuerySource.JoinType
 import top.loryn.support.SqlAppender
 import top.loryn.support.WithAlias
@@ -52,10 +53,10 @@ interface QuerySource : SqlAppender {
             private val this0 = this@QuerySource
 
             override val name = null
-            override val sqlType get() = throw UnsupportedOperationException("Query source's all columns does not have a SQL type")
+            override val sqlType get() = sqlTypeNoNeed("Query source's all columns")
 
             override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-                builder.appendAlias(this0) { appendRef(it).append(' ') }.append('*')
+                builder.appendAlias(this0) { appendRef(it).append(' ') }.append(StarSqlExpression, params)
             }
         }
 }

@@ -124,6 +124,9 @@ infix fun <C> ColumnExpression<C>.eqNullable(value: C?) =
 fun <T> SqlExpression<T>.count() =
     UnaryExpression("COUNT", this, IntSqlType, addParentheses = true)
 
+fun SqlExpression<Int>.sum() =
+    UnaryExpression("SUM", this, IntSqlType, addParentheses = true)
+
 fun <T> T?.toSqlParam(sqlType: SqlType<T>) = sqlType.expr(this)
 fun Int?.toSqlParam() = toSqlParam(IntSqlType)
 fun String?.toSqlParam() = toSqlParam(StringSqlType)

@@ -54,7 +54,7 @@ abstract class BindableTable<E>(
     override fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean, notNull: Boolean) =
         column(name, sqlType, null, null, primaryKey, notNull)
 
-    fun <T> column(
+    protected fun <T> column(
         name: String,
         sqlType: SqlType<T>,
         getter: (E.() -> T?)?,
@@ -63,7 +63,7 @@ abstract class BindableTable<E>(
         notNull: Boolean = false,
     ) = BindableColumn(this, name, sqlType, getter, setter, primaryKey, notNull).also { columnsMapMutable += it }
 
-    fun <T> column(
+    protected fun <T> column(
         name: String,
         sqlType: SqlType<T>,
         property: KMutableProperty1<E, T?>,
@@ -71,7 +71,7 @@ abstract class BindableTable<E>(
         notNull: Boolean = false,
     ) = BindableColumn(this, name, sqlType, property, primaryKey, notNull).also { columnsMapMutable += it }
 
-    fun <T> column(
+    protected fun <T> column(
         name: String,
         sqlType: SqlType<T>,
         property: KProperty1<E, T?>,

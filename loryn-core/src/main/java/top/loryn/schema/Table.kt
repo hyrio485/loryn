@@ -33,7 +33,7 @@ abstract class Table(
         get() = primaryKeys.singleOrNull()
             ?: error("Table $this has more than one primary keys, use primaryKeys instead")
 
-    open fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean = false, notNull: Boolean = false) =
+    protected open fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean = false, notNull: Boolean = false) =
         Column(this, name, sqlType, primaryKey, notNull).also { columnsMapMutable += it }
 
     // endregion

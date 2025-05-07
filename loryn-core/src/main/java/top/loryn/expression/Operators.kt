@@ -65,6 +65,18 @@ inline fun <P> SqlExpression<Boolean>.andIfNotNull(param: P?, getOther: (P) -> S
 inline fun <P> SqlExpression<Boolean>.orIfNotNull(param: P?, getOther: (P) -> SqlExpression<Boolean>) =
     if (param != null) this or getOther(param) else this
 
+fun SqlExpression<Boolean>.andIfNotNull(
+    param: Boolean?,
+    ifTrue: SqlExpression<Boolean>,
+    ifFalse: SqlExpression<Boolean>,
+) = if (param == null) this else if (param) this and ifTrue else this and ifFalse
+
+fun SqlExpression<Boolean>.orIfNotNull(
+    param: Boolean?,
+    ifTrue: SqlExpression<Boolean>,
+    ifFalse: SqlExpression<Boolean>,
+) = if (param == null) this else if (param) this or ifTrue else this or ifFalse
+
 fun andAll(vararg expressions: SqlExpression<Boolean>) =
     expressions.reduce { acc, expression -> acc and expression }
 

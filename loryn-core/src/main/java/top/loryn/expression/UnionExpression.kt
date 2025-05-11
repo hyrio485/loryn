@@ -18,13 +18,13 @@ class UnionExpression(
         }
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder
-            .append(select1, params, addParentheses)
+            .append(select1, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
             .append(' ')
             .appendKeyword("UNION")
             .append(' ')
-            .append(select2, params, addParentheses)
+            .append(select2, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
     }
 
     fun asQuerySource(alias: String? = null): QuerySource =
@@ -37,8 +37,8 @@ class UnionExpression(
             override val original = this0
 
             // 因为这里是将子查询包装成了 QuerySource ，要在构建的SQL前后加括号（与其他情况的默认行为不同），因此要重写此方法。
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-                builder.append(original, params, addParentheses = true)
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+                builder.append(original, params, addParentheses = true, ignoreAlias = ignoreAlias)
             }
         }
 }

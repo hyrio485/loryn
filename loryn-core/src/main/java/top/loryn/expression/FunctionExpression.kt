@@ -12,14 +12,14 @@ class FunctionExpression<R>(
 ) : SqlExpression<R> {
     constructor(name: String, sqlType: SqlType<R>, vararg args: SqlExpression<*>) : this(name, sqlType, args.toList())
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder.appendKeyword(name)
         if (args.isEmpty()) {
             if (addParenthesesWhenNoArgs) {
                 builder.append("()")
             }
         } else {
-            builder.append(args, params, addParentheses = true)
+            builder.append(args, params, addParentheses = true, ignoreAlias = ignoreAlias)
         }
     }
 }

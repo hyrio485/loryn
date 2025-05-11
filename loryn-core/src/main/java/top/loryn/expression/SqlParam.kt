@@ -10,7 +10,7 @@ data class SqlParam<T>(val value: T?, override val sqlType: SqlType<T>) : SqlExp
         sqlType.setParameter(statement, index, value)
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder.append("?")
         params += this@SqlParam
     }

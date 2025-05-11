@@ -8,8 +8,8 @@ interface WithAlias : SqlAppender {
     val alias: String?
     val original: SqlAppender
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        builder.append(original, params)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        builder.append(original, params, ignoreAlias = ignoreAlias)
     }
 
     companion object {

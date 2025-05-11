@@ -23,12 +23,12 @@ class InfixExpression<T1, T2, R>(
         require(operators.isNotEmpty()) { "At least one operator must be provided" }
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder
-            .append(expr1, params, addParentheses)
+            .append(expr1, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
             .append(' ')
             .appendKeywords(operators, params, " ")
             .append(' ')
-            .append(expr2, params, addParentheses)
+            .append(expr2, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
     }
 }

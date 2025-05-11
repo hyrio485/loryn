@@ -24,15 +24,15 @@ open class SelectExpression(
 
     private fun SqlBuilder.buildSqlMain(params: SqlParamList) = also {
         from?.also {
-            append(' ').appendKeyword("FROM").append(' ').append(it, params).appendAliasUsingAs(it)
+            append(' ').appendKeyword("FROM").append(' ').appendAndAsAlias(it, params)
         }
         where?.also {
-            append(' ').appendKeyword("WHERE").append(' ').append(it, params)
+            append(' ').appendKeyword("WHERE").append(' ').append(it, params, ignoreAlias = true)
         }
         groupBy.takeIf { it.isNotEmpty() }?.also { list ->
             append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ')
             appendList(list, params) { column, params ->
-                appendAlias(column, { append(column, params) }, { appendRef(it) })
+                append(column, params)
             }
         }
         having?.also {
@@ -43,14 +43,14 @@ open class SelectExpression(
         }
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder.appendKeyword("SELECT").append(' ')
         if (distinct) {
             builder.appendKeyword("DISTINCT").append(' ')
         }
         if (columns.isNotEmpty()) {
             builder.appendList(columns, params) { column, params ->
-                append(column.let { if (it is WithAlias) it.original else it }, params).appendAliasUsingAs(column)
+                appendAndAsAlias(column, params)
             }
         } else {
             builder.append('*')
@@ -64,7 +64,7 @@ open class SelectExpression(
         if (column == null) {
             builder.append('1')
         } else {
-            builder.append(column, params)
+            builder.append(column, params, ignoreAlias = true)
         }
         builder.append(')').buildSqlMain(params)
     }
@@ -100,8 +100,8 @@ open class SelectExpression(
                 }
             }
 
-        override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-            builder.append('(').append(this@SelectExpression, params).append(')')
+        override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+            builder.append('(').append(this@SelectExpression, params, ignoreAlias = ignoreAlias).append(')')
         }
     }
 
@@ -115,8 +115,8 @@ open class SelectExpression(
             override val original = this0
 
             // 因为这里是将子查询包装成了 QuerySource ，要在构建的SQL前后加括号（与其他情况的默认行为不同），因此要重写此方法。
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-                builder.append(original, params, addParentheses = true)
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+                builder.append(original, params, addParentheses = true, ignoreAlias = ignoreAlias)
             }
         }
 

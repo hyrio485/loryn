@@ -54,16 +54,31 @@ open class SqlBuilder(
         appendRef(tableName)
     }
 
-    open fun append(sqlAppender: SqlAppender, params: SqlParamList, addParentheses: Boolean = false) = also {
+    open fun append(
+        appender: SqlAppender,
+        params: SqlParamList,
+        addParentheses: Boolean = false,
+        ignoreAlias: Boolean = false,
+    ) = also {
         if (addParentheses) append('(')
-        sqlAppender.buildSql(this, params)
+        val alias = appender.getAliasOrNull()
+        if (alias == null || ignoreAlias) {
+            appender.buildSql(this, params, ignoreAlias = ignoreAlias)
+        } else {
+            appendRef(alias)
+        }
         if (addParentheses) append(')')
     }
 
-    open fun append(sqlAppenders: Iterable<SqlAppender>, params: SqlParamList, addParentheses: Boolean = false) = also {
+    open fun append(
+        appenders: Iterable<SqlAppender>,
+        params: SqlParamList,
+        addParentheses: Boolean = false,
+        ignoreAlias: Boolean = false,
+    ) = also {
         if (addParentheses) append('(')
-        appendList(sqlAppenders, params) { sqlAppender, params ->
-            append(sqlAppender, params)
+        appendList(appenders, params) { sqlAppender, params ->
+            append(sqlAppender, params, ignoreAlias = ignoreAlias)
         }
         if (addParentheses) append(')')
     }
@@ -72,16 +87,10 @@ open class SqlBuilder(
         throw UnsupportedOperationException("SQL dialect does not support pagination")
     }
 
-    open fun <A : SqlAppender> appendAlias(
-        appender: A,
-        ifAbsent: SqlBuilder.(A) -> Unit = {},
-        ifPresent: SqlBuilder.(String) -> Unit,
-    ) = also {
-        appender.getAliasOrNull()?.also { ifPresent(it) } ?: ifAbsent(appender)
+    open fun appendAndAsAlias(appender: SqlAppender, params: SqlParamList) = also {
+        append(appender, params, ignoreAlias = true)
+        appender.getAliasOrNull()?.also { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
     }
-
-    open fun <A : SqlAppender> appendAliasUsingAs(appender: A, ifAbsent: SqlBuilder.(A) -> Unit = {}) =
-        appendAlias(appender, ifAbsent) { append(' ').appendKeyword("AS").append(' ').appendRef(it) }
 
     fun build() = end().let { builder.toString() }
 }

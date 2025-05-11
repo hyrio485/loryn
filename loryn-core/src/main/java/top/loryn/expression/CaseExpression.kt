@@ -9,7 +9,7 @@ class CaseExpression<R>(
     elseExpr: SqlExpression<R>? = null,
     sqlType: SqlType<R>?,
 ) : BaseCaseExpression<Boolean, R>(branches, elseExpr, sqlType) {
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        doBuildSql(builder, params)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        doBuildSql(builder, params, ignoreAlias)
     }
 }

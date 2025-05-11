@@ -14,17 +14,19 @@ class WindowExpression<R>(
 
     override val sqlType = function.sqlType
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        builder.append(function, params).append(' ').appendKeyword("OVER").append(' ').append('(')
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        builder.append(function, params, ignoreAlias = ignoreAlias).append(' ')
+        builder.appendKeyword("OVER").append(' ').append('(')
         if (partitionBy.isNotEmpty()) {
             builder.appendKeyword("PARTITION").append(' ').appendKeyword("BY").append(' ')
-            builder.append(partitionBy, params)
+            builder.append(partitionBy, params, ignoreAlias = ignoreAlias)
             if (orderBy.isNotEmpty()) {
                 builder.append(' ')
             }
         }
         if (orderBy.isNotEmpty()) {
-            builder.appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ').append(orderBy, params)
+            builder.appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ')
+                .append(orderBy, params, ignoreAlias = ignoreAlias)
         }
         builder.append(')')
     }

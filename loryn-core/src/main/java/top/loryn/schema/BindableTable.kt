@@ -97,7 +97,7 @@ abstract class BindableTable<E>(
             override val alias = alias
             override val original = this0
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
                 builder.appendTable(this)
             }
         }

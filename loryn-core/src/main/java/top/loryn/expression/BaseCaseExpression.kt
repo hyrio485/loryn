@@ -18,15 +18,16 @@ abstract class BaseCaseExpression<T, R>(
     protected inline fun doBuildSql(
         builder: SqlBuilder,
         params: SqlParamList,
+        ignoreAlias: Boolean,
         appendValue: SqlBuilder.(SqlParamList) -> Unit = {},
     ) {
         builder.appendKeyword("CASE").append(' ').appendValue(params)
         branches.forEach { (condition, result) ->
-            builder.append(' ').appendKeyword("WHEN").append(' ').append(condition, params)
-            builder.append(' ').appendKeyword("THEN").append(' ').append(result, params)
+            builder.append(' ').appendKeyword("WHEN").append(' ').append(condition, params, ignoreAlias = ignoreAlias)
+            builder.append(' ').appendKeyword("THEN").append(' ').append(result, params, ignoreAlias = ignoreAlias)
         }
         elseExpr?.also {
-            builder.append(' ').appendKeyword("ELSE").append(' ').append(it, params)
+            builder.append(' ').appendKeyword("ELSE").append(' ').append(it, params, ignoreAlias = ignoreAlias)
         }
         builder.append(' ').appendKeyword("END")
     }

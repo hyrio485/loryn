@@ -46,7 +46,7 @@ fun dateSub(time: SqlExpression<Date>, interval: Int, unit: MysqlTimeUnit) =
     FunctionExpression("DATE_SUB", JavaDateSqlType, time, object : SqlExpression<Nothing> {
         override val sqlType get() = sqlTypeNoNeed()
 
-        override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+        override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
             builder.appendKeyword("INTERVAL").append(' ').append(interval).append(' ').appendKeyword(unit.name)
         }
     })

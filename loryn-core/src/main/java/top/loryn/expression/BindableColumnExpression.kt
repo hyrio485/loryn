@@ -20,7 +20,7 @@ interface BindableColumnExpression<E, T> : ColumnExpression<T> {
             override val getter = getter
             override val setter = setter
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) =
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) =
                 throw UnsupportedOperationException("Easy creation of BindableColumnExpression can only be used in ResultSet's column mapping.")
         }
 

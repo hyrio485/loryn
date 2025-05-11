@@ -19,7 +19,7 @@ interface ColumnExpression<T> : SqlExpression<T> {
             override val name = name
             override val sqlType = sqlType
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) =
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) =
                 throw UnsupportedOperationException("Easy creation of ColumnExpression can only be used in ResultSet's column mapping.")
         }
 
@@ -61,12 +61,12 @@ interface ColumnExpression<T> : SqlExpression<T> {
             override val alias = alias
             override val original = this0
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
                 val originalAlias = original.getAliasOrNull()
                 if (originalAlias != null) {
                     builder.appendRef(originalAlias).append(' ').appendRef(alias)
                 } else {
-                    super.buildSql(builder, params)
+                    original.buildSql(builder, params, ignoreAlias = ignoreAlias)
                 }
             }
         }

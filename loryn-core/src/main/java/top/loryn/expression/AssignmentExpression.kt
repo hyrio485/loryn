@@ -16,7 +16,9 @@ data class AssignmentExpression<C>(
 
     override val sqlType get() = sqlTypeNoNeed()
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        builder.append(column, params).append(' ').appendKeyword("=").append(' ').append(value, params)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        builder.append(column, params, ignoreAlias = ignoreAlias)
+        builder.append(' ').appendKeyword("=").append(' ')
+        builder.append(value, params, ignoreAlias = ignoreAlias)
     }
 }

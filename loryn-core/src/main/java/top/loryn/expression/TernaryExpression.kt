@@ -28,12 +28,12 @@ class TernaryExpression<T1, T2, T3, R>(
         require(operators2.isNotEmpty()) { "At least one operator of operators1 must be provided" }
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder
-            .append(expr1, params, addParentheses)
+            .append(expr1, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
             .append(' ').appendKeywords(operators1, params, " ").append(' ')
-            .append(expr2, params, addParentheses)
+            .append(expr2, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
             .append(' ').appendKeywords(operators2, params, " ").append(' ')
-            .append(expr3, params, addParentheses)
+            .append(expr3, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
     }
 }

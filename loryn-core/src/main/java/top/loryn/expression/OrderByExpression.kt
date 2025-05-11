@@ -20,9 +20,8 @@ class OrderByExpression(
         ;
     }
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        // 有别名用别名
-        builder.appendAlias(column, { append(column, params) }, { appendRef(it) })
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        builder.append(column, params, ignoreAlias = ignoreAlias)
         if (type == OrderByType.DESC) {
             builder.append(' ').appendKeyword(type.keyword)
         }

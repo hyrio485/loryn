@@ -15,8 +15,9 @@ open class Column<T>(
 ) : ColumnExpression<T> {
     val notNull = primaryKey || notNull
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        builder.appendAlias(table) { appendRef(it).append('.') }.appendRef(name)
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        table.getAliasOrNull()?.also { builder.appendRef(it).append('.') }
+        builder.appendRef(name)
     }
 
     override fun toString() =

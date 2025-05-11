@@ -55,8 +55,9 @@ interface QuerySource : SqlAppender {
             override val name = null
             override val sqlType get() = sqlTypeNoNeed("Query source's all columns")
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-                builder.appendAlias(this0) { appendRef(it).append(' ') }.append(StarSqlExpression, params)
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+                this0.getAliasOrNull()?.also { builder.appendRef(it).append(' ') }
+                builder.append(StarSqlExpression, params, ignoreAlias = ignoreAlias)
             }
         }
 
@@ -67,7 +68,7 @@ interface QuerySource : SqlAppender {
             override val name = columnExpression.name
             override val sqlType = columnExpression.sqlType
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
                 val alias = this0.getAliasOrNull()
                     ?: throw IllegalStateException("Query source $this0 does not have an alias")
                 val columnAlias = columnExpression.getAliasOrNull()

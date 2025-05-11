@@ -33,12 +33,16 @@ abstract class Table(
         get() = primaryKeys.singleOrNull()
             ?: error("Table $this has more than one primary keys, use primaryKeys instead")
 
-    protected open fun <T> column(name: String, sqlType: SqlType<T>, primaryKey: Boolean = false, notNull: Boolean = false) =
-        Column(this, name, sqlType, primaryKey, notNull).also { columnsMapMutable += it }
+    protected open fun <T> column(
+        name: String,
+        sqlType: SqlType<T>,
+        primaryKey: Boolean = false,
+        notNull: Boolean = false,
+    ) = Column(this, name, sqlType, primaryKey, notNull).also { columnsMapMutable += it }
 
     // endregion
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder.appendTable(this)
     }
 
@@ -51,7 +55,7 @@ abstract class Table(
             override val alias = this0.getAliasOrNull()
             override val original = this0
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
                 builder.appendTable(this)
             }
         }
@@ -63,7 +67,7 @@ abstract class Table(
             override val alias = alias
             override val original = this0
 
-            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
                 builder.appendTable(this)
             }
         }

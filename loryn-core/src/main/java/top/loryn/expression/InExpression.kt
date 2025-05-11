@@ -18,16 +18,16 @@ class InExpression(
 
     override val sqlType = BooleanSqlType
 
-    override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-        builder.append(expr, params).append(' ')
+    override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
+        builder.append(expr, params, ignoreAlias = ignoreAlias).append(' ')
         if (not) {
             builder.appendKeyword("NOT").append(' ')
         }
         builder.appendKeyword("IN").append(" (")
         if (list != null) {
-            builder.append(list, params)
+            builder.append(list, params, ignoreAlias = ignoreAlias)
         } else {
-            builder.append(select!!, params)
+            builder.append(select!!, params, ignoreAlias = ignoreAlias)
         }
         builder.append(')')
     }

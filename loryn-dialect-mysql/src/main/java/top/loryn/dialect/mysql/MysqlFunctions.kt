@@ -1,8 +1,12 @@
 package top.loryn.dialect.mysql
 
+import top.loryn.database.SqlBuilder
 import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.support.IntSqlType
+import top.loryn.support.JavaDateSqlType
+import top.loryn.utils.SqlParamList
+import java.util.*
 
 fun <T> SqlExpression<T>.`if`(condition: SqlExpression<Boolean>, elseBranch: SqlExpression<T>) =
     FunctionExpression("IF", sqlType, condition, this, elseBranch)
@@ -33,3 +37,15 @@ fun <T> lastValue(expr: SqlExpression<T>, partitionBy: List<ColumnExpression<*>>
 
 fun <T> lastValue(expr: SqlExpression<T>, partitionBy: ColumnExpression<*>, vararg orderBy: OrderByExpression) =
     WindowExpression(FunctionExpression("LAST_VALUE", expr.sqlType, expr), listOf(partitionBy), orderBy.toList())
+
+val NOW = FunctionExpression("NOW", JavaDateSqlType)
+val CURRENT_TIMESTAMP = FunctionExpression("CURRENT_TIMESTAMP", JavaDateSqlType, addParenthesesWhenNoArgs = false)
+
+fun dateSub(time: SqlExpression<Date>, interval: Int, unit: MysqlTimeUnit) =
+    FunctionExpression("DATE_SUB", JavaDateSqlType, time, object : SqlExpression<Nothing> {
+        override val sqlType get() = sqlTypeNoNeed()
+
+        override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            builder.appendKeyword("INTERVAL").append(' ').append(interval).append(' ').appendKeyword(unit.name)
+        }
+    })

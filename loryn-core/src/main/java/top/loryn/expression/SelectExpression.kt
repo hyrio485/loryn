@@ -5,6 +5,7 @@ import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
+import top.loryn.support.SqlType
 import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
 import top.loryn.utils.boxed
@@ -65,19 +66,43 @@ open class SelectExpression(
         builder.append(')').buildSqlMain(params)
     }
 
-    inline fun <reified T> asExpression(): ColumnExpression<T> {
-        // TODO：这里需要支持多列
-        require(columns.size == 1) { "This select expression has ${if (columns.isEmpty()) "dynamic" else "more then one"} columns" }
+    @PublishedApi
+    internal inline fun <reified T> checkAndGetFirstColumnSqlType(): SqlType<T> {
+        require(columns.size == 1) { "Only select expression with one column can be converted to ColumnExpression" }
         val column = columns[0]
         val boxedClass = T::class.java.boxed
         if (column.sqlType.clazz.boxed != boxedClass) {
             throw IllegalArgumentException("The column type is not $boxedClass")
         }
         @Suppress("UNCHECKED_CAST")
-        return column as ColumnExpression<T>
+        return column.sqlType as SqlType<T>
     }
 
-    fun asQuerySource(alias: String?): QuerySource =
+    inline fun <reified T> asColumn(): ColumnExpression<T> {
+        require(columns.size == 1) { "Only select expression with one column can be converted to ColumnExpression" }
+        checkAndGetFirstColumnSqlType<T>()
+        @Suppress("UNCHECKED_CAST")
+        return columns[0] as ColumnExpression<T>
+    }
+
+    inline fun <reified T> asExpression(sqlType: SqlType<T>? = null) = object : SqlExpression<T> {
+        // TODO: 这里需要支持多列
+        override val sqlType: SqlType<T>
+            get() {
+                return if (sqlType == null) {
+                    require(columns.size != 1) { "When the sqlType is null, the columns size must be 1" }
+                    checkAndGetFirstColumnSqlType<T>()
+                } else {
+                    sqlType
+                }
+            }
+
+        override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+            builder.append('(').append(this@SelectExpression, params).append(')')
+        }
+    }
+
+    fun asQuerySource(alias: String? = null): QuerySource =
         object : QuerySource, WithAlias {
             private val this0 = this@SelectExpression
 
@@ -88,7 +113,7 @@ open class SelectExpression(
 
             // 因为这里是将子查询包装成了 QuerySource ，要在构建的SQL前后加括号（与其他情况的默认行为不同），因此要重写此方法。
             override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
-                builder.append(this, params, addParentheses = true)
+                builder.append(original, params, addParentheses = true)
             }
         }
 

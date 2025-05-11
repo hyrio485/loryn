@@ -109,7 +109,7 @@ fun <T> SqlExpression<T>.between(start: SqlExpression<T>, end: SqlExpression<T>)
 fun <T> SqlExpression<T>.between(start: T, end: T) =
     between(expr(start), expr(end))
 
-fun <T : Comparable<T>> SqlExpression<T>.between(range: ClosedRange<T>) =
+infix fun <T : Comparable<T>> SqlExpression<T>.between(range: ClosedRange<T>) =
     between(range.start, range.endInclusive)
 
 // endregion

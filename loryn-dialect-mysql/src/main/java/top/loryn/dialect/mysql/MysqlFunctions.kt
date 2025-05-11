@@ -5,6 +5,7 @@ import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.support.IntSqlType
 import top.loryn.support.JavaDateSqlType
+import top.loryn.support.StringSqlType
 import top.loryn.utils.SqlParamList
 import java.util.*
 
@@ -49,3 +50,6 @@ fun dateSub(time: SqlExpression<Date>, interval: Int, unit: MysqlTimeUnit) =
             builder.appendKeyword("INTERVAL").append(' ').append(interval).append(' ').appendKeyword(unit.name)
         }
     })
+
+fun dateFormat(date: SqlExpression<Date>, pattern: String) =
+    FunctionExpression("DATE_FORMAT", StringSqlType, date, StringSqlType.expr(pattern))

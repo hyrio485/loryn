@@ -29,8 +29,11 @@ open class SelectExpression(
         where?.also {
             append(' ').appendKeyword("WHERE").append(' ').append(it, params)
         }
-        groupBy.takeIf { it.isNotEmpty() }?.also {
-            append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ').append(it, params)
+        groupBy.takeIf { it.isNotEmpty() }?.also { list ->
+            append(' ').appendKeyword("GROUP").append(' ').appendKeyword("BY").append(' ')
+            appendList(list, params) { column, params ->
+                appendAlias(column, { append(column, params) }, { appendRef(it) })
+            }
         }
         having?.also {
             append(' ').appendKeyword("HAVING").append(' ').append(it, params)

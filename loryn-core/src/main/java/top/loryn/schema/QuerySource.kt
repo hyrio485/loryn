@@ -59,4 +59,21 @@ interface QuerySource : SqlAppender {
                 builder.appendAlias(this0) { appendRef(it).append(' ') }.append(StarSqlExpression, params)
             }
         }
+
+    operator fun <T> get(columnExpression: ColumnExpression<T>) =
+        object : ColumnExpression<T> {
+            private val this0 = this@QuerySource
+
+            override val name = columnExpression.name
+            override val sqlType = columnExpression.sqlType
+
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                val alias = this0.getAliasOrNull()
+                    ?: throw IllegalStateException("Query source $this0 does not have an alias")
+                val columnAlias = columnExpression.getAliasOrNull()
+                    ?: columnExpression.name
+                    ?: throw IllegalStateException("Column $columnExpression does not have an alias or name")
+                builder.appendRef(alias).append('.').appendRef(columnAlias)
+            }
+        }
 }

@@ -60,5 +60,14 @@ interface ColumnExpression<T> : SqlExpression<T> {
 
             override val alias = alias
             override val original = this0
+
+            override fun buildSql(builder: SqlBuilder, params: SqlParamList) {
+                val originalAlias = original.getAliasOrNull()
+                if (originalAlias != null) {
+                    builder.appendRef(originalAlias).append(' ').appendRef(alias)
+                } else {
+                    super.buildSql(builder, params)
+                }
+            }
         }
 }

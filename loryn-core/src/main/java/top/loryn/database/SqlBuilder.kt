@@ -72,7 +72,6 @@ open class SqlBuilder(
         throw UnsupportedOperationException("SQL dialect does not support pagination")
     }
 
-    /** 如果对象有别名，则调用 [block]，其参数为别名（非空）。 */
     open fun <A : SqlAppender> appendAlias(
         appender: A,
         ifAbsent: SqlBuilder.(A) -> Unit = {},

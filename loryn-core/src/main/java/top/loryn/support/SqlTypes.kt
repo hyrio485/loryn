@@ -178,7 +178,7 @@ object JdbcDateSqlType : SqlType<SqlDate>(JDBCType.DATE, SqlDate::class.java) {
 
 object JavaDateSqlType : SqlType<JavaDate>(JDBCType.TIMESTAMP, JavaDate::class.java) {
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: JavaDate) {
-        ps.setDate(index, SqlDate(parameter.time))
+        ps.setTimestamp(index, Timestamp(parameter.time))
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): JavaDate? {

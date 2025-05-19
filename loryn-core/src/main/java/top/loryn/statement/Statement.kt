@@ -102,17 +102,35 @@ interface DqlStatement : Statement {
         statement.executeQuery().mapEachRow(block)
     }
 
-    fun <R> one(block: (ResultSet) -> R) = list(block).one()
+    fun <R> one(block: (ResultSet) -> R): R? {
+        var first = true
+        return list {
+            if (first) {
+                first = false
+            } else {
+                error("Expected one result but was more than one")
+            }
+            block(it)
+        }.one()
+    }
 }
 
 interface BindableDqlStatement<E> : DqlStatement {
     val createEntity: () -> E
     override val columns: List<BindableColumnExpression<E, *>>? get() = emptyList()
 
-    fun list(): List<E> {
+    private fun list(ensureOne: Boolean): List<E> {
         val columns = columns.takeUnless { it.isNullOrEmpty() }
             ?: throw UnsupportedOperationException("No columns specified")
+        var first = true
         return list { rs ->
+            if (first) {
+                first = false
+            } else {
+                if (ensureOne) {
+                    error("Expected one result but was more than one")
+                }
+            }
             createEntity().apply {
                 columns.forEachIndexed { index, column ->
                     if (usingIndex) {
@@ -125,7 +143,9 @@ interface BindableDqlStatement<E> : DqlStatement {
         }
     }
 
-    fun one() = list().one()
+    fun list() = list(false)
+
+    fun one() = list(true).one()
 }
 
 @LorynDsl

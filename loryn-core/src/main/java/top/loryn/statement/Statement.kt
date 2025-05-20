@@ -146,6 +146,8 @@ interface BindableDqlStatement<E> : DqlStatement {
     fun list() = list(false)
 
     fun one() = list(true).one()
+
+    fun listAndCount() = list() to count()
 }
 
 @LorynDsl

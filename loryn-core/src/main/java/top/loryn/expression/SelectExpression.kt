@@ -146,6 +146,8 @@ open class SelectExpression(
             this.having = having
         }
 
+        // region order by
+
         fun orderBy(orderBys: List<OrderByExpression>) = also {
             this.orderBy += orderBys
         }
@@ -153,6 +155,40 @@ open class SelectExpression(
         fun orderBy(vararg orderBys: OrderByExpression) = also {
             orderBy(orderBys.toList())
         }
+
+        fun orderBy(orderBys: List<ColumnExpression<*>>, type: OrderByExpression.OrderByType) = also {
+            orderBy(orderBys.map { it.toOrderBy(type) })
+        }
+
+        fun orderBy(vararg orderBys: ColumnExpression<*>, type: OrderByExpression.OrderByType) = also {
+            orderBy(orderBys.toList(), type)
+        }
+
+        fun orderBy(orderBys: List<ColumnExpression<*>>, ascending: Boolean = true) = also {
+            orderBy(orderBys.map { it.toOrderBy(ascending) })
+        }
+
+        fun orderBy(vararg orderBys: ColumnExpression<*>, ascending: Boolean = true) = also {
+            orderBy(orderBys.toList(), ascending)
+        }
+
+        fun orderBy(orderBys: List<SqlExpression<*>>, type: OrderByExpression.OrderByType) = also {
+            orderBy(orderBys.map { it.toOrderBy(type) })
+        }
+
+        fun orderBy(vararg orderBys: SqlExpression<*>, type: OrderByExpression.OrderByType) = also {
+            orderBy(orderBys.toList(), type)
+        }
+
+        fun orderBy(orderBys: List<SqlExpression<*>>, ascending: Boolean = true) = also {
+            orderBy(orderBys.map { it.toOrderBy(ascending) })
+        }
+
+        fun orderBy(vararg orderBys: SqlExpression<*>, ascending: Boolean = true) = also {
+            orderBy(orderBys.toList(), ascending)
+        }
+
+        // endregion
 
         fun pagination(paginationParams: PaginationParams) = also {
             this.paginationParams = paginationParams

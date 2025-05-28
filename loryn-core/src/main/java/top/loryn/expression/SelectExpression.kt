@@ -156,34 +156,42 @@ open class SelectExpression(
             orderBy(orderBys.toList())
         }
 
+        @JvmName("orderByColumn")
         fun orderBy(orderBys: List<ColumnExpression<*>>, type: OrderByExpression.OrderByType) = also {
             orderBy(orderBys.map { it.toOrderBy(type) })
         }
 
+        @JvmName("orderByColumn")
         fun orderBy(vararg orderBys: ColumnExpression<*>, type: OrderByExpression.OrderByType) = also {
             orderBy(orderBys.toList(), type)
         }
 
+        @JvmName("orderByColumn")
         fun orderBy(orderBys: List<ColumnExpression<*>>, ascending: Boolean = true) = also {
             orderBy(orderBys.map { it.toOrderBy(ascending) })
         }
 
+        @JvmName("orderByColumn")
         fun orderBy(vararg orderBys: ColumnExpression<*>, ascending: Boolean = true) = also {
             orderBy(orderBys.toList(), ascending)
         }
 
+        @JvmName("orderByExpr")
         fun orderBy(orderBys: List<SqlExpression<*>>, type: OrderByExpression.OrderByType) = also {
             orderBy(orderBys.map { it.toOrderBy(type) })
         }
 
+        @JvmName("orderByExpr")
         fun orderBy(vararg orderBys: SqlExpression<*>, type: OrderByExpression.OrderByType) = also {
             orderBy(orderBys.toList(), type)
         }
 
+        @JvmName("orderByExpr")
         fun orderBy(orderBys: List<SqlExpression<*>>, ascending: Boolean = true) = also {
             orderBy(orderBys.map { it.toOrderBy(ascending) })
         }
 
+        @JvmName("orderByExpr")
         fun orderBy(vararg orderBys: SqlExpression<*>, ascending: Boolean = true) = also {
             orderBy(orderBys.toList(), ascending)
         }

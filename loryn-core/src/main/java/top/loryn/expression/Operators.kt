@@ -1,7 +1,9 @@
 package top.loryn.expression
 
 import top.loryn.expression.OrderByExpression.OrderByType
+import top.loryn.schema.Column
 import top.loryn.support.*
+import java.util.*
 
 // region comparison operators
 
@@ -85,6 +87,34 @@ fun orAll(vararg expressions: SqlExpression<Boolean>) =
 
 operator fun SqlExpression<Boolean>.not() =
     UnaryExpression("NOT", this, BooleanSqlType, addParentheses = false)
+
+// endregion
+// region time range
+
+private fun Long?.toDate() = this?.let(::Date)
+
+fun Column<Date>.inTimeRangeOrNull(dateMin: Date?, dateMax: Date?) =
+    when {
+        dateMin != null && dateMax != null -> this.between(dateMin, dateMax)
+        dateMin != null -> this gte dateMin
+        dateMax != null -> this lte dateMax
+        else -> null
+    }
+
+fun Column<Date>.inTimeRangeOrNull(timeMin: Long?, timeMax: Long?) =
+    inTimeRangeOrNull(timeMin.toDate(), timeMax.toDate())
+
+fun Column<Date>.inTimeRange(dateMin: Date?, dateMax: Date?) =
+    inTimeRangeOrNull(dateMin, dateMax) ?: TrueSqlExpression
+
+fun Column<Date>.inTimeRange(timeMin: Long?, timeMax: Long?) =
+    inTimeRange(timeMin.toDate(), timeMax.toDate())
+
+fun SqlExpression<Boolean>.andTimeRange(dateMin: Date?, dateMax: Date?, column: Column<Date>) =
+    column.inTimeRangeOrNull(dateMin, dateMax)?.let { this and it }
+
+fun SqlExpression<Boolean>.andTimeRange(timeMin: Long?, timeMax: Long?, column: Column<Date>) =
+    andTimeRange(timeMin.toDate(), timeMax.toDate(), column)
 
 // endregion
 // region in operator

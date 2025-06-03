@@ -111,7 +111,7 @@ fun Column<Date>.inTimeRange(timeMin: Long?, timeMax: Long?) =
     inTimeRange(timeMin.toDate(), timeMax.toDate())
 
 fun SqlExpression<Boolean>.andTimeRange(dateMin: Date?, dateMax: Date?, column: Column<Date>) =
-    column.inTimeRangeOrNull(dateMin, dateMax)?.let { this and it }
+    column.inTimeRangeOrNull(dateMin, dateMax)?.let { this and it } ?: this
 
 fun SqlExpression<Boolean>.andTimeRange(timeMin: Long?, timeMax: Long?, column: Column<Date>) =
     andTimeRange(timeMin.toDate(), timeMax.toDate(), column)

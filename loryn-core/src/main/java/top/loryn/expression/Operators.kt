@@ -147,6 +147,8 @@ infix fun <T : Comparable<T>> SqlExpression<T>.between(range: ClosedRange<T>) =
 // endregion
 // region other operators
 
+infix fun SelectExpression.union(other: SelectExpression) = UnionExpression(this, other)
+
 infix fun SqlExpression<String>.like(other: SqlExpression<String>) =
     InfixExpression("LIKE", this, other, BooleanSqlType)
 

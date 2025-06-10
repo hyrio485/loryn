@@ -6,32 +6,26 @@ import top.loryn.support.WithAlias
 import top.loryn.utils.SqlParamList
 
 class UnionExpression(
-    val select1: SelectExpression,
-    val select2: SelectExpression,
+    val expr1: SqlExpression<*>,
+    val expr2: SqlExpression<*>,
     val addParentheses: Boolean = true,
 ) : SqlExpression<Nothing> {
     override val sqlType get() = sqlTypeNoNeed()
 
-    init {
-        require(select1.columns.size == select2.columns.size) {
-            "The number of columns in both SELECT statements must be the same"
-        }
-    }
-
     override fun buildSql(builder: SqlBuilder, params: SqlParamList, ignoreAlias: Boolean) {
         builder
-            .append(select1, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
+            .append(expr1, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
             .append(' ')
             .appendKeyword("UNION")
             .append(' ')
-            .append(select2, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
+            .append(expr2, params, addParentheses = addParentheses, ignoreAlias = ignoreAlias)
     }
 
     fun asQuerySource(alias: String? = null): QuerySource =
         object : QuerySource, WithAlias {
             private val this0 = this@UnionExpression
 
-            override val columns = select1.columns
+            override val columns = emptyList<ColumnExpression<*>>()
 
             override val alias = alias
             override val original = this0

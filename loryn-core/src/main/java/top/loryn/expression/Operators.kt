@@ -122,6 +122,8 @@ fun SqlExpression<Boolean>.andTimeRange(timeMin: Long?, timeMax: Long?, column: 
 infix fun <C> ColumnExpression<C>.`in`(values: Iterable<C>) =
     InExpression(this, list = values.map { expr(it) })
 
+infix fun SqlExpression<*>.`in`(expr: SqlExpression<*>) = this `in` listOf(expr)
+fun SqlExpression<*>.`in`(vararg list: SqlExpression<*>) = InExpression(this, list = list.toList())
 infix fun SqlExpression<*>.`in`(list: List<SqlExpression<*>>) = InExpression(this, list = list)
 infix fun SqlExpression<*>.`in`(select: SelectExpression) = InExpression(this, select = select)
 infix fun Tuple.`in`(list: List<Tuple>) = InExpression(this, list = list)

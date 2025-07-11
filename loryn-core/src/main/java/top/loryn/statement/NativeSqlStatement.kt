@@ -31,6 +31,15 @@ fun Database.dml(
     useGeneratedKeys: Boolean = false,
 ) = dml(sql, params.toList(), useGeneratedKeys)
 
+fun Database.dml(
+    useGeneratedKeys: Boolean = false,
+    builderAction: StringBuilder.(params: SqlParamList) -> Unit,
+): DmlStatement {
+    val params: SqlParamList = mutableListOf()
+    val sql = buildString { builderAction(params) }
+    return dml(sql, params, useGeneratedKeys)
+}
+
 fun Database.dql(
     sql: String,
     params: List<SqlParam<*>>,
@@ -54,6 +63,15 @@ fun Database.dql(
     vararg params: SqlParam<*>,
     columns: List<ColumnExpression<*>> = emptyList(),
 ) = dql(sql, params.toList(), columns)
+
+fun Database.dql(
+    columns: List<ColumnExpression<*>> = emptyList(),
+    builderAction: StringBuilder.(params: SqlParamList) -> Unit,
+): DqlStatement {
+    val params: SqlParamList = mutableListOf()
+    val sql = buildString { builderAction(params) }
+    return dql(sql, params, columns)
+}
 
 fun <E> Database.dqlBindable(
     sql: String,
@@ -81,3 +99,13 @@ fun <E> Database.dqlBindable(
     createEntity: () -> E,
     columns: List<BindableColumnExpression<E, *>>,
 ) = dqlBindable(sql, params.toList(), createEntity, columns)
+
+fun <E> Database.dqlBindable(
+    createEntity: () -> E,
+    columns: List<BindableColumnExpression<E, *>> = emptyList(),
+    builderAction: StringBuilder.(params: SqlParamList) -> Unit,
+): BindableDqlStatement<E> {
+    val params: SqlParamList = mutableListOf()
+    val sql = buildString { builderAction(params) }
+    return dqlBindable(sql, params, createEntity, columns)
+}

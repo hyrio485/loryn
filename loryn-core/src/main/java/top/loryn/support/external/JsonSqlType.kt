@@ -23,3 +23,9 @@ object JsonSqlType : SqlType<JsonNode>(JDBCType.VARCHAR, JsonNode::class.java) {
 // ObjectNode -> VARCHAR
 
 val JsonObjectSqlType = JsonSqlType.transform(ObjectNode::class.java, { it as ObjectNode }, { it })
+
+inline fun <reified T> getJsonObjectBasedSqlType() = JsonObjectSqlType.transform(
+    T::class.java,
+    { objectMapper.treeToValue(it, T::class.java) },
+    { objectMapper.valueToTree(it) },
+)

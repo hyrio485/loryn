@@ -46,7 +46,7 @@ class UpdateBuilder<T : Table>(table: T) : StatementBuilder<T, UpdateStatement>(
         set(column, column.expr(value))
     }
 
-    fun where(where: SqlExpression<Boolean>) {
+    override fun where(where: SqlExpression<Boolean>) {
         this.where = where
     }
 
@@ -75,7 +75,7 @@ class BindableUpdateBuilder<E, T : BindableTable<E>>(table: T) : StatementBuilde
         set(column, column.expr(value))
     }
 
-    fun where(where: SqlExpression<Boolean>) {
+    override fun where(where: SqlExpression<Boolean>) {
         this.where = where
     }
 

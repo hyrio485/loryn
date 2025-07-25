@@ -3,6 +3,7 @@ package top.loryn.expression
 import top.loryn.database.SqlBuilder
 import top.loryn.schema.BindableQuerySource
 import top.loryn.schema.QuerySource
+import top.loryn.statement.WhereClause
 import top.loryn.support.LorynDsl
 import top.loryn.support.PaginationParams
 import top.loryn.support.SqlType
@@ -22,7 +23,7 @@ open class SelectExpression(
 ) : SqlExpression<Nothing> {
     override val sqlType get() = sqlTypeNoNeed()
 
-    private fun SqlBuilder.buildSqlMain(params: SqlParamList) = also {
+    private fun SqlBuilder.buildSqlMain(params: SqlParamList) {
         from?.also {
             append(' ').appendKeyword("FROM").append(' ').appendAndAsAlias(it, params)
         }
@@ -122,7 +123,7 @@ open class SelectExpression(
 
     abstract class AbstractBuilder<T : QuerySource>(
         protected val from: T?,
-    ) {
+    ) : WhereClause {
         protected var where: SqlExpression<Boolean>? = null
         protected val groupBy: MutableList<ColumnExpression<*>> = mutableListOf()
         protected var having: SqlExpression<Boolean>? = null
@@ -130,87 +131,87 @@ open class SelectExpression(
         protected var paginationParams: PaginationParams? = null
         protected var distinct: Boolean = false
 
-        fun where(where: SqlExpression<Boolean>) = also {
+        override fun where(where: SqlExpression<Boolean>) {
             this.where = where
         }
 
-        fun groupBy(columns: List<ColumnExpression<*>>) = also {
+        fun groupBy(columns: List<ColumnExpression<*>>) {
             this.groupBy += columns
         }
 
-        fun groupBy(vararg columns: ColumnExpression<*>) = also {
+        fun groupBy(vararg columns: ColumnExpression<*>) {
             groupBy(columns.toList())
         }
 
-        fun having(having: SqlExpression<Boolean>) = also {
+        fun having(having: SqlExpression<Boolean>) {
             this.having = having
         }
 
         // region order by
 
-        fun orderBy(orderBys: List<OrderByExpression>) = also {
+        fun orderBy(orderBys: List<OrderByExpression>) {
             this.orderBy += orderBys
         }
 
-        fun orderBy(vararg orderBys: OrderByExpression) = also {
+        fun orderBy(vararg orderBys: OrderByExpression) {
             orderBy(orderBys.toList())
         }
 
         @JvmName("orderByColumn")
-        fun orderBy(orderBys: List<ColumnExpression<*>>, type: OrderByExpression.OrderByType) = also {
+        fun orderBy(orderBys: List<ColumnExpression<*>>, type: OrderByExpression.OrderByType) {
             orderBy(orderBys.map { it.toOrderBy(type) })
         }
 
         @JvmName("orderByColumn")
-        fun orderBy(vararg orderBys: ColumnExpression<*>, type: OrderByExpression.OrderByType) = also {
+        fun orderBy(vararg orderBys: ColumnExpression<*>, type: OrderByExpression.OrderByType) {
             orderBy(orderBys.toList(), type)
         }
 
         @JvmName("orderByColumn")
-        fun orderBy(orderBys: List<ColumnExpression<*>>, ascending: Boolean = true) = also {
+        fun orderBy(orderBys: List<ColumnExpression<*>>, ascending: Boolean = true) {
             orderBy(orderBys.map { it.toOrderBy(ascending) })
         }
 
         @JvmName("orderByColumn")
-        fun orderBy(vararg orderBys: ColumnExpression<*>, ascending: Boolean = true) = also {
+        fun orderBy(vararg orderBys: ColumnExpression<*>, ascending: Boolean = true) {
             orderBy(orderBys.toList(), ascending)
         }
 
         @JvmName("orderByExpr")
-        fun orderBy(orderBys: List<SqlExpression<*>>, type: OrderByExpression.OrderByType) = also {
+        fun orderBy(orderBys: List<SqlExpression<*>>, type: OrderByExpression.OrderByType) {
             orderBy(orderBys.map { it.toOrderBy(type) })
         }
 
         @JvmName("orderByExpr")
-        fun orderBy(vararg orderBys: SqlExpression<*>, type: OrderByExpression.OrderByType) = also {
+        fun orderBy(vararg orderBys: SqlExpression<*>, type: OrderByExpression.OrderByType) {
             orderBy(orderBys.toList(), type)
         }
 
         @JvmName("orderByExpr")
-        fun orderBy(orderBys: List<SqlExpression<*>>, ascending: Boolean = true) = also {
+        fun orderBy(orderBys: List<SqlExpression<*>>, ascending: Boolean = true) {
             orderBy(orderBys.map { it.toOrderBy(ascending) })
         }
 
         @JvmName("orderByExpr")
-        fun orderBy(vararg orderBys: SqlExpression<*>, ascending: Boolean = true) = also {
+        fun orderBy(vararg orderBys: SqlExpression<*>, ascending: Boolean = true) {
             orderBy(orderBys.toList(), ascending)
         }
 
         // endregion
 
-        fun pagination(paginationParams: PaginationParams) = also {
+        fun pagination(paginationParams: PaginationParams) {
             this.paginationParams = paginationParams
         }
 
-        fun pagination(currentPage: Int, pageSize: Int) = also {
+        fun pagination(currentPage: Int, pageSize: Int) {
             pagination(PaginationParams(currentPage, pageSize))
         }
 
-        fun limit(limit: Int) = also {
+        fun limit(limit: Int) {
             pagination(PaginationParams(1, limit))
         }
 
-        fun distinct(distinct: Boolean = true) = also {
+        fun distinct(distinct: Boolean = true) {
             this.distinct = distinct
         }
 
@@ -223,11 +224,11 @@ open class SelectExpression(
     open class Builder<T : QuerySource>(from: T? = null) : AbstractBuilder<T>(from) {
         protected val columns: MutableList<ColumnExpression<*>> = mutableListOf()
 
-        open fun column(columns: List<ColumnExpression<*>>) = also {
+        open fun column(columns: List<ColumnExpression<*>>) {
             this.columns += columns
         }
 
-        open fun column(vararg columns: ColumnExpression<*>) = also {
+        open fun column(vararg columns: ColumnExpression<*>) {
             column(columns.toList())
         }
 
@@ -255,11 +256,11 @@ class BindableSelectExpression<E>(
     class Builder<E, T : BindableQuerySource<E>>(from: T) : AbstractBuilder<T>(from) {
         private val columns: MutableList<BindableColumnExpression<E, *>> = mutableListOf()
 
-        fun column(columns: List<BindableColumnExpression<E, *>>) = also {
+        fun column(columns: List<BindableColumnExpression<E, *>>) {
             this.columns += columns
         }
 
-        fun column(vararg columns: BindableColumnExpression<E, *>) = also {
+        fun column(vararg columns: BindableColumnExpression<E, *>) {
             column(columns.toList())
         }
 

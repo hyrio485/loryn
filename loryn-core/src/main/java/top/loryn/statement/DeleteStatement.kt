@@ -23,7 +23,7 @@ class DeleteStatement(
 class DeleteBuilder<T : Table>(table: T) : StatementBuilder<T, DeleteStatement>(table) {
     private var where: SqlExpression<Boolean>? = null
 
-    fun where(where: SqlExpression<Boolean>) {
+    override fun where(where: SqlExpression<Boolean>) {
         this.where = where
     }
 

@@ -2,10 +2,7 @@ package top.loryn.statement
 
 import top.loryn.database.Database
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.BindableColumnExpression
-import top.loryn.expression.ColumnExpression
-import top.loryn.expression.SqlAndParams
-import top.loryn.expression.SqlParam
+import top.loryn.expression.*
 import top.loryn.schema.Column
 import top.loryn.schema.Table
 import top.loryn.support.LorynDsl
@@ -17,7 +14,15 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 
-abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T) {
+internal interface WhereClause {
+    fun where(where: SqlExpression<Boolean>) {}
+
+    fun whereAndAll(vararg expressions: SqlExpression<Boolean>) {
+        where(andAll(*expressions))
+    }
+}
+
+abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T) : WhereClause {
     abstract fun buildStatement(database: Database): S
 }
 

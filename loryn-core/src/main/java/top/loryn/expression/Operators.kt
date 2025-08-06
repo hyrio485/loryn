@@ -189,6 +189,15 @@ fun String.addSqlParam(params: SqlParamList) = addSqlParam(params, StringSqlType
 fun Boolean.addSqlParam(params: SqlParamList) = addSqlParam(params, BooleanSqlType)
 fun Date.addSqlParam(params: SqlParamList) = addSqlParam(params, JavaDateSqlType)
 
+fun <T> Iterable<T>.toInSql(params: SqlParamList, sqlType: SqlType<T>) =
+    joinToString(prefix = "(", postfix = ")") { it.addSqlParam(params, sqlType) }
+
+@JvmName("toInSqlInt")
+fun Iterable<Int>.toInSql(params: SqlParamList) = toInSql(params, IntSqlType)
+
+@JvmName("toInSqlString")
+fun Iterable<String>.toInSql(params: SqlParamList) = toInSql(params, StringSqlType)
+
 // endregion
 // region column related
 

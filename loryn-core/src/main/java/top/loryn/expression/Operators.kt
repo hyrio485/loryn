@@ -3,6 +3,7 @@ package top.loryn.expression
 import top.loryn.expression.OrderByExpression.OrderByType
 import top.loryn.schema.Column
 import top.loryn.support.*
+import top.loryn.utils.SqlParamList
 import java.util.*
 
 // region comparison operators
@@ -174,9 +175,19 @@ fun SqlExpression<Int>.sum() =
     UnaryExpression("SUM", this, IntSqlType, addParentheses = true)
 
 fun <T> T?.toSqlParam(sqlType: SqlType<T>) = sqlType.expr(this)
+
 fun Int?.toSqlParam() = toSqlParam(IntSqlType)
 fun String?.toSqlParam() = toSqlParam(StringSqlType)
 fun Boolean?.toSqlParam() = toSqlParam(BooleanSqlType)
+fun Date?.toSqlParam() = toSqlParam(JavaDateSqlType)
+
+fun <T> T.addSqlParam(params: SqlParamList, sqlType: SqlType<T>) =
+    "?".also { params.add(toSqlParam(sqlType)) }
+
+fun Int.addSqlParam(params: SqlParamList) = addSqlParam(params, IntSqlType)
+fun String.addSqlParam(params: SqlParamList) = addSqlParam(params, StringSqlType)
+fun Boolean.addSqlParam(params: SqlParamList) = addSqlParam(params, BooleanSqlType)
+fun Date.addSqlParam(params: SqlParamList) = addSqlParam(params, JavaDateSqlType)
 
 // endregion
 // region column related

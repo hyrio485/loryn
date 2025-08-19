@@ -207,16 +207,14 @@ fun <T> SqlExpression<T>.distinct(alias: String? = null) =
 fun <T> SqlExpression<T>.asColumn(alias: String? = null) =
     ColumnExpression.wrap(this, alias)
 
-fun <C> ColumnExpression<C>.toOrderBy(type: OrderByType) =
-    OrderByExpression(this, type)
+fun <C> ColumnExpression<C>.toOrderBy(type: OrderByType) = OrderByExpression(this, type)
+fun <C> ColumnExpression<C>.toOrderBy(ascending: Boolean = true) = OrderByExpression(this, ascending)
+fun <T> SqlExpression<T>.toOrderBy(type: OrderByType) = asColumn().toOrderBy(type)
+fun <T> SqlExpression<T>.toOrderBy(ascending: Boolean = true) = asColumn().toOrderBy(ascending)
 
-fun <C> ColumnExpression<C>.toOrderBy(ascending: Boolean = true) =
-    OrderByExpression(this, ascending)
-
-fun <T> SqlExpression<T>.toOrderBy(type: OrderByType) =
-    OrderByExpression(asColumn(), type)
-
-fun <T> SqlExpression<T>.toOrderBy(ascending: Boolean = true) =
-    OrderByExpression(asColumn(), ascending)
+fun <C> ColumnExpression<C>.desc() = toOrderBy(OrderByType.DESC)
+fun <C> ColumnExpression<C>.asc() = toOrderBy(OrderByType.ASC)
+fun <T> SqlExpression<T>.desc() = toOrderBy(OrderByType.DESC)
+fun <T> SqlExpression<T>.asc() = toOrderBy(OrderByType.ASC)
 
 // endregion

@@ -17,7 +17,7 @@ object BooleanSqlType : SqlType<Boolean>(JDBCType.BOOLEAN, Boolean::class.java) 
         ps.setBoolean(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Boolean? {
+    override fun doGetResult(rs: ResultSet, index: Int): Boolean {
         return rs.getBoolean(index)
     }
 }
@@ -29,7 +29,7 @@ object IntSqlType : SqlType<Int>(JDBCType.INTEGER, Int::class.java) {
         ps.setInt(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Int? {
+    override fun doGetResult(rs: ResultSet, index: Int): Int {
         return rs.getInt(index)
     }
 }
@@ -41,7 +41,7 @@ object ShortSqlType : SqlType<Short>(JDBCType.SMALLINT, Short::class.java) {
         ps.setShort(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Short? {
+    override fun doGetResult(rs: ResultSet, index: Int): Short {
         return rs.getShort(index)
     }
 }
@@ -53,7 +53,7 @@ object LongSqlType : SqlType<Long>(JDBCType.BIGINT, Long::class.java) {
         ps.setLong(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Long? {
+    override fun doGetResult(rs: ResultSet, index: Int): Long {
         return rs.getLong(index)
     }
 }
@@ -65,7 +65,7 @@ object FloatSqlType : SqlType<Float>(JDBCType.FLOAT, Float::class.java) {
         ps.setFloat(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Float? {
+    override fun doGetResult(rs: ResultSet, index: Int): Float {
         return rs.getFloat(index)
     }
 }
@@ -77,7 +77,7 @@ object DoubleSqlType : SqlType<Double>(JDBCType.DOUBLE, Double::class.java) {
         ps.setDouble(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): Double? {
+    override fun doGetResult(rs: ResultSet, index: Int): Double {
         return rs.getDouble(index)
     }
 }
@@ -127,7 +127,7 @@ object BlobSqlType : SqlType<ByteArray>(JDBCType.BLOB, ByteArray::class.java) {
         ps.setBlob(index, SerialBlob(parameter))
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): ByteArray? {
+    override fun doGetResult(rs: ResultSet, index: Int): ByteArray {
         return rs.getBlob(index).let { blob ->
             try {
                 blob.binaryStream.use { it.readBytes() }
@@ -293,7 +293,7 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
         ps.setObject(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): UUID? {
+    override fun doGetResult(rs: ResultSet, index: Int): UUID {
         return rs.getObject(index) as UUID
     }
 }

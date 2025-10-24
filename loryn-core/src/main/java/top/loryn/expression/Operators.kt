@@ -185,6 +185,7 @@ fun <T> T.addSqlParam(params: SqlParamList, sqlType: SqlType<T>) =
     "?".also { params.add(toSqlParam(sqlType)) }
 
 fun Int.addSqlParam(params: SqlParamList) = addSqlParam(params, IntSqlType)
+fun Long.addSqlParam(params: SqlParamList) = addSqlParam(params, LongSqlType)
 fun String.addSqlParam(params: SqlParamList) = addSqlParam(params, StringSqlType)
 fun Boolean.addSqlParam(params: SqlParamList) = addSqlParam(params, BooleanSqlType)
 fun Date.addSqlParam(params: SqlParamList) = addSqlParam(params, JavaDateSqlType)

@@ -23,7 +23,7 @@ open class SelectExpression(
 ) : SqlExpression<Nothing> {
     override val sqlType get() = sqlTypeNoNeed()
 
-    private fun SqlBuilder.buildSqlMain(params: SqlParamList) {
+    private fun SqlBuilder.buildSqlMain(params: SqlParamList, withOrderBy: Boolean) {
         from?.also {
             append(' ').appendKeyword("FROM").append(' ').appendAndAsAlias(it, params)
         }
@@ -39,7 +39,7 @@ open class SelectExpression(
         having?.also {
             append(' ').appendKeyword("HAVING").append(' ').append(it, params)
         }
-        orderBy.takeIf { it.isNotEmpty() }?.also {
+        orderBy.takeIf { it.isNotEmpty() && withOrderBy }?.also {
             append(' ').appendKeyword("ORDER").append(' ').appendKeyword("BY").append(' ').append(it, params)
         }
     }
@@ -56,7 +56,7 @@ open class SelectExpression(
         } else {
             builder.append('*')
         }
-        builder.buildSqlMain(params)
+        builder.buildSqlMain(params, true)
         paginationParams?.also { builder.append(' ').appendPagination(it) }
     }
 
@@ -67,7 +67,7 @@ open class SelectExpression(
         } else {
             builder.append(column, params, ignoreAlias = true)
         }
-        builder.append(')').buildSqlMain(params)
+        builder.append(')').buildSqlMain(params, false)
     }
 
     @PublishedApi

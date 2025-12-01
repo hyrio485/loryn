@@ -21,6 +21,9 @@ fun <T> SqlExpression<T>.ifNull(default: T?) =
 fun <T> Column<T>.max() =
     FunctionExpression("MAX", sqlType, this)
 
+fun <T> Column<T>.min() =
+    FunctionExpression("MIN", sqlType, this)
+
 fun rowNumber(partitionBy: List<ColumnExpression<*>>, orderBy: List<OrderByExpression>) =
     WindowExpression(FunctionExpression("ROW_NUMBER", IntSqlType), partitionBy, orderBy)
 

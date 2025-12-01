@@ -103,10 +103,11 @@ interface DqlStatement : Statement {
         },
     ) = database.doExecute(getSqlAndParams = getSqlAndParams) { statement ->
         statement.executeQuery().use { resultSet ->
-            if (!resultSet.next()) {
-                error("No result found")
+            if (resultSet.next()) {
+                resultSet.getInt(1)
+            } else { // 如果设置了groupBy等条件可能出现此情况
+                0
             }
-            resultSet.getInt(1)
         }
     }
 

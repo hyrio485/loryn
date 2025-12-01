@@ -20,6 +20,13 @@ internal interface WhereClause {
     fun whereAndAll(vararg expressions: SqlExpression<Boolean>) {
         where(andAll(*expressions))
     }
+
+    fun whereOptional(vararg expressions: SqlExpression<Boolean>?) {
+        val conds = expressions.filterNotNull()
+        if (conds.isNotEmpty()) {
+            whereAndAll(*conds.toTypedArray())
+        }
+    }
 }
 
 abstract class StatementBuilder<T : Table, S : Statement>(protected val table: T) : WhereClause {

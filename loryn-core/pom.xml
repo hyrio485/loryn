@@ -7,7 +7,7 @@
   <parent>
     <groupId>top.loryn</groupId>
     <artifactId>loryn</artifactId>
-    <version>1.0.5</version> <!-- loryn -->
+    <version>1.0.6</version> <!-- loryn -->
   </parent>
 
   <artifactId>loryn-core</artifactId>

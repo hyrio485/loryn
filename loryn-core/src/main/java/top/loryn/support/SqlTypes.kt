@@ -127,8 +127,8 @@ object BlobSqlType : SqlType<ByteArray>(JDBCType.BLOB, ByteArray::class.java) {
         ps.setBlob(index, SerialBlob(parameter))
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): ByteArray {
-        return rs.getBlob(index).let { blob ->
+    override fun doGetResult(rs: ResultSet, index: Int): ByteArray? {
+        return rs.getBlob(index)?.let { blob ->
             try {
                 blob.binaryStream.use { it.readBytes() }
             } finally {

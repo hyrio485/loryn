@@ -75,6 +75,10 @@ class BindableUpdateBuilder<E, T : BindableTable<E>>(table: T) : StatementBuilde
         set(column, column.expr(value))
     }
 
+    internal fun <C> setByEntity(column: BindableColumn<E, C>, entity: E) {
+        set(column, column.getValueExpr(entity))
+    }
+
     override fun where(where: SqlExpression<Boolean>) {
         this.where = where
     }
@@ -94,7 +98,7 @@ fun <E, T : BindableTable<E>> Database.update(
     entity: E,
     columns: List<BindableColumn<E, *>> = table.updateColumns,
 ) = updateBindable(table) {
-    columns.forEach { set(it) { it.getValueExpr(entity) } }
+    columns.forEach { column -> setByEntity(column, entity) }
     where(it.primaryKeyFilter(entity))
 }
 
@@ -122,10 +126,8 @@ fun <E, T : BindableTable<E>> Database.updateOptimistic(
 ): Int {
     require(revColumn !in columns) { "Revision column $revColumn cannot be included in the update columns" }
     return updateBindable(table) {
-        columns.forEach { column ->
-            set(column) { it.getValueExpr(entity) }
-            set(revColumn, revColumn.getValue(entity)!! + 1)
-        }
+        columns.forEach { column -> setByEntity(column, entity) }
+        set(revColumn, revColumn.getValue(entity)!! + 1)
         where(it.primaryKeyFilter(entity) and (revColumn eq revColumn.getValueExpr(entity)))
     }
 }
@@ -166,7 +168,9 @@ fun <E, T : BindableTable<E>> Database.update(
     columns: List<BindableColumn<E, *>> = table.updateColumns,
 ) = updateBindable(table) {
     val primaryKeys = it.primaryKeys
-    columns.forEach { set(it) { it.caseValueExpr(primaryKeys, entities) } }
+    columns.forEach { column ->
+        set(column) { col -> col.caseValueExpr(primaryKeys, entities) }
+    }
     where(it.primaryKeyFilter(entities))
 }
 

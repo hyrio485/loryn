@@ -70,7 +70,7 @@
     </repository>
     <snapshotRepository>
       <id>hyrio-snapshots</id>
-      <url>http://your-repo-host/repository/maven-snapshots/</url>
+      <url>https://nexus.hyrio.xyz/repository/maven-snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
 

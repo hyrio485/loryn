@@ -6,7 +6,7 @@
 
   <groupId>top.loryn</groupId>
   <artifactId>loryn</artifactId>
-  <version>1.0.7</version> <!-- loryn -->
+  <version>1.0.8</version> <!-- loryn -->
   <packaging>pom</packaging>
   <name>${project.artifactId}</name>
   <description>${project.artifactId}</description>
@@ -65,14 +65,12 @@
 
   <distributionManagement>
     <repository>
-      <id>releases</id>
-      <name>Releases</name>
-      <url>https://oa-nexus.eastmoney.com/repository/maven-releases/</url>
+      <id>hyrio-releases</id>
+      <url>https://nexus.hyrio.xyz/repository/maven-releases/</url>
     </repository>
     <snapshotRepository>
-      <id>snapshots</id>
-      <name>Snapshots</name>
-      <url>https://oa-nexus.eastmoney.com/repository/maven-snapshots/</url>
+      <id>hyrio-snapshots</id>
+      <url>http://your-repo-host/repository/maven-snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
 

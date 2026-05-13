@@ -10,10 +10,10 @@ object EmptyDatabaseImpl : Database {
     private fun notSupported(): Nothing =
         throw UnsupportedOperationException("This database implementation does not support any operations.")
 
-    override val logger = notSupported()
-    override val dialect = notSupported()
-    override val config = notSupported()
-    override val metadata = notSupported()
+    override val logger get() = notSupported()
+    override val dialect get() = notSupported()
+    override val config get() = notSupported()
+    override val metadata get() = notSupported()
 
     override fun withLogger(logger: Logger) = notSupported()
     override fun withLogger(name: String) = notSupported()

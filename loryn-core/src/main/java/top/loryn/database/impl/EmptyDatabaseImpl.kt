@@ -15,9 +15,9 @@ object EmptyDatabaseImpl : Database {
     override val config get() = notSupported()
     override val metadata get() = notSupported()
 
-    override fun withLogger(logger: Logger) = notSupported()
-    override fun withLogger(name: String) = notSupported()
-    override fun withLogger(clazz: Class<*>) = notSupported()
+    override fun withLogger(logger: Logger) = EmptyDatabaseImpl
+    override fun withLogger(name: String) = EmptyDatabaseImpl
+    override fun withLogger(clazz: Class<*>) = EmptyDatabaseImpl
 
     override fun <T> useConnection(block: (Connection) -> T) = notSupported()
     override fun <T> useTransaction(

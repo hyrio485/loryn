@@ -3,7 +3,11 @@ package top.loryn.database
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator
-import top.loryn.database.transaction.*
+import top.loryn.database.impl.DefaultDatabaseImpl
+import top.loryn.database.transaction.JdbcTransactionManager
+import top.loryn.database.transaction.SpringManagedTransactionManager
+import top.loryn.database.transaction.Transaction
+import top.loryn.database.transaction.TransactionIsolation
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
 import top.loryn.support.LazyLogObject
@@ -12,46 +16,14 @@ import top.loryn.support.WrappedSqlException
 import java.sql.Connection
 import java.sql.DatabaseMetaData
 import java.sql.DriverManager
-import java.sql.SQLException
 import java.util.*
 import javax.sql.DataSource
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
-class Database(
-    val transactionManager: TransactionManager,
-    val logger: Logger = defaultLogger,
-    val dialect: SqlDialect = detectDialectImplementation(),
-    val exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
-    val config: Config = Config(),
-    metadata: Metadata? = null,
-) {
-    val metadata = metadata ?: useConnection { conn ->
-        Metadata(conn.metaData)
-    }.also {
-        logger.info(
-            "Connected to {}, productName: {}, productVersion: {}",
-            it.url, it.productName, it.productVersion
-        )
-    }
-
-    fun copy(
-        transactionManager: TransactionManager = this.transactionManager,
-        logger: Logger = this.logger,
-        dialect: SqlDialect = this.dialect,
-        exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = this.exceptionTranslator,
-        config: Config = this.config,
-        metadata: Metadata = this.metadata,
-    ) = Database(transactionManager, logger, dialect, exceptionTranslator, config, metadata)
-
-    fun withLogger(logger: Logger) = copy(logger = logger)
-    fun withLogger(name: String) = copy(logger = LoggerFactory.getLogger(name))
-    fun withLogger(clazz: Class<*>) = copy(logger = LoggerFactory.getLogger(clazz))
-
-    data class Config(
-        val uppercaseKeywords: Boolean = true,
-    )
+interface Database {
+    val logger: Logger
+    val dialect: SqlDialect
+    val config: Config
+    val metadata: Metadata
 
     data class Metadata(
         val url: String,
@@ -102,76 +74,35 @@ class Database(
         )
     }
 
-    @OptIn(ExperimentalContracts::class)
-    inline fun <T> useConnection(block: (Connection) -> T): T {
-        contract {
-            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-        }
-        try {
-            val transaction = transactionManager.currentTransaction
-            val connection = transaction?.connection ?: transactionManager.newConnection()
-            try {
-                return block(connection)
-            } finally {
-                if (transaction == null) connection.close()
-            }
-        } catch (e: WrappedSqlException) {
-            throw exceptionTranslator?.invoke(e) ?: e
-        } catch (e: SQLException) {
-            throw exceptionTranslator?.invoke(WrappedSqlException(e)) ?: e
-        }
-    }
+    data class Config(
+        val uppercaseKeywords: Boolean = true,
+    )
 
-    @OptIn(ExperimentalContracts::class)
-    inline fun <T> useTransaction(
+    fun withLogger(logger: Logger): Database
+    fun withLogger(name: String): Database
+    fun withLogger(clazz: Class<*>): Database
+
+    fun <T> useConnection(block: (Connection) -> T): T
+
+    fun <T> useTransaction(
         rollbackFor: Class<out Throwable> = Throwable::class.java,
         isolation: TransactionIsolation? = null,
         block: (Transaction) -> T,
-    ): T {
-        contract {
-            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-        }
-        val current = transactionManager.currentTransaction
-        val isOuter = current == null
-        val transaction = current ?: transactionManager.newTransaction(isolation)
-        var throwable: Throwable? = null
-
-        try {
-            return block(transaction)
-        } catch (e: WrappedSqlException) {
-            throwable = exceptionTranslator?.invoke(e) ?: e
-            throw throwable
-        } catch (e: SQLException) {
-            throwable = exceptionTranslator?.invoke(WrappedSqlException(e)) ?: e
-            throw throwable
-        } catch (e: Throwable) {
-            throwable = e
-            throw throwable
-        } finally {
-            if (isOuter) {
-                try {
-                    if (throwable == null || !rollbackFor.isInstance(throwable)) {
-                        transaction.commit()
-                    } else {
-                        transaction.rollback()
-                    }
-                } finally {
-                    transaction.close()
-                }
-            }
-        }
-    }
+    ): T
 
     // region Logging
 
     fun showParams(args: List<SqlParam<*>>) {
-        logger.debug("Parameters: {}", LazyLogObject {
-            if (args.isEmpty()) {
-                "<no parameters>"
-            } else {
-                args.joinToString { "${it.value}(${it.sqlType.javaClassName})" }
-            }
-        })
+        logger.debug(
+            "Parameters: {}",
+            LazyLogObject {
+                if (args.isEmpty()) {
+                    "<no parameters>"
+                } else {
+                    args.joinToString { "${it.value}(${it.sqlType.javaClassName})" }
+                }
+            },
+        )
     }
 
     fun showSql(sql: String, args: List<SqlParam<*>>? = null) {
@@ -190,7 +121,7 @@ class Database(
     // endregion
 
     companion object {
-        private val defaultLogger by lazy {
+        internal val defaultLogger by lazy {
             try {
                 val logger: Logger? = LoggerFactory.getLogger(Database::class.java)
                 if (logger == null) {
@@ -214,7 +145,7 @@ class Database(
             }
         }
 
-        private fun detectDialectImplementation(): SqlDialect {
+        internal fun detectDialectImplementation(): SqlDialect {
             val dialects = ServiceLoader.load(SqlDialect::class.java).toList()
             return when (dialects.size) {
                 0 -> object : SqlDialect {}
@@ -229,7 +160,7 @@ class Database(
             exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
             connector: () -> Connection,
-        ) = Database(
+        ): Database = DefaultDatabaseImpl(
             transactionManager = JdbcTransactionManager(connector = connector),
             logger = logger,
             dialect = dialect,
@@ -243,7 +174,7 @@ class Database(
             dialect: SqlDialect = detectDialectImplementation(),
             exceptionTranslator: ((WrappedSqlException) -> Throwable?)? = null,
             config: Config = Config(),
-        ) = Database(
+        ): Database = DefaultDatabaseImpl(
             transactionManager = JdbcTransactionManager { dataSource.connection },
             logger = logger,
             dialect = dialect,
@@ -261,7 +192,7 @@ class Database(
             if (!driver.isNullOrBlank()) {
                 Class.forName(driver)
             }
-            return Database(
+            return DefaultDatabaseImpl(
                 transactionManager = JdbcTransactionManager { DriverManager.getConnection(url, user, password) },
                 logger = logger,
                 dialect = dialect,
@@ -277,7 +208,7 @@ class Database(
             config: Config = Config(),
         ): Database {
             val translator = SQLErrorCodeSQLExceptionTranslator(dataSource)
-            return Database(
+            return DefaultDatabaseImpl(
                 transactionManager = SpringManagedTransactionManager(dataSource),
                 dialect = dialect,
                 logger = logger,
@@ -293,7 +224,7 @@ class Database(
          * Keywords in SQL:2003 standard, all in uppercase.
          * See https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#key%20word
          */
-        private val ANSI_SQL_2003_KEYWORDS = setOf(
+        internal val ANSI_SQL_2003_KEYWORDS = setOf(
             "A",
             "ABS",
             "ABSOLUTE",
@@ -790,7 +721,7 @@ class Database(
             "WORK",
             "WRITE",
             "YEAR",
-            "ZONE"
+            "ZONE",
         )
     }
 }

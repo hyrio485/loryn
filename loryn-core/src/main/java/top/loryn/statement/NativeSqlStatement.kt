@@ -6,6 +6,7 @@ import top.loryn.expression.BindableColumnExpression
 import top.loryn.expression.ColumnExpression
 import top.loryn.expression.SqlAndParams
 import top.loryn.expression.SqlParam
+import top.loryn.schema.BindableTable
 import top.loryn.utils.SqlParamList
 
 fun Database.dml(
@@ -109,3 +110,13 @@ fun <E> Database.dqlBindable(
     val sql = buildString { builderAction(params) }
     return dqlBindable(sql, params, createEntity, columns)
 }
+
+fun <E> Database.dqlBindable(
+    table: BindableTable<E>,
+    columns: List<BindableColumnExpression<E, *>> = table.columns,
+    builderAction: StringBuilder.(params: SqlParamList) -> Unit,
+): BindableDqlStatement<E> = dqlBindable(
+    createEntity = table::createEntity,
+    columns = columns,
+    builderAction = builderAction,
+)

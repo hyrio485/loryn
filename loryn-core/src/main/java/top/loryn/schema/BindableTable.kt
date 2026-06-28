@@ -4,6 +4,7 @@ import top.loryn.database.SqlBuilder
 import top.loryn.expression.and
 import top.loryn.expression.eq
 import top.loryn.expression.`in`
+import top.loryn.expression.not
 import top.loryn.support.SqlType
 import top.loryn.support.Tuple
 import top.loryn.support.WithAlias
@@ -88,6 +89,8 @@ abstract class BindableTable<E>(
     open val revColumn: BindableColumn<E, Int> get() = errorColumn("revision column")
     open val deletedColumn: BindableColumn<E, Boolean> get() = errorColumn("deleted column")
 
+    open val notDeleted get() = !deletedColumn
+
     override fun createEntity() = createEntity.invoke()
 
     override fun aliased(alias: String): BindableTable<E> =
@@ -103,7 +106,7 @@ abstract class BindableTable<E>(
         }
 
     operator fun <T> get(column: BindableColumn<E, T>) = BindableColumn(
-        this, column.name, column.sqlType, column.getter, column.setter, column.primaryKey, column.notNull
+        this, column.name, column.sqlType, column.getter, column.setter, column.primaryKey, column.notNull,
     )
 
     fun mapBindable(columns: List<BindableColumn<E, *>>) = columns.map { this[it] }

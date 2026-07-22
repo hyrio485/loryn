@@ -305,7 +305,11 @@ class EnumSqlType<C : Enum<C>>(
 ) : SqlType<C>(JDBCType.OTHER, enumClass) {
     constructor(enumClass: KClass<C>) : this(enumClass.java)
 
-    private companion object {
+    companion object {
+        inline operator fun <reified C : Enum<C>> invoke(): EnumSqlType<C> {
+            return EnumSqlType(C::class.java)
+        }
+
         private val pgStatementClass = try {
             Class.forName("org.postgresql.PGStatement")
         } catch (_: ClassNotFoundException) {

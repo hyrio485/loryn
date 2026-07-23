@@ -1,10 +1,7 @@
 package top.loryn.schema
 
 import top.loryn.database.SqlBuilder
-import top.loryn.expression.and
-import top.loryn.expression.eq
-import top.loryn.expression.`in`
-import top.loryn.expression.not
+import top.loryn.expression.*
 import top.loryn.support.SqlType
 import top.loryn.support.Tuple
 import top.loryn.support.WithAlias
@@ -89,7 +86,7 @@ abstract class BindableTable<E>(
     open val revColumn: BindableColumn<E, Int> get() = errorColumn("revision column")
     open val deletedColumn: BindableColumn<E, Boolean> get() = errorColumn("deleted column")
 
-    open val notDeleted get() = !deletedColumn
+    open val notDeleted: SqlExpression<Boolean> get() = !deletedColumn
 
     override fun createEntity() = createEntity.invoke()
 

@@ -206,7 +206,7 @@ object InstantSqlType : SqlType<Instant>(JDBCType.TIMESTAMP, Instant::class.java
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): Instant? {
-        return rs.getTimestamp(index).toInstant()
+        return rs.getTimestamp(index)?.toInstant()
     }
 }
 
@@ -218,7 +218,7 @@ object LocalDateTimeSqlType : SqlType<LocalDateTime>(JDBCType.TIMESTAMP, LocalDa
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): LocalDateTime? {
-        return rs.getTimestamp(index).toLocalDateTime()
+        return rs.getTimestamp(index)?.toLocalDateTime()
     }
 }
 
@@ -230,7 +230,7 @@ object LocalDateSqlType : SqlType<LocalDate>(JDBCType.DATE, LocalDate::class.jav
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): LocalDate? {
-        return rs.getDate(index).toLocalDate()
+        return rs.getDate(index)?.toLocalDate()
     }
 }
 
@@ -242,7 +242,7 @@ object LocalTimeSqlType : SqlType<LocalTime>(JDBCType.TIME, LocalTime::class.jav
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): LocalTime? {
-        return rs.getTime(index).toLocalTime()
+        return rs.getTime(index)?.toLocalTime()
     }
 }
 
@@ -256,7 +256,7 @@ object MonthDaySqlType : SqlType<MonthDay>(JDBCType.VARCHAR, MonthDay::class.jav
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): MonthDay? {
-        return MonthDay.parse(rs.getString(index), formatter)
+        return rs.getString(index)?.let { MonthDay.parse(it, formatter) }
     }
 }
 
@@ -270,7 +270,7 @@ object YearMonthSqlType : SqlType<YearMonth>(JDBCType.VARCHAR, YearMonth::class.
     }
 
     override fun doGetResult(rs: ResultSet, index: Int): YearMonth? {
-        return YearMonth.parse(rs.getString(index), formatter)
+        return rs.getString(index)?.let { YearMonth.parse(it, formatter) }
     }
 }
 
@@ -293,8 +293,8 @@ object UuidSqlType : SqlType<UUID>(JDBCType.OTHER, UUID::class.java) {
         ps.setObject(index, parameter)
     }
 
-    override fun doGetResult(rs: ResultSet, index: Int): UUID {
-        return rs.getObject(index) as UUID
+    override fun doGetResult(rs: ResultSet, index: Int): UUID? {
+        return rs.getObject(index) as UUID?
     }
 }
 

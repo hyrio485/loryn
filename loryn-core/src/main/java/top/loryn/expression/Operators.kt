@@ -5,6 +5,7 @@ import top.loryn.schema.Column
 import top.loryn.support.*
 import top.loryn.utils.SqlParamList
 import java.util.*
+import kotlin.reflect.KClass
 
 // region comparison operators
 
@@ -24,22 +25,47 @@ infix fun <C> SqlExpression<C>.lte(value: C?) = lte(expr(value))
 // endregion
 // region arithmetic operators
 
-operator fun SqlExpression<Int>.plus(other: SqlExpression<Int>) = InfixExpression("+", this, other, IntSqlType)
-operator fun SqlExpression<Int>.plus(value: Int) = plus(expr(value))
-operator fun SqlExpression<Int>.minus(other: SqlExpression<Int>) = InfixExpression("-", this, other, IntSqlType)
-operator fun SqlExpression<Int>.minus(value: Int) = minus(expr(value))
-operator fun SqlExpression<Int>.times(other: SqlExpression<Int>) = InfixExpression("*", this, other, IntSqlType)
-operator fun SqlExpression<Int>.times(value: Int) = times(expr(value))
-operator fun SqlExpression<Int>.div(other: SqlExpression<Int>) = InfixExpression("/", this, other, IntSqlType)
-operator fun SqlExpression<Int>.div(value: Int) = div(expr(value))
-operator fun SqlExpression<Int>.rem(other: SqlExpression<Int>) = InfixExpression("%", this, other, IntSqlType)
-operator fun SqlExpression<Int>.rem(value: Int) = rem(expr(value))
+@PublishedApi
+@Suppress("UNCHECKED_CAST")
+internal inline val <reified N : Number> KClass<N>.sqlType: SqlType<N>
+    get() = when (this) {
+        Int::class -> IntSqlType
+        Long::class -> LongSqlType
+        Float::class -> FloatSqlType
+        Double::class -> DoubleSqlType
+        else -> error("Unsupported number type: ${this::class}")
+    } as SqlType<N>
 
-operator fun SqlExpression<Int>.unaryPlus() =
-    UnaryExpression("+", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
+inline operator fun <reified N : Number> SqlExpression<N>.plus(other: SqlExpression<N>) =
+    InfixExpression("+", this, other, N::class.sqlType)
 
-operator fun SqlExpression<Int>.unaryMinus() =
-    UnaryExpression("-", this, IntSqlType, addParentheses = false, addWhiteSpace = false)
+inline operator fun <reified N : Number> SqlExpression<N>.plus(value: N) = plus(expr(value))
+
+inline operator fun <reified N : Number> SqlExpression<N>.minus(other: SqlExpression<N>) =
+    InfixExpression("-", this, other, N::class.sqlType)
+
+inline operator fun <reified N : Number> SqlExpression<N>.minus(value: N) = minus(expr(value))
+
+inline operator fun <reified N : Number> SqlExpression<N>.times(other: SqlExpression<N>) =
+    InfixExpression("*", this, other, N::class.sqlType)
+
+inline operator fun <reified N : Number> SqlExpression<N>.times(value: N) = times(expr(value))
+
+inline operator fun <reified N : Number> SqlExpression<N>.div(other: SqlExpression<N>) =
+    InfixExpression("/", this, other, N::class.sqlType)
+
+inline operator fun <reified N : Number> SqlExpression<N>.div(value: N) = div(expr(value))
+
+inline operator fun <reified N : Number> SqlExpression<N>.rem(other: SqlExpression<N>) =
+    InfixExpression("%", this, other, N::class.sqlType)
+
+inline operator fun <reified N : Number> SqlExpression<N>.rem(value: N) = rem(expr(value))
+
+inline operator fun <reified N : Number> SqlExpression<N>.unaryPlus() =
+    UnaryExpression("+", this, N::class.sqlType, addParentheses = false, addWhiteSpace = false)
+
+inline operator fun <reified N : Number> SqlExpression<N>.unaryMinus() =
+    UnaryExpression("-", this, N::class.sqlType, addParentheses = false, addWhiteSpace = false)
 
 // endregion
 // region logical operators

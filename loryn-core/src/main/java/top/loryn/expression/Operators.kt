@@ -4,6 +4,9 @@ import top.loryn.expression.OrderByExpression.OrderByType
 import top.loryn.schema.Column
 import top.loryn.support.*
 import top.loryn.utils.SqlParamList
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -215,6 +218,9 @@ fun Long.addSqlParam(params: SqlParamList) = addSqlParam(params, LongSqlType)
 fun String.addSqlParam(params: SqlParamList) = addSqlParam(params, StringSqlType)
 fun Boolean.addSqlParam(params: SqlParamList) = addSqlParam(params, BooleanSqlType)
 fun Date.addSqlParam(params: SqlParamList) = addSqlParam(params, JavaDateSqlType)
+fun LocalDate.addSqlParam(params: SqlParamList) = addSqlParam(params, LocalDateSqlType)
+fun LocalTime.addSqlParam(params: SqlParamList) = addSqlParam(params, LocalTimeSqlType)
+fun LocalDateTime.addSqlParam(params: SqlParamList) = addSqlParam(params, LocalDateTimeSqlType)
 
 fun <T> Iterable<T>.toInSql(params: SqlParamList, sqlType: SqlType<T>) =
     joinToString(prefix = "(", postfix = ")") { it.addSqlParam(params, sqlType) }

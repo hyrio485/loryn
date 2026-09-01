@@ -49,7 +49,7 @@ fun dateSub(time: SqlExpression<Date>, interval: Int, unit: MysqlTimeUnit) =
         },
     )
 
-fun dateFormat(date: SqlExpression<Date>, pattern: String) =
+fun <Date> dateFormat(date: SqlExpression<Date>, pattern: String) =
     FunctionExpression("DATE_FORMAT", StringSqlType, date, StringSqlType.expr(pattern))
 
 fun fromUnixTime(unixTime: SqlExpression<Long>) =

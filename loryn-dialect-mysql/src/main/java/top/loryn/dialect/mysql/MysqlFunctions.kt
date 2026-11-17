@@ -16,6 +16,9 @@ fun <T> SqlExpression<T>.ifNull(default: SqlExpression<T>) =
 fun <T> SqlExpression<T>.ifNull(default: T?) =
     ifNull(expr(default))
 
+fun <T> SqlExpression<T>.contains(value: String) =
+    FunctionExpression("LOCATE", IntSqlType, StringSqlType.expr(value), this) gt 0
+
 fun rowNumber(partitionBy: List<ColumnExpression<*>>, orderBy: List<OrderByExpression>) =
     WindowExpression(FunctionExpression("ROW_NUMBER", IntSqlType), partitionBy, orderBy)
 
